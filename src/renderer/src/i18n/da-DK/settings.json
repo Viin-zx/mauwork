@@ -853,6 +853,10 @@
     "pulling": "Henter...",
     "runModel": "Kør model",
     "tts": {
+      "instructions": {
+      "label": "Voice Instructions",
+      "placeholder": "Enter TTS instructions"
+      },
       "title": "Tekst-til-tale (TTS)",
       "description": "Generér tale fra tekst. Stemmer vises i modellisten nedenfor.",
       "audioFormat": {

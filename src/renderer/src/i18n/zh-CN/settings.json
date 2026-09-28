@@ -1398,6 +1398,10 @@
         "label": "温度",
         "helper": "随机性参数（0-2）。"
       },
+      "instructions": {
+        "label": "语音指令（Instructions）",
+        "placeholder": "输入 TTS 语音指令"
+      },
       "topP": {
         "label": "Top P",
         "helper": "Nucleus 采样（0-1）。"

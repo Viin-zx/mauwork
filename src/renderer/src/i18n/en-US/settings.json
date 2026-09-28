@@ -1524,6 +1524,10 @@
         "label": "Temperature",
         "helper": "Controls randomness (0-2)."
       },
+      "instructions": {
+        "label": "Voice Instructions",
+        "placeholder": "Enter TTS instructions"
+      },
       "topP": {
         "label": "Top P",
         "helper": "Nucleus sampling (0-1)."

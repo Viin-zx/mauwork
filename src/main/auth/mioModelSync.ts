@@ -2,6 +2,7 @@ import type { AuthService, MioModelVo, MioModelParameters } from './authService'
 import { ApiEndpointType, ModelType } from '@shared/model'
 import { isReasoningEffort } from '@shared/types/model-db'
 import type { MODEL_META, ModelConfig } from '@shared/types/provider'
+import { normalizeTtsSettings, type TtsResponseFormat, type TtsSettings } from '@shared/ttsSettings'
 import {
   DEFAULT_MODEL_CONTEXT_LENGTH,
   DEFAULT_MODEL_FUNCTION_CALL,
@@ -83,6 +84,28 @@ export function mioModelListToMetas(models: MioModelVo[], providerId: string): M
 }
 
 /**
+ * 从 MioModelParameters 中提取 TTS 设置（仅 TTS 模型，字段无效时不写入）
+ *
+ * 接口字段与 TtsSettings 字段的对应关系：
+ * - speechAgentId → voice（语音 Agent ID）
+ * - audioFormat → responseFormat（音频格式，接口为大写如 "MP3"，需转小写并校验）
+ */
+function extractTtsSettings(
+  params: MioModelParameters | undefined,
+  isTts: boolean
+): TtsSettings | undefined {
+  if (!isTts || !params) return undefined
+  const candidate: TtsSettings = {}
+  if (typeof params.speechAgentId === 'string') {
+    candidate.voice = params.speechAgentId
+  }
+  if (typeof params.audioFormat === 'string') {
+    candidate.responseFormat = params.audioFormat.trim().toLowerCase() as TtsResponseFormat
+  }
+  return normalizeTtsSettings(candidate)
+}
+
+/**
  * 将单个 MioModelVo 映射为 ModelConfig（接口参数 → 客户端模型设置）
  *
  * 接口字段与 ModelConfig 字段的对应关系：
@@ -94,11 +117,14 @@ export function mioModelListToMetas(models: MioModelVo[], providerId: string): M
  * - speechRecognitionEnabled → speechRecognition（接口未下发时不写入，避免覆盖用户手动配置）
  * - requestTimeoutMs → timeout
  * - temperature / topP / reasoningEffort 直映
+ * - speechAgentId / audioFormat → tts（仅 TTS 模型）
  * - modelType → type
  */
 export function mioModelVoToConfig(vo: MioModelVo): ModelConfig {
   const params = vo.parameters
   const reasoningEffort = params?.reasoningEffort
+  const type = mapModelType(vo.modelType) ?? ModelType.Chat
+  const tts = extractTtsSettings(params, type === ModelType.TTS)
   return {
     maxTokens: params?.maxOutputTokens ?? DEFAULT_MODEL_MAX_TOKENS,
     contextLength: params?.contextWindowTokens ?? DEFAULT_MODEL_CONTEXT_LENGTH,
@@ -109,10 +135,11 @@ export function mioModelVoToConfig(vo: MioModelVo): ModelConfig {
     functionCall: params?.functionCallingEnabled ?? DEFAULT_MODEL_FUNCTION_CALL,
     reasoning: params?.reasoningEnabled ?? false,
     speechRecognition: params?.speechRecognitionEnabled,
-    type: mapModelType(vo.modelType) ?? ModelType.Chat,
+    type,
     reasoningEffort:
       reasoningEffort && isReasoningEffort(reasoningEffort) ? reasoningEffort : undefined,
-    apiEndpoint: ApiEndpointType.Chat
+    apiEndpoint: ApiEndpointType.Chat,
+    ...(tts ? { tts } : {})
   }
 }
 

@@ -1498,6 +1498,10 @@
       "verifySuccess": "Weryfikacja przebiegła pomyślnie"
     },
     "tts": {
+      "instructions": {
+      "label": "Voice Instructions",
+      "placeholder": "Enter TTS instructions"
+      },
       "title": "Zamiana tekstu na mowę (TTS)",
       "description": "Generuj mowę z tekstu. Brzmienia znajdują się na poniższej liście modeli.",
       "audioFormat": {

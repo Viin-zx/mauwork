@@ -176,6 +176,7 @@ declare module 'vue-i18n' {
       renderError: string
     }
     input: {
+      suggestions: string
       placeholder: string
       fileArea: string
       inputArea: string
@@ -394,6 +395,9 @@ declare module 'vue-i18n' {
       loadedScope: string
     }
     messages: {
+      loadEarlier: string
+      scrollToLatest: string
+      minimap: string
       thinking: string
       rateLimitWaiting: string
       rateLimitCompactLoading: string
@@ -483,6 +487,7 @@ declare module 'vue-i18n' {
       current: string
       agent: string
       acpAgent: string
+      saveFailed: string
     }
     topbar: {
       backToParent: string
@@ -1342,6 +1347,7 @@ declare module 'vue-i18n' {
       maxTurns: string
       continueMessage: string
     }
+    skipToContent: string
     notifications: {
       label: string
       actionFailed: string
@@ -1455,6 +1461,8 @@ declare module 'vue-i18n' {
       enterUrlToStart: string
       enterUrlDescription: string
       name: string
+      enterContent: string
+      returnFocus: string
     }
     size: {
       bytes: string
@@ -1470,6 +1478,17 @@ declare module 'vue-i18n' {
       none: string
       recent: string
       openFolder: string
+    }
+    diff: {
+      oldLine: string
+      newLine: string
+      change: string
+      content: string
+      add: string
+      del: string
+      context: string
+      hunk: string
+      meta: string
     }
     emojiPicker: {
       search: string
@@ -3825,6 +3844,8 @@ declare module 'vue-i18n' {
           cancelled: string
           failed: string
         }
+        terminalLabel: string
+        terminalHint: string
       }
       terminal: {
         title: string
@@ -4344,6 +4365,48 @@ declare module 'vue-i18n' {
         unsupported_platform: string
       }
       ocrPinHint: string
+    }
+    userPlugins: {
+      install: string
+      update: string
+      installDescription: string
+      gitUrl: string
+      gitRef: string
+      subdirectory: string
+      chooseZip: string
+      chooseDirectory: string
+      inspect: string
+      executionNotice: string
+      useSkills: string
+      allowHooks: string
+      allowMcp: string
+      sharedData: string
+      requiredVariables: string
+      applyUpdate: string
+      uninstall: string
+      source: string
+      selected: string
+      notSelected: string
+      reviewed: string
+      hooksNotEnabled: string
+      diagnostics: string
+      noInvocations: string
+      retryHook: string
+      mcpSetupDescription: string
+      saveMcp: string
+      manageMcp: string
+      uninstallDescription: string
+      fromGit: string
+      fromZip: string
+      userPlugin: string
+      hookStatus: {
+        started: string
+        completed: string
+        failed: string
+        uncertain: string
+      }
+      technicalDetails: string
+      hooks: string
     }
     success: string
     columns: {

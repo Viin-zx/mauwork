@@ -1372,6 +1372,10 @@
       }
     },
     "tts": {
+      "instructions": {
+      "label": "Voice Instructions",
+      "placeholder": "Enter TTS instructions"
+      },
       "title": "Teks-ke-ucapan (TTS)",
       "description": "Hasilkan teks menjadi ucapan, dan suara akan ditampilkan dalam daftar model di bawah.",
       "audioFormat": {

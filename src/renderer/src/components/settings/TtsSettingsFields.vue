@@ -39,12 +39,12 @@
     <div class="space-y-2">
       <Label>{{ t('settings.provider.tts.temperature.label') }}</Label>
       <Input
-        :model-value="speedDraft"
+        :model-value="temperatureDraft"
         inputmode="decimal"
-        placeholder="0.25 - 4.0"
-        @update:model-value="onSpeedInput"
-        @blur="commitSpeed"
-        @keydown.enter.prevent="commitSpeed"
+        placeholder="0 - 2"
+        @update:model-value="onTemperatureInput"
+        @blur="commitTemperature"
+        @keydown.enter.prevent="commitTemperature"
       />
       <p class="text-xs text-muted-foreground">
         {{ t('settings.provider.tts.temperature.helper') }}
@@ -52,10 +52,10 @@
     </div>
 
     <div class="space-y-2">
-      <Label>{{ t('settings.model.modelConfig.timeout.label') }}</Label>
+      <Label>{{ t('settings.provider.tts.instructions.label') }}</Label>
       <Input
         :model-value="tts.instructions ?? ''"
-        :placeholder="t('settings.model.modelConfig.name.placeholder')"
+        :placeholder="t('settings.provider.tts.instructions.placeholder')"
         @update:model-value="onInstructionsInput"
       />
     </div>
@@ -86,25 +86,28 @@ const DEFAULT_SELECT_VALUE = '__default'
 const props = withDefaults(
   defineProps<{
     modelValue?: TtsSettings
+    temperature?: number
   }>(),
   {
-    modelValue: undefined
+    modelValue: undefined,
+    temperature: undefined
   }
 )
 
 const emit = defineEmits<{
   'update:modelValue': [value: TtsSettings | undefined]
+  'update:temperature': [value: number | undefined]
 }>()
 
 const { t } = useI18n()
 
 const tts = computed<TtsSettings>(() => normalizeTtsSettings(props.modelValue) ?? {})
-const speedDraft = ref('')
+const temperatureDraft = ref('')
 
 watch(
-  () => tts.value.speed,
-  (speed) => {
-    speedDraft.value = typeof speed === 'number' ? String(speed) : ''
+  () => props.temperature,
+  (temperature) => {
+    temperatureDraft.value = typeof temperature === 'number' ? String(temperature) : ''
   },
   { immediate: true }
 )
@@ -133,23 +136,23 @@ const onResponseFormatSelect = (value: unknown) => {
   emitSettings({ responseFormat: selected as TtsResponseFormat })
 }
 
-const onSpeedInput = (value: string | number) => {
-  speedDraft.value = String(value)
+const onTemperatureInput = (value: string | number) => {
+  temperatureDraft.value = String(value)
 }
 
-const commitSpeed = () => {
-  const value = speedDraft.value.trim()
+const commitTemperature = () => {
+  const value = temperatureDraft.value.trim()
   if (!value) {
-    emitSettings({ speed: undefined })
+    emit('update:temperature', undefined)
     return
   }
 
-  const speed = Number(value)
-  if (!Number.isFinite(speed)) {
+  const temperature = Number(value)
+  if (!Number.isFinite(temperature)) {
     return
   }
 
-  emitSettings({ speed })
+  emit('update:temperature', temperature)
 }
 
 const onInstructionsInput = (value: string | number) => {

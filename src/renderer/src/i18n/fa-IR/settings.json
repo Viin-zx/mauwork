@@ -932,6 +932,10 @@
     "pulling": "در حال دریافت...",
     "runModel": "اجرای مدل",
     "tts": {
+      "instructions": {
+      "label": "Voice Instructions",
+      "placeholder": "Enter TTS instructions"
+      },
       "title": "تبدیل متن به گفتار (TTS)",
       "description": "گفتار را از متن تولید کنید. صداها در فهرست مدل‌ها در پایین نمایش داده می‌شوند.",
       "audioFormat": {

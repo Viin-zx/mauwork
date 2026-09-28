@@ -129,7 +129,11 @@
             v-model="config.videoGeneration"
           />
 
-          <TtsSettingsFields v-if="showTtsSettings" v-model="config.tts" />
+          <TtsSettingsFields
+            v-if="showTtsSettings"
+            v-model="config.tts"
+            v-model:temperature="config.temperature"
+          />
 
           <!-- 温度 -->
           <div v-if="showTemperatureControl" class="space-y-2">

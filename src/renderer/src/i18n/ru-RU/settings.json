@@ -925,6 +925,10 @@
     "pulling": "Скачивание...",
     "runModel": "Запустить модель",
     "tts": {
+      "instructions": {
+      "label": "Voice Instructions",
+      "placeholder": "Enter TTS instructions"
+      },
       "title": "Текст в речь (TTS)",
       "description": "Генерируйте речь из текста. Голоса отображаются в списке моделей ниже.",
       "audioFormat": {
