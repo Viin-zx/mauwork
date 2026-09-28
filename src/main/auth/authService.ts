@@ -2,8 +2,10 @@ import { app, safeStorage } from 'electron'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-/** mioagent 业务后端地址（含接口前缀） */
-const API_BASE_URL = 'https://mioagent.dev.zrshuiwu.com/prod-api/mio/client/v1'
+/** mioagent 业务后端地址（含接口前缀）。构建时注入：dev 模式用 .env.development，生产模式用 .env.production，未配置时回退开发环境 */
+const API_BASE_URL =
+  import.meta.env.VITE_MIOAGENT_BASE_URL ||
+  'https://mioagent.dev.zrshuiwu.com/prod-api/mio/client/v1'
 const COUNTRY_CODE = '+86'
 const TOKEN_FILE_NAME = 'mio-auth.json'
 
