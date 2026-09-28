@@ -461,11 +461,15 @@ jobs:
               if uploads:
                   print(f'aborted {len(uploads)} incomplete multipart uploads', flush=True)
 
-          def upload_one(name):
+          def upload_one(name, force=False):
               path = os.path.join('release-assets', name)
               key = f'{prefix}/{name}'
               size = os.path.getsize(path)
-              if head_size(key) == size:
+              # 元数据文件（latest.yml/latest-mac.yml/release-index.json）每次
+              # 内容都变（版本号、sha512、sourceCommit、workflowRunId），且与旧版
+              # 本文件大小往往相同，按大小跳过会误判"已存在"导致更新指针不刷新，
+              # 因此必须强制覆盖。
+              if not force and head_size(key) == size:
                   return name, 'skip', size, 0.0
               started = time.monotonic()
               s3.upload_file(path, bucket, key, Config=transfer)
@@ -490,8 +494,10 @@ jobs:
                       )
                   else:
                       print(f'skipped {name} (already on OSS)', flush=True)
+          # release-index.json 同样每次内容都变，强制覆盖
+          upload_one('release-index.json', force=True)
           for name in metadata:
-              upload_one(name)
+              upload_one(name, force=True)
           total_elapsed = time.monotonic() - started
           listed = s3.list_objects_v2(Bucket=bucket, Prefix=f'{prefix}/').get(
               'Contents', []
