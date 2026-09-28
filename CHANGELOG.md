@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.0 (2026-09-28)
+- Renamed the project from MioWork to MauWork across the app and release channels
+- Added development environment configuration files with dynamic backend URL support
+- Fixed update-check timeouts and the lock from a previously failed update
+- Refreshed multiple ACP agent versions and added Antigravity macOS x86_64 support
+- 将项目名称从 MioWork 更名为 MauWork，覆盖应用与发布渠道
+- 新增开发环境配置文件，支持动态后端 URL
+- 修复更新检查超时与上次更新失败后的锁定问题
+- 刷新多个 ACP 代理版本并新增 Antigravity macOS x86_64 支持
+
 ## v1.1.5 (2026-09-24)
 - Test update for OSS auto-update verification
 
