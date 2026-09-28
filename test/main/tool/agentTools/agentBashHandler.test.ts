@@ -292,8 +292,8 @@ describe('AgentBashHandler', () => {
       commandEnvironment
     )
     const prepareCommand = vi.spyOn(handler as never, 'prepareCommand' as never).mockResolvedValue({
-      originalCommand: 'miowork tool call',
-      command: 'miowork tool call',
+      originalCommand: 'mauwork tool call',
+      command: 'mauwork tool call',
       env: {},
       rewritten: false,
       rtkApplied: false,
@@ -318,7 +318,7 @@ describe('AgentBashHandler', () => {
     })
 
     await handler.executeCommand(
-      { command: 'miowork tool call', description: 'Call programmatic tool' },
+      { command: 'mauwork tool call', description: 'Call programmatic tool' },
       {
         commandShell: POSIX_COMMAND_SHELL,
         conversationId: 'conv-1',
@@ -329,7 +329,7 @@ describe('AgentBashHandler', () => {
     )
 
     expect(prepareCommand).toHaveBeenCalledWith(
-      'miowork tool call',
+      'mauwork tool call',
       undefined,
       POSIX_COMMAND_SHELL,
       true
@@ -341,7 +341,7 @@ describe('AgentBashHandler', () => {
     expect(commandEnvironment.createProgrammaticEnvironment).toHaveBeenCalledWith(
       armedProgrammaticToken,
       'conv-1',
-      'miowork tool call',
+      'mauwork tool call',
       'owned input',
       POSIX_COMMAND_SHELL
     )
@@ -358,7 +358,7 @@ describe('AgentBashHandler', () => {
       createPermissionService(),
       commandEnvironment
     )
-    const command = 'miowork tool search --query calendar --limit 4'
+    const command = 'mauwork tool search --query calendar --limit 4'
     vi.spyOn(handler as never, 'prepareCommand' as never).mockResolvedValue({
       originalCommand: command,
       command,
@@ -418,8 +418,8 @@ describe('AgentBashHandler', () => {
       commandEnvironment
     )
     vi.spyOn(handler as never, 'prepareCommand' as never).mockResolvedValue({
-      originalCommand: 'miowork tool call',
-      command: 'miowork tool call',
+      originalCommand: 'mauwork tool call',
+      command: 'mauwork tool call',
       env: {},
       rewritten: false,
       rtkApplied: false,
@@ -429,7 +429,7 @@ describe('AgentBashHandler', () => {
 
     await expect(
       handler.executeCommand(
-        { command: 'miowork tool call', description: 'Call programmatic tool' },
+        { command: 'mauwork tool call', description: 'Call programmatic tool' },
         {
           commandShell: POSIX_COMMAND_SHELL,
           conversationId: 'conv-1',
@@ -454,7 +454,7 @@ describe('AgentBashHandler', () => {
     {
       name: 'background execution',
       args: {
-        command: 'miowork tool call',
+        command: 'mauwork tool call',
         description: 'Call programmatic tool',
         background: true
       },
@@ -463,7 +463,7 @@ describe('AgentBashHandler', () => {
     {
       name: 'yielded execution',
       args: {
-        command: 'miowork tool batch',
+        command: 'mauwork tool batch',
         description: 'Batch programmatic tools',
         yieldMs: 100
       },
@@ -471,7 +471,7 @@ describe('AgentBashHandler', () => {
     },
     {
       name: 'detached execution',
-      args: { command: 'miowork tool call', description: 'Call programmatic tool' },
+      args: { command: 'mauwork tool call', description: 'Call programmatic tool' },
       options: { stdin: '{}', programmatic: true }
     }
   ])('rejects owned stdin for $name before shell execution', async ({ args, options }) => {
@@ -823,8 +823,8 @@ describe('AgentBashHandler', () => {
       commandEnvironment
     )
     vi.spyOn(handler as never, 'prepareCommand' as never).mockResolvedValue({
-      originalCommand: 'miowork tool call',
-      command: 'miowork tool call',
+      originalCommand: 'mauwork tool call',
+      command: 'mauwork tool call',
       env: { PATH: '/bin' },
       rewritten: false,
       rtkApplied: false,
@@ -849,7 +849,7 @@ describe('AgentBashHandler', () => {
     const removeSpy = vi.spyOn(backgroundExecSessionManager, 'remove').mockResolvedValue()
 
     const result = await handler.executeCommand(
-      { command: 'miowork tool call', description: 'Call programmatic tool' },
+      { command: 'mauwork tool call', description: 'Call programmatic tool' },
       {
         commandShell: POSIX_COMMAND_SHELL,
         conversationId: 'conv-1',
@@ -863,7 +863,7 @@ describe('AgentBashHandler', () => {
     expect(writeSpy).toHaveBeenCalledWith('conv-1', 'bg_programmatic', '{"target":"remote"}', true)
     expect(backgroundExecSessionManager.start).toHaveBeenCalledWith(
       'conv-1',
-      'miowork tool call',
+      'mauwork tool call',
       workspaceRoot,
       expect.objectContaining({ timeout: 35_000 })
     )
@@ -883,8 +883,8 @@ describe('AgentBashHandler', () => {
       commandEnvironment
     )
     vi.spyOn(handler as never, 'prepareCommand' as never).mockResolvedValue({
-      originalCommand: 'miowork tool call',
-      command: 'miowork tool call',
+      originalCommand: 'mauwork tool call',
+      command: 'mauwork tool call',
       env: { PATH: '/bin' },
       rewritten: false,
       rtkApplied: false,
@@ -900,7 +900,7 @@ describe('AgentBashHandler', () => {
 
     await expect(
       handler.executeCommand(
-        { command: 'miowork tool call', description: 'Call programmatic tool' },
+        { command: 'mauwork tool call', description: 'Call programmatic tool' },
         {
           commandShell: POSIX_COMMAND_SHELL,
           conversationId: 'conv-1',
@@ -927,8 +927,8 @@ describe('AgentBashHandler', () => {
       commandEnvironment
     )
     vi.spyOn(handler as never, 'prepareCommand' as never).mockResolvedValue({
-      originalCommand: 'miowork tool batch',
-      command: 'miowork tool batch',
+      originalCommand: 'mauwork tool batch',
+      command: 'mauwork tool batch',
       env: { PATH: '/bin' },
       rewritten: false,
       rtkApplied: false,
@@ -952,7 +952,7 @@ describe('AgentBashHandler', () => {
     const controller = new AbortController()
 
     const pending = handler.executeCommand(
-      { command: 'miowork tool batch', description: 'Run programmatic batch' },
+      { command: 'mauwork tool batch', description: 'Run programmatic batch' },
       {
         commandShell: POSIX_COMMAND_SHELL,
         conversationId: 'conv-1',
@@ -995,8 +995,8 @@ describe('AgentBashHandler', () => {
       createProgrammaticCommandEnvironment()
     )
     vi.spyOn(handler as never, 'prepareCommand' as never).mockResolvedValue({
-      originalCommand: 'miowork tool search --query mail',
-      command: 'miowork tool search --query mail',
+      originalCommand: 'mauwork tool search --query mail',
+      command: 'mauwork tool search --query mail',
       env: { PATH: '/bin' },
       rewritten: false,
       rtkApplied: false,
@@ -1007,7 +1007,7 @@ describe('AgentBashHandler', () => {
     await expect(
       handler.executeCommand(
         {
-          command: 'miowork tool search --query mail',
+          command: 'mauwork tool search --query mail',
           description: 'Search programmatic tools'
         },
         {

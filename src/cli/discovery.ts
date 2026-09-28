@@ -29,12 +29,12 @@ function resolveDefaultProfilePath(
   homeDirectory: string
 ): string {
   if (platform === 'darwin') {
-    return path.join(homeDirectory, 'Library', 'Application Support', 'MioWork')
+    return path.join(homeDirectory, 'Library', 'Application Support', 'MauWork')
   }
   if (platform === 'win32') {
-    return path.join(env.APPDATA ?? path.join(homeDirectory, 'AppData', 'Roaming'), 'MioWork')
+    return path.join(env.APPDATA ?? path.join(homeDirectory, 'AppData', 'Roaming'), 'MauWork')
   }
-  return path.join(env.XDG_CONFIG_HOME ?? path.join(homeDirectory, '.config'), 'MioWork')
+  return path.join(env.XDG_CONFIG_HOME ?? path.join(homeDirectory, '.config'), 'MauWork')
 }
 
 export function resolveCliUserDataPath(options: CliDiscoveryOptions = {}): string {

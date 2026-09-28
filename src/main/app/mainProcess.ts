@@ -42,7 +42,7 @@ export async function startMainProcess(
   await splashWindow.create()
 
   try {
-    electronApp.setAppUserModelId('com.miowork.app')
+    electronApp.setAppUserModelId('com.mauwork.app')
     // 先解析当前账号，后续所有业务数据（主库、知识库、记忆、skill、设置）都落在账号目录下
     const authService = new AuthService()
     setActiveAccountKey(resolveAccountKey(authService.peekUserId()))

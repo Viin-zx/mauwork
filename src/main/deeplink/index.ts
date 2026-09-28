@@ -47,11 +47,11 @@ class ProviderDeeplinkError extends Error {
 
 /**
  * DeepLink 处理器类
- * 负责处理 miowork:// 协议的链接
- * miowork://start 唤起应用，进入到默认的新会话界面
- * miowork://start?msg=你好 唤起应用，进入新会话界面，并且带上默认消息
- * miowork://start?msg=你好&model=deepseek-chat 唤起应用，进入新会话界面，并且带上默认消息，model先进行完全匹配，选中第一个命中的。没有命中的就进行模糊匹配，只要包含这个字段的第一个返回，如果都没有就忽略用默认
- * miowork://mcp/install?json=base64JSONData 通过json数据直接安装mcp
+ * 负责处理 mauwork:// 协议的链接
+ * mauwork://start 唤起应用，进入到默认的新会话界面
+ * mauwork://start?msg=你好 唤起应用，进入新会话界面，并且带上默认消息
+ * mauwork://start?msg=你好&model=deepseek-chat 唤起应用，进入新会话界面，并且带上默认消息，model先进行完全匹配，选中第一个命中的。没有命中的就进行模糊匹配，只要包含这个字段的第一个返回，如果都没有就忽略用默认
+ * mauwork://mcp/install?json=base64JSONData 通过json数据直接安装mcp
  */
 export class DeeplinkService {
   private startupUrl: string | null = null
@@ -73,10 +73,10 @@ export class DeeplinkService {
     // 注册协议处理器
     if (process.defaultApp) {
       if (process.argv.length >= 2) {
-        app.setAsDefaultProtocolClient('miowork', process.execPath, [path.resolve(process.argv[1])])
+        app.setAsDefaultProtocolClient('mauwork', process.execPath, [path.resolve(process.argv[1])])
       }
     } else {
-      app.setAsDefaultProtocolClient('miowork')
+      app.setAsDefaultProtocolClient('mauwork')
     }
   }
 
@@ -108,7 +108,7 @@ export class DeeplinkService {
       const urlObj = new URL(url)
       logger.info('Received DeepLink:', this.redactDeepLinkUrlForLog(url))
 
-      if (urlObj.protocol !== 'miowork:') {
+      if (urlObj.protocol !== 'mauwork:') {
         console.error('Unsupported protocol:', urlObj.protocol)
         return
       }

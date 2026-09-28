@@ -52,7 +52,7 @@ import {
 
 const execFileAsync = promisify(execFile)
 
-const GITHUB_RELEASE_DOWNLOAD_PREFIX = 'https://github.com/Viin-zx/miowork/releases/download/'
+const GITHUB_RELEASE_DOWNLOAD_PREFIX = 'https://github.com/Viin-zx/mauwork/releases/download/'
 const PLUGIN_PACKAGE_EXTENSION = '.dcplugin'
 const CUA_RUNTIME_OWNERSHIP_MIGRATION = 'cua-runtime-ownership'
 const CUA_RUNTIME_OWNERSHIP_MIGRATION_VERSION = 2

@@ -29,14 +29,14 @@ async function createFixture(platform: NodeJS.Platform = 'darwin') {
   await mkdir(homeDirectory, { recursive: true })
   await mkdir(userDataDirectory, { recursive: true })
   await mkdir(cliDirectory, { recursive: true })
-  await writeFile(path.join(cliDirectory, 'miowork'), '#!/bin/sh\n', { mode: 0o755 })
-  await writeFile(path.join(cliDirectory, 'miowork.cmd'), '@echo off\r\n')
-  await writeFile(path.join(cliDirectory, 'miowork.mjs'), 'console.log("miowork")\n')
+  await writeFile(path.join(cliDirectory, 'mauwork'), '#!/bin/sh\n', { mode: 0o755 })
+  await writeFile(path.join(cliDirectory, 'mauwork.cmd'), '@echo off\r\n')
+  await writeFile(path.join(cliDirectory, 'mauwork.mjs'), 'console.log("mauwork")\n')
   const electronHost =
     platform === 'darwin'
-      ? path.join(appRoot, 'MacOS', 'MioWork')
+      ? path.join(appRoot, 'MacOS', 'MauWork')
       : platform === 'win32'
-        ? path.join(appRoot, 'MioWork.exe')
+        ? path.join(appRoot, 'MauWork.exe')
         : path.join(appRoot, 'miochat')
   await mkdir(path.dirname(electronHost), { recursive: true })
   await writeFile(electronHost, 'fixture electron\n', { mode: 0o755 })
@@ -77,7 +77,7 @@ describe('CliLauncherService', () => {
   it('installs and reverses a POSIX launcher without changing existing shell content', async () => {
     const fixture = await createFixture()
     const profilePath = path.join(fixture.homeDirectory, '.zprofile')
-    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'miowork')
+    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'mauwork')
     await writeFile(profilePath, 'export EDITOR=vim\n')
 
     await expect(fixture.service.getStatus()).resolves.toMatchObject({
@@ -100,18 +100,18 @@ describe('CliLauncherService', () => {
       'if [ ! -f "$electron_host" ] || [ ! -x "$electron_host" ] || [ ! -f "$cli_module" ]; then'
     )
     expect(command).toContain('ELECTRON_RUN_AS_NODE=1')
-    expect(command).toContain(`cli_module='${path.join(fixture.cliDirectory, 'miowork.mjs')}'`)
+    expect(command).toContain(`cli_module='${path.join(fixture.cliDirectory, 'mauwork.mjs')}'`)
     expect(command).not.toContain('command -v node')
     expect(await readFile(profilePath, 'utf8')).toBe(
       [
         'export EDITOR=vim',
         '',
-        '# >>> MioWork CLI >>>',
+        '# >>> MauWork CLI >>>',
         'case ":$PATH:" in',
         '  *":$HOME/.local/bin:"*) ;;',
         '  *) export PATH="$HOME/.local/bin:$PATH" ;;',
         'esac',
-        '# <<< MioWork CLI <<<',
+        '# <<< MauWork CLI <<<',
         ''
       ].join('\n')
     )
@@ -163,7 +163,7 @@ describe('CliLauncherService', () => {
       state: 'installed'
     })
     const command = await readFile(
-      path.join(fixture.homeDirectory, '.local', 'bin', 'miowork'),
+      path.join(fixture.homeDirectory, '.local', 'bin', 'mauwork'),
       'utf8'
     )
     expect(command).toContain(`electron_host='${electronHost}'`)
@@ -229,7 +229,7 @@ describe('CliLauncherService', () => {
 
   it('refuses to overwrite an unowned command or an orphaned managed block', async () => {
     const fixture = await createFixture()
-    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'miowork')
+    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'mauwork')
     await mkdir(path.dirname(commandPath), { recursive: true })
     await writeFile(commandPath, 'foreign')
 
@@ -243,14 +243,14 @@ describe('CliLauncherService', () => {
     await rm(commandPath)
     await writeFile(
       path.join(fixture.homeDirectory, '.zprofile'),
-      '# >>> MioWork CLI >>>\ncustom\n# <<< MioWork CLI <<<\n'
+      '# >>> MauWork CLI >>>\ncustom\n# <<< MauWork CLI <<<\n'
     )
     await expect(fixture.service.ensureInstalled()).rejects.toThrow('without an ownership marker')
   })
 
   posixIt('fails closed when an owned command or shell block is modified', async () => {
     const fixture = await createFixture()
-    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'miowork')
+    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'mauwork')
     const profilePath = path.join(fixture.homeDirectory, '.zprofile')
     await fixture.service.ensureInstalled()
     const installedCommand = await readFile(commandPath, 'utf8')
@@ -281,7 +281,7 @@ describe('CliLauncherService', () => {
 
   it('repairs missing owned files while ensuring launcher availability', async () => {
     const fixture = await createFixture()
-    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'miowork')
+    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'mauwork')
     await fixture.service.ensureInstalled()
     await rm(commandPath)
 
@@ -298,15 +298,15 @@ describe('CliLauncherService', () => {
 
   it('refreshes only a stale launcher whose previous content is still owned', async () => {
     const fixture = await createFixture()
-    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'miowork')
+    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'mauwork')
     await fixture.service.ensureInstalled()
     const nextAppRoot = path.join(fixture.root, 'Contents-v2')
     const nextCliDirectory = path.join(nextAppRoot, 'resources', 'app.asar.unpacked', 'cli')
     await mkdir(nextCliDirectory, { recursive: true })
-    await writeFile(path.join(nextCliDirectory, 'miowork'), '#!/bin/sh\n', { mode: 0o755 })
-    await writeFile(path.join(nextCliDirectory, 'miowork.mjs'), 'console.log("v2")\n')
+    await writeFile(path.join(nextCliDirectory, 'mauwork'), '#!/bin/sh\n', { mode: 0o755 })
+    await writeFile(path.join(nextCliDirectory, 'mauwork.mjs'), 'console.log("v2")\n')
     await mkdir(path.join(nextAppRoot, 'MacOS'), { recursive: true })
-    await writeFile(path.join(nextAppRoot, 'MacOS', 'MioWork'), 'fixture electron v2\n', {
+    await writeFile(path.join(nextAppRoot, 'MacOS', 'MauWork'), 'fixture electron v2\n', {
       mode: 0o755
     })
     fixture.setCliDirectory(nextCliDirectory)
@@ -317,14 +317,14 @@ describe('CliLauncherService', () => {
     })
     await fixture.service.ensureInstalled()
     const refreshedCommand = await readFile(commandPath, 'utf8')
-    expect(refreshedCommand).toContain(`cli_module='${path.join(nextCliDirectory, 'miowork.mjs')}'`)
+    expect(refreshedCommand).toContain(`cli_module='${path.join(nextCliDirectory, 'mauwork.mjs')}'`)
     expect(refreshedCommand).not.toContain(fixture.cliDirectory)
     await expect(fixture.service.getStatus()).resolves.toMatchObject({ state: 'installed' })
   })
 
   posixIt('migrates an owned legacy POSIX symlink to the stable command shim', async () => {
     const fixture = await createFixture()
-    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'miowork')
+    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'mauwork')
     const markerPath = path.join(fixture.userDataDirectory, 'local-control', 'launcher.json')
     await fixture.service.ensureInstalled()
 
@@ -332,7 +332,7 @@ describe('CliLauncherService', () => {
     delete marker.commandHash
     await writeFile(markerPath, `${JSON.stringify(marker)}\n`)
     await rm(commandPath)
-    await symlink(path.join(fixture.cliDirectory, 'miowork'), commandPath)
+    await symlink(path.join(fixture.cliDirectory, 'mauwork'), commandPath)
 
     await expect(fixture.service.getStatus()).resolves.toMatchObject({
       state: 'stale',
@@ -349,7 +349,7 @@ describe('CliLauncherService', () => {
 
   posixIt('fails closed when an owned POSIX shim loses its executable mode', async () => {
     const fixture = await createFixture()
-    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'miowork')
+    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'mauwork')
     await fixture.service.ensureInstalled()
     await chmod(commandPath, 0o644)
 
@@ -363,7 +363,7 @@ describe('CliLauncherService', () => {
   it('reports an oversized shell profile without classifying it as modified', async () => {
     const fixture = await createFixture()
     const profilePath = path.join(fixture.homeDirectory, '.zprofile')
-    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'miowork')
+    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'mauwork')
     const originalProfile = Buffer.alloc(1024 * 1024 + 1, 0x61)
     await writeFile(profilePath, originalProfile)
 
@@ -392,7 +392,7 @@ describe('CliLauncherService', () => {
       fixture.localAppDataDirectory,
       'Microsoft',
       'WindowsApps',
-      'miowork.cmd'
+      'mauwork.cmd'
     )
 
     await expect(fixture.service.ensureInstalled()).resolves.toMatchObject({
@@ -401,7 +401,7 @@ describe('CliLauncherService', () => {
       shellConfigPath: null
     })
     expect(await readFile(commandPath, 'utf8')).toContain(
-      `set "cli_module=${path.join(fixture.cliDirectory, 'miowork.mjs')}"`
+      `set "cli_module=${path.join(fixture.cliDirectory, 'mauwork.mjs')}"`
     )
     expect(await readFile(commandPath, 'utf8')).toContain(
       `set "electron_host=${fixture.electronHost}"`
@@ -412,15 +412,15 @@ describe('CliLauncherService', () => {
     const nextAppRoot = path.join(fixture.root, 'app-v2')
     const nextCliDirectory = path.join(nextAppRoot, 'resources', 'app.asar.unpacked', 'cli')
     await mkdir(nextCliDirectory, { recursive: true })
-    await writeFile(path.join(nextCliDirectory, 'miowork.mjs'), 'console.log("v2")\n')
-    await writeFile(path.join(nextAppRoot, 'MioWork.exe'), 'fixture electron v2\n', {
+    await writeFile(path.join(nextCliDirectory, 'mauwork.mjs'), 'console.log("v2")\n')
+    await writeFile(path.join(nextAppRoot, 'MauWork.exe'), 'fixture electron v2\n', {
       mode: 0o755
     })
     fixture.setCliDirectory(nextCliDirectory)
     await expect(fixture.service.getStatus()).resolves.toMatchObject({ state: 'stale' })
     await fixture.service.ensureInstalled()
     expect(await readFile(commandPath, 'utf8')).toContain(
-      `set "cli_module=${path.join(nextCliDirectory, 'miowork.mjs')}"`
+      `set "cli_module=${path.join(nextCliDirectory, 'mauwork.mjs')}"`
     )
 
     await expect(fixture.service.removeOwnedLauncher()).resolves.toMatchObject({
@@ -436,7 +436,7 @@ describe('CliLauncherService', () => {
       fixture.localAppDataDirectory,
       'Microsoft',
       'WindowsApps',
-      'miowork.cmd'
+      'mauwork.cmd'
     )
     await fixture.service.ensureInstalled()
     const marker = JSON.parse(await readFile(markerPath, 'utf8')) as Record<string, unknown>
@@ -482,7 +482,7 @@ describe('CliLauncherService', () => {
 
   it('can remove owned integration after the packaged source disappears', async () => {
     const fixture = await createFixture()
-    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'miowork')
+    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'mauwork')
     const profilePath = path.join(fixture.homeDirectory, '.zprofile')
     await fixture.service.ensureInstalled()
     fixture.setCliDirectory(null)
@@ -502,7 +502,7 @@ describe('CliLauncherService', () => {
 
   it('prioritizes a missing packaged source over missing owned files', async () => {
     const fixture = await createFixture()
-    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'miowork')
+    const commandPath = path.join(fixture.homeDirectory, '.local', 'bin', 'mauwork')
     await fixture.service.ensureInstalled()
     await rm(commandPath)
     fixture.setCliDirectory(null)

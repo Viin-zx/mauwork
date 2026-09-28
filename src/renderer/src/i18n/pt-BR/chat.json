@@ -1,7 +1,7 @@
 {
   "input": {
     "suggestions": "Sugestões",
-    "placeholder": "Pergunte qualquer coisa ao MioWork, {'@'} para mencionar arquivos, / para comandos",
+    "placeholder": "Pergunte qualquer coisa ao MauWork, {'@'} para mencionar arquivos, / para comandos",
     "fileArea": "Área de Arquivos",
     "inputArea": "Área de Entrada",
     "functionSwitch": "Alternar Função",
@@ -34,7 +34,7 @@
     "voiceRecognitionUnsupportedTitle": "O ambiente atual não oferece suporte a reconhecimento de voz",
     "voiceRecognitionUnsupportedDescription": "Use este recurso em um navegador ou ambiente de desktop com suporte a reconhecimento de voz.",
     "voiceRecognitionPermissionDeniedTitle": "Não foi possível acessar o microfone",
-    "voiceRecognitionPermissionDeniedDescription": "Permita que o MioWork use o microfone e tente novamente.",
+    "voiceRecognitionPermissionDeniedDescription": "Permita que o MauWork use o microfone e tente novamente.",
     "voiceRecognitionErrorTitle": "Falha no reconhecimento de voz",
     "voiceRecognitionErrorDescription": "Não foi possível concluir o reconhecimento de voz. Tente novamente mais tarde.",
     "send": "Enviar",
@@ -60,7 +60,7 @@
         "agentCore": "Agent Core",
         "agentImageGeneration": "Geração de Imagem",
         "agentSkills": "Agent Skills",
-        "deepchatSettings": "MioWork Settings",
+        "deepchatSettings": "MauWork Settings",
         "yobrowser": "YoBrowser"
       }
     },
@@ -442,12 +442,12 @@
   },
   "onboarding": {
     "agentSwitch": {
-      "title": "Alternar para o agente MioWork",
-      "description": "Antes de conversar, saia do ACP e volte para o fluxo integrado do MioWork.",
+      "title": "Alternar para o agente MauWork",
+      "description": "Antes de conversar, saia do ACP e volte para o fluxo integrado do MauWork.",
       "caption": "Clique no botão de agente destacado na barra lateral para continuar."
     },
     "switchModel": {
-      "description": "Escolha o modelo que você deseja usar na sua primeira conversa no MioWork.",
+      "description": "Escolha o modelo que você deseja usar na sua primeira conversa no MauWork.",
       "caption": "Use o seletor de modelo destacado e escolha qualquer modelo disponível."
     },
     "firstChat": {
@@ -624,7 +624,7 @@
       "reasons": {
         "session_unavailable": "Esta sessão não está mais disponível.",
         "agent_unavailable": "O Agent selecionado não está disponível.",
-        "deepchat_agent_required": "A colaboração proativa requer um MioWork Agent.",
+        "deepchat_agent_required": "A colaboração proativa requer um MauWork Agent.",
         "regular_parent_required": "A colaboração proativa não está disponível em uma sessão filha.",
         "agent_policy_unavailable": "Não foi possível carregar a política de colaboração.",
         "subagents_disabled": "Ative Subagents para este Agent antes de usar a colaboração proativa."

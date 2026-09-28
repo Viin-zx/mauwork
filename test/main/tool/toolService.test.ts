@@ -366,7 +366,7 @@ describe('ToolService', () => {
           type: 'function',
           function: {
             name: 'exec',
-            arguments: '{"command":"miowork tool call","stdin":"{}"}'
+            arguments: '{"command":"mauwork tool call","stdin":"{}"}'
           },
           conversationId: request.sessionId
         },
@@ -384,7 +384,7 @@ describe('ToolService', () => {
     ).resolves.toMatchObject({ content: 'done' })
     expect(callTool).toHaveBeenCalledWith(
       'exec',
-      { command: 'miowork tool call', stdin: '{}' },
+      { command: 'mauwork tool call', stdin: '{}' },
       request.sessionId,
       expect.objectContaining({
         toolCallId: 'exec-1',
@@ -586,7 +586,7 @@ describe('ToolService', () => {
       },
       toolName: 'exec',
       toolSource: 'agent',
-      normalizedArguments: { command: 'miowork tool call', stdin: '{}' },
+      normalizedArguments: { command: 'mauwork tool call', stdin: '{}' },
       target: { serverName: 'agent-filesystem', originalName: 'exec' }
     })
     parent.armOuterDispatch({

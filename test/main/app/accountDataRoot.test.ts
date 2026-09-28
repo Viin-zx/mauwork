@@ -66,8 +66,8 @@ function seedLegacyGlobalData(): void {
 }
 
 beforeEach(() => {
-  userDataRoot = mkdtempSync(path.join(os.tmpdir(), 'miowork-userdata-'))
-  homeRoot = mkdtempSync(path.join(os.tmpdir(), 'miowork-home-'))
+  userDataRoot = mkdtempSync(path.join(os.tmpdir(), 'mauwork-userdata-'))
+  homeRoot = mkdtempSync(path.join(os.tmpdir(), 'mauwork-home-'))
   mocks.paths.userData = userDataRoot
   mocks.paths.home = homeRoot
   setActiveAccountKey(ANONYMOUS_ACCOUNT_KEY)

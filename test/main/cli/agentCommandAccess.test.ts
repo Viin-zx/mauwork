@@ -29,7 +29,7 @@ async function createCliDirectory(platform: NodeJS.Platform = 'darwin') {
   temporaryDirectories.push(root)
   const directory = path.join(root, 'out', 'cli')
   await mkdir(directory, { recursive: true })
-  await writeFile(path.join(directory, platform === 'win32' ? 'miowork.cmd' : 'miowork'), '')
+  await writeFile(path.join(directory, platform === 'win32' ? 'mauwork.cmd' : 'mauwork'), '')
   return { root, directory }
 }
 
@@ -57,7 +57,7 @@ describe('AgentCliCommandAccess', () => {
     const environment = createEnvironment(
       access,
       ' conversation-1 ',
-      'miowork model invoke --prompt hello --jsonl'
+      'mauwork model invoke --prompt hello --jsonl'
     )
 
     expect(environment).toEqual({
@@ -107,7 +107,7 @@ describe('AgentCliCommandAccess', () => {
       access.createProgrammaticEnvironment(
         armed,
         ' conversation-1 ',
-        'miowork tool call',
+        'mauwork tool call',
         stdin,
         POSIX_COMMAND_SHELL
       )
@@ -123,7 +123,7 @@ describe('AgentCliCommandAccess', () => {
       access.createProgrammaticEnvironment(
         armed,
         'conversation-2',
-        'miowork tool call',
+        'mauwork tool call',
         stdin,
         POSIX_COMMAND_SHELL
       )
@@ -132,7 +132,7 @@ describe('AgentCliCommandAccess', () => {
       access.createProgrammaticEnvironment(
         armed,
         'conversation-1',
-        'miowork tool call --target remote',
+        'mauwork tool call --target remote',
         stdin,
         POSIX_COMMAND_SHELL
       )
@@ -141,7 +141,7 @@ describe('AgentCliCommandAccess', () => {
       access.createProgrammaticEnvironment(
         armed,
         'conversation-1',
-        'miowork tool call',
+        'mauwork tool call',
         '{"target":"changed","arguments":{}}',
         POSIX_COMMAND_SHELL
       )
@@ -175,7 +175,7 @@ describe('AgentCliCommandAccess', () => {
       access.createProgrammaticEnvironment(
         armed,
         'conversation-1',
-        'miowork tool batch',
+        'mauwork tool batch',
         stdin,
         POSIX_COMMAND_SHELL
       )
@@ -191,7 +191,7 @@ describe('AgentCliCommandAccess', () => {
       commandPermission: new CommandPermissionService(),
       resolveCliDirectory: () => directory
     })
-    const command = 'miowork tool search --query calendar --limit 4'
+    const command = 'mauwork tool search --query calendar --limit 4'
     const armed = {
       token: 'd'.repeat(43),
       conversationId: 'conversation-1',
@@ -225,7 +225,7 @@ describe('AgentCliCommandAccess', () => {
       access.createProgrammaticEnvironment(
         armed,
         'conversation-1',
-        'miowork tool search --query mail --limit 4',
+        'mauwork tool search --query mail --limit 4',
         undefined,
         POSIX_COMMAND_SHELL
       )
@@ -241,7 +241,7 @@ describe('AgentCliCommandAccess', () => {
         commandPermission: new CommandPermissionService(),
         resolveCliDirectory: () => directory
       })
-      const command = 'miowork tool search --query "calendar mail" --limit 4'
+      const command = 'mauwork tool search --query "calendar mail" --limit 4'
       const armed = {
         token: 'd'.repeat(43),
         conversationId: 'conversation-1',
@@ -282,7 +282,7 @@ describe('AgentCliCommandAccess', () => {
         commandPermission: new CommandPermissionService(),
         resolveCliDirectory: () => directory
       })
-      const command = 'miowork tool describe --target "calendar_search"'
+      const command = 'mauwork tool describe --target "calendar_search"'
       const armed = {
         token: 'd'.repeat(43),
         conversationId: 'conversation-1',
@@ -332,7 +332,7 @@ describe('AgentCliCommandAccess', () => {
         access.createProgrammaticEnvironment(
           armed,
           'conversation-1',
-          'miowork tool search --query "calendar $HOME"',
+          'mauwork tool search --query "calendar $HOME"',
           undefined,
           commandShell
         )
@@ -341,19 +341,19 @@ describe('AgentCliCommandAccess', () => {
   )
 
   it.each([
-    'miowork --json model invoke',
-    'miowork model',
-    'miowork run watch --run conversation-1',
-    'miowork provider remove --provider provider-1',
-    'miowork tool search --query calendar',
-    'miowork tool describe --target calendar_search',
-    'miowork tool call',
-    'miowork tool batch',
-    'miowork unknown command',
-    'miowork model invoke > output.txt',
-    'miowork model invoke | tee output.txt',
-    'FOO=bar miowork model invoke',
-    `miowork model invoke --prompt $${LOCAL_CONTROL_AGENT_TOKEN_ENV}`
+    'mauwork --json model invoke',
+    'mauwork model',
+    'mauwork run watch --run conversation-1',
+    'mauwork provider remove --provider provider-1',
+    'mauwork tool search --query calendar',
+    'mauwork tool describe --target calendar_search',
+    'mauwork tool call',
+    'mauwork tool batch',
+    'mauwork unknown command',
+    'mauwork model invoke > output.txt',
+    'mauwork model invoke | tee output.txt',
+    'FOO=bar mauwork model invoke',
+    `mauwork model invoke --prompt $${LOCAL_CONTROL_AGENT_TOKEN_ENV}`
   ])('blocks human-token fallback without issuing authority for %j', async (command) => {
     const { directory } = await createCliDirectory()
     const authority = new AgentCliTokenAuthority()
@@ -383,7 +383,7 @@ describe('AgentCliCommandAccess', () => {
     expect(
       access.createEnvironment(
         'conversation-1',
-        'miowork model invoke --prompt $env:deepchat_cli_agent_token',
+        'mauwork model invoke --prompt $env:deepchat_cli_agent_token',
         WINDOWS_POWERSHELL_COMMAND_SHELL
       )
     ).toEqual({
@@ -406,7 +406,7 @@ describe('AgentCliCommandAccess', () => {
     expect(
       access.createEnvironment(
         'conversation-1',
-        'miowork model invoke ^" & whoami"',
+        'mauwork model invoke ^" & whoami"',
         CMD_COMMAND_SHELL
       )
     ).toEqual({
@@ -429,7 +429,7 @@ describe('AgentCliCommandAccess', () => {
     expect(
       access.createEnvironment(
         'conversation-1',
-        'miowork model invoke --prompt %deepchat_cli_agent_token%',
+        'mauwork model invoke --prompt %deepchat_cli_agent_token%',
         CMD_COMMAND_SHELL
       )
     ).toEqual({
@@ -454,7 +454,7 @@ describe('AgentCliCommandAccess', () => {
       prependPath: [],
       preserveCommand: false
     })
-    expect(createEnvironment(access, 'conversation-1', '"miowork" model invoke')).toEqual({
+    expect(createEnvironment(access, 'conversation-1', '"mauwork" model invoke')).toEqual({
       variables: { [LOCAL_CONTROL_AGENT_TOKEN_ENV]: '' },
       prependPath: [],
       preserveCommand: false
@@ -471,7 +471,7 @@ describe('AgentCliCommandAccess', () => {
       resolveCliDirectory: () => directory
     })
 
-    expect(createEnvironment(access, 'conversation-1', 'miowork help')).toEqual({
+    expect(createEnvironment(access, 'conversation-1', 'mauwork help')).toEqual({
       variables: { [LOCAL_CONTROL_AGENT_TOKEN_ENV]: '' },
       prependPath: [directory],
       preserveCommand: true
@@ -496,7 +496,7 @@ describe('AgentCliCommandAccess', () => {
       createEnvironment(
         access,
         'conversation-1',
-        'miowork audio transcribe --artifact artifact-1 --provider p --model m'
+        'mauwork audio transcribe --artifact artifact-1 --provider p --model m'
       )
     ).toMatchObject({ variables: { [LOCAL_CONTROL_AGENT_TOKEN_ENV]: agentToken } })
     const request = authority.beginRequest(agentToken)
@@ -514,7 +514,7 @@ describe('AgentCliCommandAccess', () => {
       resolveCliDirectory: () => null
     })
 
-    expect(createEnvironment(access, 'conversation-1', 'miowork system status')).toEqual({
+    expect(createEnvironment(access, 'conversation-1', 'mauwork system status')).toEqual({
       variables: { [LOCAL_CONTROL_AGENT_TOKEN_ENV]: '' },
       prependPath: [],
       preserveCommand: true
@@ -532,7 +532,7 @@ describe('resolveBundledCliDirectory', () => {
         resourcesPath: '/unused',
         isPackaged: false,
         platform: 'darwin',
-        isFile: (filePath) => filePath === path.join(development.directory, 'miowork')
+        isFile: (filePath) => filePath === path.join(development.directory, 'mauwork')
       })
     ).toBe(development.directory)
 
@@ -540,14 +540,14 @@ describe('resolveBundledCliDirectory', () => {
     temporaryDirectories.push(packagedRoot)
     const packagedDirectory = path.join(packagedRoot, 'app.asar.unpacked', 'cli')
     await mkdir(packagedDirectory, { recursive: true })
-    await writeFile(path.join(packagedDirectory, 'miowork.cmd'), '')
+    await writeFile(path.join(packagedDirectory, 'mauwork.cmd'), '')
     expect(
       resolveBundledCliDirectory({
         appPath: '/unused',
         resourcesPath: packagedRoot,
         isPackaged: true,
         platform: 'win32',
-        isFile: (filePath) => filePath === path.join(packagedDirectory, 'miowork.cmd')
+        isFile: (filePath) => filePath === path.join(packagedDirectory, 'mauwork.cmd')
       })
     ).toBe(packagedDirectory)
     expect(

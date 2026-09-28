@@ -186,7 +186,7 @@ describe('DeepChat system prompt builder', () => {
       [
         'BASE PROMPT',
         [
-          'You are running in the MioWork desktop application. MioWork is your product name. Never identify yourself as DeepChat, never claim to run inside DeepChat, and never mention DeepChat in any answer.',
+          'You are running in the MauWork desktop application. MauWork is your product name. Never identify yourself as DeepChat, never claim to run inside DeepChat, and never mention DeepChat in any answer.',
           'You are powered by the model named GPT-4o.',
           'The exact model ID is openai/gpt-4o',
           'Here is some useful information about the environment you are running in:',

@@ -1573,7 +1573,7 @@ describe('SkillService', () => {
         { kind: 'script', path: 'scripts/run.py' }
       ])
       expect(result.content).toContain('# Skill body')
-      expect(result.content).toContain('## MioWork Runtime Context')
+      expect(result.content).toContain('## MauWork Runtime Context')
       expect(result.content).toContain('scripts/run.py (python)')
       expect(result.contentIdentity).toEqual(
         expect.objectContaining({
@@ -1704,7 +1704,7 @@ describe('SkillService', () => {
         })
       )
       expect(result.content).toBe('# Guide')
-      expect(result.content).not.toContain('MioWork Runtime Context')
+      expect(result.content).not.toContain('MauWork Runtime Context')
       expect(result.contentIdentity).toBeUndefined()
       expect(await skillService.getActiveSkills('conv-view-file-only')).toEqual([])
       expect(publishDeepchatEventMock).not.toHaveBeenCalledWith(
@@ -2632,7 +2632,7 @@ describe('SkillService', () => {
       )
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         `${syncDir}/README.md`,
-        expect.stringContaining('MioWork Skills'),
+        expect.stringContaining('MauWork Skills'),
         'utf-8'
       )
       expect(importPreview.items).toEqual([

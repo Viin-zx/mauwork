@@ -215,12 +215,12 @@ function callExample(entry: ProgrammaticToolEntry): string {
     target: entry.target.providerVisibleName,
     arguments: callArguments(entry)
   })
-  const example = canonicalJsonStringifyData({ command: 'miowork tool call', stdin })
+  const example = canonicalJsonStringifyData({ command: 'mauwork tool call', stdin })
   if (Buffer.byteLength(example, 'utf8') <= PROGRAMMATIC_TOOL_EXAMPLE_MAX_CHARACTERS) {
     return example
   }
   return canonicalJsonStringifyData({
-    command: 'miowork tool call',
+    command: 'mauwork tool call',
     stdin: canonicalJsonStringifyData({
       target: entry.target.providerVisibleName,
       arguments: {}

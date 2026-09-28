@@ -69,7 +69,7 @@
     "moveAndDeleteAgent": "Pindahkan dan Padam Ejen",
     "moveConversation": "Pindahkan Perbualan",
     "agentType": {
-      "deepchat": "MioWork",
+      "deepchat": "MauWork",
       "acp": "ACP"
     },
     "blockReason": {
@@ -84,7 +84,7 @@
       "draft": "Draf",
       "subagent": "Subejen"
     },
-    "deepChatTargetOnly": "Hanya ejen MioWork boleh dipilih sebagai sasaran pemindahan. Perbualan ACP boleh dipindahkan ke MioWork, tetapi tidak ke ACP."
+    "deepChatTargetOnly": "Hanya ejen MauWork boleh dipilih sebagai sasaran pemindahan. Perbualan ACP boleh dipindahkan ke MauWork, tetapi tidak ke ACP."
   },
   "deleteMessage": {
     "title": "Padam mesej ini?",

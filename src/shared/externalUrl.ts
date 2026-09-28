@@ -3,7 +3,7 @@ export const ALLOWED_EXTERNAL_PROTOCOLS = Object.freeze([
   'https:',
   'mailto:',
   'tel:',
-  'miowork:'
+  'mauwork:'
 ] as const)
 
 const ALLOWED_EXTERNAL_PROTOCOL_SET = new Set<string>(ALLOWED_EXTERNAL_PROTOCOLS)

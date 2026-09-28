@@ -2,7 +2,7 @@
   "steps": {
     "welcome": {
       "title": "selamat datang",
-      "description": "Mari mulai menyiapkan MioWork"
+      "description": "Mari mulai menyiapkan MauWork"
     },
     "provider": {
       "title": "Penyedia layanan model",
@@ -17,7 +17,7 @@
       "description": "Semuanya siap untuk mulai digunakan!"
     }
   },
-  "title": "Selamat datang di MioWork",
+  "title": "Selamat datang di MauWork",
   "description": "Mari kita melalui proses penyiapan bersama",
   "provider": {
     "select": "Pilih penyedia layanan",
@@ -35,7 +35,7 @@
     "back": "Kembali"
   },
   "page": {
-    "title": "Selamat datang di MioWork Agent",
+    "title": "Selamat datang di MauWork Agent",
     "description": "Hubungkan ke penyedia layanan model untuk memulai",
     "guide": {
       "title": "kemajuan booting",
@@ -72,8 +72,8 @@
   },
   "agentPage": {
     "title": "Pilih Agent untuk mulai membuat",
-    "deepchatType": "MioWork Agent",
+    "deepchatType": "MauWork Agent",
     "acpType": "ACP Agent",
-    "manageAgents": "Kelola MioWork Agent"
+    "manageAgents": "Kelola MauWork Agent"
   }
 }

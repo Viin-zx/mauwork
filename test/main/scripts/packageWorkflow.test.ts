@@ -131,12 +131,12 @@ const reusableWorkflows = {
   windows: {
     name: '_package-windows.yml',
     runner: "${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2025-vs2026' }}",
-    artifact: 'miowork-package-win32-${{ inputs.arch }}'
+    artifact: 'mauwork-package-win32-${{ inputs.arch }}'
   },
   macos: {
     name: '_package-macos.yml',
     runner: "${{ inputs.arch == 'arm64' && 'macos-15' || 'macos-15-intel' }}",
-    artifact: 'miowork-package-darwin-${{ inputs.arch }}'
+    artifact: 'mauwork-package-darwin-${{ inputs.arch }}'
   }
 }
 
@@ -723,10 +723,10 @@ describe('Release caller and publication boundary', () => {
       step.uses?.startsWith('actions/download-artifact@')
     )
     expect(downloads.map((step) => step.with?.name)).toEqual([
-      'miowork-package-win32-x64-distribution',
-      'miowork-package-win32-arm64-distribution',
-      'miowork-package-darwin-x64-distribution',
-      'miowork-package-darwin-arm64-distribution'
+      'mauwork-package-win32-x64-distribution',
+      'mauwork-package-win32-arm64-distribution',
+      'mauwork-package-darwin-x64-distribution',
+      'mauwork-package-darwin-arm64-distribution'
     ])
     for (const download of downloads) {
       expect(download.with).toMatchObject({ 'digest-mismatch': 'error' })

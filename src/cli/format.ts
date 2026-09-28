@@ -32,7 +32,7 @@ export function formatHumanResult(
     case 'cli.status': {
       const result = contract.output.parse(value)
       return [
-        result.running ? 'MioWork is running' : 'MioWork is stopped',
+        result.running ? 'MauWork is running' : 'MauWork is stopped',
         `PID: ${result.pid}`,
         `Uptime: ${formatDuration(result.uptimeMs)}`,
         `Endpoint: ${result.endpointKind}`,
@@ -43,7 +43,7 @@ export function formatHumanResult(
     case 'cli.version': {
       const result = contract.output.parse(value)
       return [
-        `MioWork ${result.appVersion}`,
+        `MauWork ${result.appVersion}`,
         `CLI ${CLI_VERSION}`,
         `Protocol ${result.protocolVersion}, surface ${result.surfaceVersion}`
       ].join('\n')
@@ -61,7 +61,7 @@ export function formatHumanResult(
     case 'cli.doctor': {
       const result = contract.output.parse(value)
       return [
-        `MioWork CLI doctor: ${result.healthy ? 'healthy' : 'unhealthy'}`,
+        `MauWork CLI doctor: ${result.healthy ? 'healthy' : 'unhealthy'}`,
         ...result.checks.map(
           (check) => `[${check.status.toUpperCase()}] ${check.id}: ${check.message}`
         )
@@ -88,7 +88,7 @@ export function formatHumanResult(
       return [
         `Run ${result.runId} started (${result.status})`,
         `Session: ${result.sessionId}`,
-        `Watch: miowork run watch --run ${result.runId}`
+        `Watch: mauwork run watch --run ${result.runId}`
       ].join('\n')
     }
     case 'runs.get': {
@@ -278,7 +278,7 @@ export function formatHumanResult(
         `Generated ${result.artifacts.length} ${noun} artifact${result.artifacts.length === 1 ? '' : 's'} in ${formatDuration(result.durationMs)}`,
         ...result.artifacts.flatMap((artifact) => [
           `${artifact.id}  ${artifact.mimeType}  ${artifact.size} bytes  ${artifact.filename}`,
-          `  Download: miowork artifact get --id ${artifact.id} --out ${artifact.filename}`
+          `  Download: mauwork artifact get --id ${artifact.id} --out ${artifact.filename}`
         ])
       ].join('\n')
     }

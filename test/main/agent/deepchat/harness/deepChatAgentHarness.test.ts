@@ -9209,7 +9209,7 @@ describe('DeepChatAgentHarness', () => {
         toolCallCount: number
       }
 
-      expect(inserted.endpoint).toBe('miowork://interleaved-reasoning-gap')
+      expect(inserted.endpoint).toBe('mauwork://interleaved-reasoning-gap')
       expect(inserted.requestSeq).toBe(0)
       expect(body).toEqual({
         providerId: 'zenmux',
@@ -12783,7 +12783,7 @@ describe('DeepChatAgentHarness', () => {
         {
           type: 'error',
           error_message:
-            'The provider reported a context overflow after response output began. MioWork preserved the partial output and did not retry.',
+            'The provider reported a context overflow after response output began. MauWork preserved the partial output and did not retry.',
           failure: { code: 'context_overflow_after_output', retryable: false }
         }
       ])
@@ -13344,7 +13344,7 @@ describe('DeepChatAgentHarness', () => {
       ])
 
       expect(providerCoreStream).toHaveBeenCalledTimes(2)
-      expect(errorMessage).toContain('provider still reported a context overflow after MioWork')
+      expect(errorMessage).toContain('provider still reported a context overflow after MauWork')
       expect(errorMessage).toContain('Approximate context ledger for this request')
       expect(errorMessage).toContain('System prompt (attribution unavailable)')
       expect(errorMessage).not.toContain('Request was not sent because it cannot fit')
@@ -13391,7 +13391,7 @@ describe('DeepChatAgentHarness', () => {
       )
 
       expect(providerCoreStream).toHaveBeenCalledTimes(2)
-      expect(errorMessage).toContain('provider still reported a context overflow after MioWork')
+      expect(errorMessage).toContain('provider still reported a context overflow after MauWork')
       expect(errorMessage).not.toContain('Request was not sent because it cannot fit')
       expect(errorMessage).not.toContain('provider raw red marker')
       expect(llmProvider.generateText).toHaveBeenCalled()
@@ -13432,7 +13432,7 @@ describe('DeepChatAgentHarness', () => {
       const errorMessage = await collectProviderErrorMessage(callArgs, requestMessages)
 
       expect(providerCoreStream).toHaveBeenCalledTimes(2)
-      expect(errorMessage).toContain('provider still reported a context overflow after MioWork')
+      expect(errorMessage).toContain('provider still reported a context overflow after MauWork')
       expect(errorMessage).not.toContain('provider raw red marker')
       expect(llmProvider.generateText).toHaveBeenCalledTimes(1)
       expect(getContextOverflowAnchorCalls()).toHaveLength(1)
@@ -13479,7 +13479,7 @@ describe('DeepChatAgentHarness', () => {
       expect(providerCoreStream).toHaveBeenCalledTimes(2)
       expect(errorUpdate).toBeTruthy()
       expect(serializedBlocks).not.toContain('provider raw red marker')
-      expect(serializedBlocks).toContain('provider still reported a context overflow after MioWork')
+      expect(serializedBlocks).toContain('provider still reported a context overflow after MauWork')
     })
 
     it('retries rate-limit token errors without treating them as context overflow', async () => {
@@ -14196,7 +14196,7 @@ describe('DeepChatAgentHarness', () => {
       })
 
       await expect(agent.compactSession('s1')).rejects.toThrow(
-        'Manual compaction is only available for MioWork agent sessions.'
+        'Manual compaction is only available for MauWork agent sessions.'
       )
       expect(prepareSpy).not.toHaveBeenCalled()
     })

@@ -30,7 +30,7 @@
     "adapter": "cua-embedded-v1",
     "integrityDescriptor": "runtime/${target.platform}/${arch}/integrity.json",
     "adapterContract": {
-      "hostBundleId": "com.miowork.app",
+      "hostBundleId": "com.mauwork.app",
       "driverVersion": "0.19.2",
       "contractVersion": "0.6.0",
       "toolsListSchemaVersion": "1",

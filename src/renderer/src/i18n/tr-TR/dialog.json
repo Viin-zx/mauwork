@@ -69,7 +69,7 @@
     "moveAndDeleteAgent": "Taşı ve Ajanı Sil",
     "moveConversation": "Konuşmayı Taşı",
     "agentType": {
-      "deepchat": "MioWork",
+      "deepchat": "MauWork",
       "acp": "ACP"
     },
     "blockReason": {
@@ -84,7 +84,7 @@
       "draft": "Taslak",
       "subagent": "Alt ajan"
     },
-    "deepChatTargetOnly": "Taşıma hedefi olarak yalnızca MioWork ajanları seçilebilir. ACP konuşmaları MioWork’e taşınabilir, ancak ACP’ye taşınamaz."
+    "deepChatTargetOnly": "Taşıma hedefi olarak yalnızca MauWork ajanları seçilebilir. ACP konuşmaları MauWork’e taşınabilir, ancak ACP’ye taşınamaz."
   },
   "deleteMessage": {
     "title": "Bu mesaj silinsin mi?",

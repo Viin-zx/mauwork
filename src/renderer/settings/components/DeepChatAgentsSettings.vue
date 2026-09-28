@@ -1469,7 +1469,7 @@ const isDirty = computed(
     currentFormSignature.value !== originalFormSignature.value
 )
 const applyBuiltinDefaultModels = (state: FormState): FormState => {
-  // 仅内置 MioWork（deepchat）Agent 的模型默认值使用服务端 isDefault 模型兜底
+  // 仅内置 MauWork（deepchat）Agent 的模型默认值使用服务端 isDefault 模型兜底
   if (state.id !== 'deepchat') return state
   let chatDefault: EditableModel = null
   let visionDefault: EditableModel = null

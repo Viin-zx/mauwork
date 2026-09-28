@@ -2391,8 +2391,8 @@ export class ToolService implements ToolServicePort {
 
     const names = tools.map((tool) => `\`${tool.function.name}\``).join(', ')
     return [
-      '## MioWork Settings Tools',
-      `MioWork settings tools are available in this session: ${names}.`,
+      '## MauWork Settings Tools',
+      `MauWork settings tools are available in this session: ${names}.`,
       'Prefer these tools over describing manual settings steps when a direct change is possible.'
     ].join('\n')
   }

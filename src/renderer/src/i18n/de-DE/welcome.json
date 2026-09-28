@@ -2,7 +2,7 @@
   "steps": {
     "welcome": {
       "title": "Willkommen",
-      "description": "Richten wir MioWork ein"
+      "description": "Richten wir MauWork ein"
     },
     "provider": {
       "title": "Modellanbieter",
@@ -17,7 +17,7 @@
       "description": "Alles bereit. Sie können loslegen!"
     }
   },
-  "title": "Willkommen bei MioWork",
+  "title": "Willkommen bei MauWork",
   "description": "Lassen Sie uns die Einrichtung gemeinsam abschließen",
   "provider": {
     "select": "Anbieter auswählen",
@@ -35,7 +35,7 @@
     "back": "Zurück"
   },
   "page": {
-    "title": "Willkommen bei MioWork Agent",
+    "title": "Willkommen bei MauWork Agent",
     "description": "Verbinden Sie einen Modellanbieter, um zu starten",
     "guide": {
       "title": "Einrichtungsfortschritt",
@@ -72,8 +72,8 @@
   },
   "agentPage": {
     "title": "Agent auswählen und loslegen",
-    "deepchatType": "MioWork Agent",
+    "deepchatType": "MauWork Agent",
     "acpType": "ACP Agent",
-    "manageAgents": "MioWork Agent verwalten"
+    "manageAgents": "MauWork Agent verwalten"
   }
 }

@@ -174,7 +174,7 @@ function migrateSensitiveConfigToSqlite(options: Parameters<typeof migrateConfig
       prompts: [
         {
           id: 'default',
-          name: 'MioWork',
+          name: 'MauWork',
           content: DEFAULT_SYSTEM_PROMPT,
           isDefault: true,
           createdAt: Date.now(),

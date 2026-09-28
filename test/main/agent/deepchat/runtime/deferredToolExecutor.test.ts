@@ -483,13 +483,13 @@ describe('DeferredToolExecutor Execution Journal', () => {
     {
       kind: 'discovery',
       expectedVerb: 'search',
-      execArguments: { command: 'miowork tool search --query calendar' }
+      execArguments: { command: 'mauwork tool search --query calendar' }
     },
     {
       kind: 'tool call',
       expectedVerb: 'call',
       execArguments: {
-        command: 'miowork tool call',
+        command: 'mauwork tool call',
         stdin: JSON.stringify({ target: 'remote_search', arguments: { query: 'calendar' } })
       }
     }

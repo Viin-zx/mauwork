@@ -27,7 +27,7 @@ export function isProgrammaticExecAttempt(toolName: string, argumentsJson: strin
     const command = typeof args.command === 'string' ? args.command : ''
     return (
       typeof args.stdin === 'string' ||
-      /^miowork tool (?:search|describe|call|batch)(?:\s|$)/.test(command)
+      /^mauwork tool (?:search|describe|call|batch)(?:\s|$)/.test(command)
     )
   } catch {
     return false

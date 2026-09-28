@@ -1,7 +1,7 @@
 {
   "input": {
     "suggestions": "הצעות",
-    "placeholder": "שאלו את MioWork כל דבר, השתמשו ב-{'@'} כדי להזכיר קבצים וב-/ לפקודות",
+    "placeholder": "שאלו את MauWork כל דבר, השתמשו ב-{'@'} כדי להזכיר קבצים וב-/ לפקודות",
     "fileArea": "אזור קבצים",
     "inputArea": "אזור קלט",
     "functionSwitch": "מתג פונקציות",
@@ -34,7 +34,7 @@
     "voiceRecognitionUnsupportedTitle": "הסביבה הנוכחית לא תומכת בזיהוי דיבור",
     "voiceRecognitionUnsupportedDescription": "השתמש בתכונה זו בדפדפן או בסביבת שולחן עבודה שתומכים בזיהוי דיבור.",
     "voiceRecognitionPermissionDeniedTitle": "לא ניתן לגשת למיקרופון",
-    "voiceRecognitionPermissionDeniedDescription": "אפשר ל-MioWork להשתמש במיקרופון ונסה שוב.",
+    "voiceRecognitionPermissionDeniedDescription": "אפשר ל-MauWork להשתמש במיקרופון ונסה שוב.",
     "voiceRecognitionErrorTitle": "זיהוי הדיבור נכשל",
     "voiceRecognitionErrorDescription": "לא ניתן היה להשלים את זיהוי הדיבור. נסה שוב מאוחר יותר.",
     "send": "שלח",
@@ -60,7 +60,7 @@
         "agentCore": "Agent Core",
         "agentImageGeneration": "יצירת תמונות",
         "agentSkills": "Agent Skills",
-        "deepchatSettings": "MioWork Settings",
+        "deepchatSettings": "MauWork Settings",
         "yobrowser": "YoBrowser"
       }
     },
@@ -442,12 +442,12 @@
   },
   "onboarding": {
     "agentSwitch": {
-      "title": "מעבר לסוכן MioWork",
-      "description": "לפני שמתחילים לשוחח, עברו מ-ACP וחזרו לזרימה המובנית של MioWork.",
+      "title": "מעבר לסוכן MauWork",
+      "description": "לפני שמתחילים לשוחח, עברו מ-ACP וחזרו לזרימה המובנית של MauWork.",
       "caption": "כדי להמשיך, לחצו על כפתור הסוכן המודגש בסרגל הצד."
     },
     "switchModel": {
-      "description": "בחרו את המודל שבו תרצו להשתמש בשיחת ה-MioWork הראשונה שלכם.",
+      "description": "בחרו את המודל שבו תרצו להשתמש בשיחת ה-MauWork הראשונה שלכם.",
       "caption": "השתמשו במחליף המודלים המודגש ובחרו כל מודל זמין."
     },
     "firstChat": {
@@ -624,7 +624,7 @@
       "reasons": {
         "session_unavailable": "ההפעלה הזו אינה זמינה עוד.",
         "agent_unavailable": "ה-Agent שנבחר אינו זמין.",
-        "deepchat_agent_required": "שיתוף פעולה יזום דורש MioWork Agent.",
+        "deepchat_agent_required": "שיתוף פעולה יזום דורש MauWork Agent.",
         "regular_parent_required": "שיתוף פעולה יזום אינו זמין בהפעלת משנה.",
         "agent_policy_unavailable": "לא ניתן לטעון את מדיניות שיתוף הפעולה.",
         "subagents_disabled": "יש להפעיל Subagents עבור Agent זה כדי להשתמש בשיתוף פעולה יזום."

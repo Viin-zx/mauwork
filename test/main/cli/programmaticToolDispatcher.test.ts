@@ -340,7 +340,7 @@ describe('ProgrammaticToolDispatcher', () => {
     expect(output.tools[0]?.description).not.toMatch(/[\uD800-\uDBFF]$/u)
     expect(output.tools[0]?.inputSignature).toContain('field_0: string')
     expect(output.tools[0]?.inputSignature).toContain('...')
-    expect(output.tools[0]?.callExample).toContain('miowork tool call')
+    expect(output.tools[0]?.callExample).toContain('mauwork tool call')
     expect(output.truncated).toBe(false)
     expect(recordDiscoveryResult).toHaveBeenCalledWith(
       expect.objectContaining({ route: 'tool.search' }),

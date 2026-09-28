@@ -19,7 +19,7 @@ architecture-specific behavior inside the Linux reusable workflow and keep calle
 
 ## Release Assembly
 
-Release downloads the exact `miowork-package-linux-arm64` artifact and validates its manifest,
+Release downloads the exact `mauwork-package-linux-arm64` artifact and validates its manifest,
 source identity, package smoke, installer-size report, files, and digests. The assembler publishes
 its AppImage and tarball, then generates `latest-linux-arm64.yml` independently. Linux x64 and ARM64
 updater metadata are never merged.

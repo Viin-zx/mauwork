@@ -69,7 +69,7 @@
     "moveAndDeleteAgent": "Pindahkan dan Hapus Agen",
     "moveConversation": "Pindahkan Percakapan",
     "agentType": {
-      "deepchat": "MioWork",
+      "deepchat": "MauWork",
       "acp": "ACP"
     },
     "blockReason": {
@@ -84,7 +84,7 @@
       "draft": "Draf",
       "subagent": "Subagen"
     },
-    "deepChatTargetOnly": "Hanya agen MioWork yang dapat dipilih sebagai tujuan pemindahan. Percakapan ACP dapat dipindahkan ke MioWork, tetapi tidak ke ACP."
+    "deepChatTargetOnly": "Hanya agen MauWork yang dapat dipilih sebagai tujuan pemindahan. Percakapan ACP dapat dipindahkan ke MauWork, tetapi tidak ke ACP."
   },
   "deleteMessage": {
     "title": "Hapus pesan ini?",

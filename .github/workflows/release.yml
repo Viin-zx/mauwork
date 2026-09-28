@@ -182,29 +182,29 @@ jobs:
       - name: Download Windows x64 package
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: miowork-package-win32-x64-distribution
-          path: artifacts/miowork-package-win32-x64
+          name: mauwork-package-win32-x64-distribution
+          path: artifacts/mauwork-package-win32-x64
           digest-mismatch: error
 
       - name: Download Windows ARM64 package
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: miowork-package-win32-arm64-distribution
-          path: artifacts/miowork-package-win32-arm64
+          name: mauwork-package-win32-arm64-distribution
+          path: artifacts/mauwork-package-win32-arm64
           digest-mismatch: error
 
       - name: Download macOS x64 package
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: miowork-package-darwin-x64-distribution
-          path: artifacts/miowork-package-darwin-x64
+          name: mauwork-package-darwin-x64-distribution
+          path: artifacts/mauwork-package-darwin-x64
           digest-mismatch: error
 
       - name: Download macOS ARM64 package
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: miowork-package-darwin-arm64-distribution
-          path: artifacts/miowork-package-darwin-arm64
+          name: mauwork-package-darwin-arm64-distribution
+          path: artifacts/mauwork-package-darwin-arm64
           digest-mismatch: error
 
       - name: Assemble fail-closed release assets
@@ -330,7 +330,7 @@ jobs:
           token: ${{ github.token }}
           tag_name: ${{ needs.preflight.outputs.tag }}
           target_commitish: ${{ needs.preflight.outputs.sha }}
-          name: MioWork V${{ needs.preflight.outputs.version }}
+          name: MauWork V${{ needs.preflight.outputs.version }}
           draft: true
           prerelease: ${{ needs.preflight.outputs.prerelease == 'true' }}
           files: release-assets/*
@@ -396,7 +396,7 @@ jobs:
         run: |
           # aws-cli 对自定义 endpoint 强制 path-style，而新 OSS bucket 拒绝 path-style
           # （SecondLevelDomainForbidden）。改用官方文档验证过的 boto3 + virtual addressing：
-          # 请求落到 miowork-releases.oss-cn-hangzhou.aliyuncs.com/updates/...。
+          # 请求落到 mauwork-releases.oss-cn-hangzhou.aliyuncs.com/updates/...。
           python3 -m pip install --user boto3 >/dev/null 2>&1
           python3 - <<'PYEOF'
           import os
@@ -409,7 +409,7 @@ jobs:
           from boto3.s3.transfer import TransferConfig
 
           endpoint = os.environ.get('OSS_ENDPOINT', '').strip() or 'https://oss-cn-hangzhou.aliyuncs.com'
-          bucket = 'miowork-releases'
+          bucket = 'mauwork-releases'
           prefix = 'updates'
 
           s3 = boto3.client(

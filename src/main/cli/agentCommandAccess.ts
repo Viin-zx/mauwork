@@ -18,7 +18,7 @@ import {
 import { getCliSurfaceEntry } from './surface'
 import type { ResolvedCommandShell } from '@shared/commandShell'
 
-const AGENT_CLI_COMMAND_PATTERN = /^miowork\s+([a-z][a-z0-9-]*)\s+([a-z][a-z0-9-]*)(?:\s|$)/
+const AGENT_CLI_COMMAND_PATTERN = /^mauwork\s+([a-z][a-z0-9-]*)\s+([a-z][a-z0-9-]*)(?:\s|$)/
 const AGENT_CLI_COMMAND_TOKEN_TTL_MS = 5 * 60_000
 
 function referencesAgentToken(command: string, commandShell: ResolvedCommandShell): boolean {
@@ -90,7 +90,7 @@ export function resolveBundledCliDirectory(
   const directory = input.isPackaged
     ? path.join(input.resourcesPath, 'app.asar.unpacked', 'cli')
     : path.join(input.appPath, 'out', 'cli')
-  const launcher = path.join(directory, platform === 'win32' ? 'miowork.cmd' : 'miowork')
+  const launcher = path.join(directory, platform === 'win32' ? 'mauwork.cmd' : 'mauwork')
   if (input.isFile) return input.isFile(launcher) ? directory : null
   try {
     return fs.statSync(launcher).isFile() ? directory : null
@@ -122,7 +122,7 @@ export class AgentCliCommandAccess {
       armed.programmaticOperation.operation.sessionId !== normalizedConversationId ||
       invocation.route !== armed.programmaticOperation.route ||
       invocation.canonicalInvocationHash !== armed.programmaticOperation.canonicalInvocationHash ||
-      this.options.commandPermission.extractBaseCommand(command) !== 'miowork' ||
+      this.options.commandPermission.extractBaseCommand(command) !== 'mauwork' ||
       this.options.commandPermission.hasShellControlSyntax(command, commandShell.dialect) ||
       referencesAgentToken(command, commandShell)
     ) {
@@ -147,10 +147,10 @@ export class AgentCliCommandAccess {
     const normalizedConversationId = conversationId.trim()
     const normalizedCommand = command.trim()
     if (!normalizedConversationId) return undefined
-    if (this.options.commandPermission.extractBaseCommand(normalizedCommand) !== 'miowork') {
+    if (this.options.commandPermission.extractBaseCommand(normalizedCommand) !== 'mauwork') {
       return unprivilegedAgentEnvironment()
     }
-    if (normalizedCommand === 'miowork help') {
+    if (normalizedCommand === 'mauwork help') {
       return localAgentEnvironment(this.options.resolveCliDirectory())
     }
 

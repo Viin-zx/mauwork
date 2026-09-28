@@ -2,7 +2,7 @@
   "steps": {
     "welcome": {
       "title": "ようこそ",
-      "description": "MioWorkの設定を始めましょう"
+      "description": "MauWorkの設定を始めましょう"
     },
     "provider": {
       "title": "モデルプロバイダー",
@@ -17,7 +17,7 @@
       "description": "すべての準備が整いました！"
     }
   },
-  "title": "MioWorkへようこそ",
+  "title": "MauWorkへようこそ",
   "description": "セットアップを完了しましょう",
   "provider": {
     "select": "プロバイダーを選択",
@@ -35,7 +35,7 @@
     "back": "戻る"
   },
   "page": {
-    "title": "MioWork Agentへようこそ",
+    "title": "MauWork Agentへようこそ",
     "description": "始めるにはモデルプロバイダーを接続してください",
     "guide": {
       "title": "セットアップガイド",
@@ -72,8 +72,8 @@
   },
   "agentPage": {
     "title": "エージェントを選んで作成を始める",
-    "deepchatType": "MioWorkエージェント",
+    "deepchatType": "MauWorkエージェント",
     "acpType": "ACPエージェント",
-    "manageAgents": "MioWorkエージェントを管理"
+    "manageAgents": "MauWorkエージェントを管理"
   }
 }

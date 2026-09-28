@@ -141,7 +141,7 @@ export const contextMenuTranslations: TranslationCollection = {
     zoomIn: '放大',
     zoomOut: '缩小',
     resetZoom: '实际大小',
-    showHide: '显示/隐藏 MioWork'
+    showHide: '显示/隐藏 MauWork'
   },
   'zh-TW': {
     copy: '複製',
@@ -174,7 +174,7 @@ export const contextMenuTranslations: TranslationCollection = {
     zoomIn: '放大',
     zoomOut: '縮小',
     resetZoom: '實際大小',
-    showHide: '顯示/隱藏 MioWork'
+    showHide: '顯示/隱藏 MauWork'
   },
   'en-US': {
     copy: 'Copy',
@@ -207,7 +207,7 @@ export const contextMenuTranslations: TranslationCollection = {
     zoomIn: 'Zoom In',
     zoomOut: 'Zoom Out',
     resetZoom: 'Actual Size',
-    showHide: 'Show/Hide MioWork'
+    showHide: 'Show/Hide MauWork'
   },
   'ja-JP': {
     copy: 'コピー',
@@ -323,7 +323,7 @@ Object.assign(contextMenuTranslations, {
     zoomIn: 'Acercar',
     zoomOut: 'Alejar',
     resetZoom: 'Tamaño real',
-    showHide: 'Mostrar/ocultar MioWork'
+    showHide: 'Mostrar/ocultar MauWork'
   },
   'de-DE': {
     copy: 'Kopieren',
@@ -356,7 +356,7 @@ Object.assign(contextMenuTranslations, {
     zoomIn: 'Vergrößern',
     zoomOut: 'Verkleinern',
     resetZoom: 'Originalgröße',
-    showHide: 'MioWork ein-/ausblenden'
+    showHide: 'MauWork ein-/ausblenden'
   },
   'tr-TR': {
     copy: 'Kopyala',
@@ -389,7 +389,7 @@ Object.assign(contextMenuTranslations, {
     zoomIn: 'Yakınlaştır',
     zoomOut: 'Uzaklaştır',
     resetZoom: 'Gerçek boyut',
-    showHide: "MioWork'i göster/gizle"
+    showHide: "MauWork'i göster/gizle"
   },
   'id-ID': {
     copy: 'Salin',
@@ -422,7 +422,7 @@ Object.assign(contextMenuTranslations, {
     zoomIn: 'Perbesar',
     zoomOut: 'Perkecil',
     resetZoom: 'Ukuran sebenarnya',
-    showHide: 'Tampilkan/sembunyikan MioWork'
+    showHide: 'Tampilkan/sembunyikan MauWork'
   },
   'ms-MY': {
     copy: 'Salin',
@@ -455,7 +455,7 @@ Object.assign(contextMenuTranslations, {
     zoomIn: 'Zum masuk',
     zoomOut: 'Zum keluar',
     resetZoom: 'Saiz sebenar',
-    showHide: 'Tunjuk/sembunyikan MioWork'
+    showHide: 'Tunjuk/sembunyikan MauWork'
   },
   'it-IT': {
     copy: 'Copia',
@@ -488,7 +488,7 @@ Object.assign(contextMenuTranslations, {
     zoomIn: 'Ingrandisci',
     zoomOut: 'Riduci',
     resetZoom: 'Dimensioni reali',
-    showHide: 'Mostra/nascondi MioWork'
+    showHide: 'Mostra/nascondi MauWork'
   },
   'pl-PL': {
     copy: 'Kopiuj',
@@ -521,7 +521,7 @@ Object.assign(contextMenuTranslations, {
     zoomIn: 'Powiększ',
     zoomOut: 'Pomniejsz',
     resetZoom: 'Rzeczywisty rozmiar',
-    showHide: 'Pokaż/ukryj MioWork'
+    showHide: 'Pokaż/ukryj MauWork'
   },
   'vi-VN': {
     copy: 'Sao chép',
@@ -554,7 +554,7 @@ Object.assign(contextMenuTranslations, {
     zoomIn: 'Phóng to',
     zoomOut: 'Thu nhỏ',
     resetZoom: 'Kích thước thực',
-    showHide: 'Hiện/ẩn MioWork'
+    showHide: 'Hiện/ẩn MauWork'
   }
 })
 

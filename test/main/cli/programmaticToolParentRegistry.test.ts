@@ -112,7 +112,7 @@ describe('ProgrammaticToolParentRegistry', () => {
       },
       toolName: 'exec',
       toolSource: 'agent',
-      normalizedArguments: { command: 'miowork tool call', stdin: '{}' },
+      normalizedArguments: { command: 'mauwork tool call', stdin: '{}' },
       target: { serverName: 'agent-filesystem', originalName: 'exec' }
     })
     registration.armOuterDispatch({ ...outerDispatch, operation: operationBinding.operation })
@@ -180,7 +180,7 @@ describe('ProgrammaticToolParentRegistry', () => {
       },
       toolName: 'exec',
       toolSource: 'agent',
-      normalizedArguments: { command: 'miowork tool call', stdin: '{}' },
+      normalizedArguments: { command: 'mauwork tool call', stdin: '{}' },
       target: { serverName: 'agent-filesystem', originalName: 'exec' }
     })
     registration.armOuterDispatch({
@@ -247,7 +247,7 @@ describe('ProgrammaticToolParentRegistry', () => {
       },
       toolName: 'exec',
       toolSource: 'agent',
-      normalizedArguments: { command: 'miowork tool search --query calendar' },
+      normalizedArguments: { command: 'mauwork tool search --query calendar' },
       target: { serverName: 'agent-filesystem', originalName: 'exec' }
     })
     registration.armOuterDispatch({ ...outerDispatch, operation: searchBinding.operation })
@@ -307,7 +307,7 @@ describe('ProgrammaticToolParentRegistry', () => {
       },
       toolName: 'exec',
       toolSource: 'agent',
-      normalizedArguments: { command: 'miowork tool call', stdin: '{}' },
+      normalizedArguments: { command: 'mauwork tool call', stdin: '{}' },
       target: { serverName: 'agent-filesystem', originalName: 'exec' }
     })
     active = false
@@ -348,7 +348,7 @@ describe('ProgrammaticToolParentRegistry', () => {
       },
       toolName: 'exec',
       toolSource: 'agent',
-      normalizedArguments: { command: 'miowork tool call', stdin: '{}' },
+      normalizedArguments: { command: 'mauwork tool call', stdin: '{}' },
       target: { serverName: 'agent-filesystem', originalName: 'exec' }
     })
     registration.armOuterDispatch({ ...outerDispatch, operation: operationBinding.operation })
@@ -412,7 +412,7 @@ describe('ProgrammaticToolParentRegistry', () => {
       },
       toolName: 'exec',
       toolSource: 'agent',
-      normalizedArguments: { command: 'miowork tool call', stdin: '{}' },
+      normalizedArguments: { command: 'mauwork tool call', stdin: '{}' },
       target: { serverName: 'agent-filesystem', originalName: 'exec' }
     })
     registration.armOuterDispatch({ ...outerDispatch, operation: operationBinding.operation })
@@ -471,7 +471,7 @@ describe('ProgrammaticToolParentRegistry', () => {
       },
       toolName: 'exec',
       toolSource: 'agent',
-      normalizedArguments: { command: 'miowork tool call' },
+      normalizedArguments: { command: 'mauwork tool call' },
       target: { serverName: 'agent-filesystem', originalName: 'exec' }
     })
     registration.armOuterDispatch({
@@ -503,7 +503,7 @@ describe('ProgrammaticToolParentRegistry', () => {
       },
       toolName: 'exec',
       toolSource: 'agent',
-      normalizedArguments: { command: 'miowork tool call' },
+      normalizedArguments: { command: 'mauwork tool call' },
       target: { serverName: 'agent-filesystem', originalName: 'exec' }
     })
     registration.armOuterDispatch({ ...outerDispatch, operation: operationBinding.operation })
@@ -538,7 +538,7 @@ describe('ProgrammaticToolParentRegistry', () => {
       },
       toolName: 'exec',
       toolSource: 'agent',
-      normalizedArguments: { command: 'miowork tool call' },
+      normalizedArguments: { command: 'mauwork tool call' },
       target: { serverName: 'agent-filesystem', originalName: 'exec' }
     })
     registration.armOuterDispatch({ ...outerDispatch, operation: operationBinding.operation })

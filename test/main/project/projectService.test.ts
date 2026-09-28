@@ -237,24 +237,24 @@ describe('ProjectService', () => {
         vi.fn()
       )
 
-      await expect(presenter.ensureDefaultWorkspace()).resolves.toBe('/mock/documents/MioWork')
+      await expect(presenter.ensureDefaultWorkspace()).resolves.toBe('/mock/documents/MauWork')
 
-      expect(mkdirSyncMock).toHaveBeenCalledWith('/mock/documents/MioWork', { recursive: true })
+      expect(mkdirSyncMock).toHaveBeenCalledWith('/mock/documents/MauWork', { recursive: true })
       expect(sqlitePresenter.newProjectsTable.upsert).toHaveBeenCalledWith(
-        '/mock/documents/MioWork',
-        'MioWork'
+        '/mock/documents/MauWork',
+        'MauWork'
       )
       expect(sqlitePresenter.newEnvironmentPreferencesTable.markActive).toHaveBeenCalledWith(
-        '/mock/documents/MioWork'
+        '/mock/documents/MauWork'
       )
       expect(settingsStore.set).toHaveBeenCalledWith(
         'defaultProjectPath',
-        '/mock/documents/MioWork'
+        '/mock/documents/MauWork'
       )
     })
 
     it('recreates and registers the built-in workspace when it is already the default', async () => {
-      const settingsStore = createMockSettingsStore('/mock/documents/MioWork')
+      const settingsStore = createMockSettingsStore('/mock/documents/MauWork')
       presenter = new ProjectService(
         sqlitePresenter,
         sqlitePresenter,
@@ -263,16 +263,16 @@ describe('ProjectService', () => {
         vi.fn()
       )
 
-      await expect(presenter.ensureDefaultWorkspace()).resolves.toBe('/mock/documents/MioWork')
+      await expect(presenter.ensureDefaultWorkspace()).resolves.toBe('/mock/documents/MauWork')
 
-      expect(mkdirSyncMock).toHaveBeenCalledWith('/mock/documents/MioWork', { recursive: true })
+      expect(mkdirSyncMock).toHaveBeenCalledWith('/mock/documents/MauWork', { recursive: true })
       expect(sqlitePresenter.newProjectsTable.upsert).toHaveBeenCalledWith(
-        '/mock/documents/MioWork',
-        'MioWork'
+        '/mock/documents/MauWork',
+        'MauWork'
       )
       expect(settingsStore.set).not.toHaveBeenCalledWith(
         'defaultProjectPath',
-        '/mock/documents/MioWork'
+        '/mock/documents/MauWork'
       )
     })
 
@@ -315,7 +315,7 @@ describe('ProjectService', () => {
       const settingsStore = createMockSettingsStore()
       sqlitePresenter.newEnvironmentPreferencesTable.list.mockReturnValue([
         {
-          path: '/mock/documents/MioWork',
+          path: '/mock/documents/MauWork',
           status: 'archived',
           sort_order: 2147483647,
           archived_at: 1000,
@@ -341,7 +341,7 @@ describe('ProjectService', () => {
       const settingsStore = createMockSettingsStore()
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
       mkdirSyncMock.mockImplementation((targetPath: string) => {
-        if (targetPath === '/mock/documents/MioWork') {
+        if (targetPath === '/mock/documents/MauWork') {
           throw new Error('documents denied')
         }
       })
@@ -354,13 +354,13 @@ describe('ProjectService', () => {
       )
 
       try {
-        await expect(presenter.ensureDefaultWorkspace()).resolves.toBe('/mock/home/MioWork')
+        await expect(presenter.ensureDefaultWorkspace()).resolves.toBe('/mock/home/MauWork')
 
-        expect(mkdirSyncMock).toHaveBeenCalledWith('/mock/documents/MioWork', { recursive: true })
-        expect(mkdirSyncMock).toHaveBeenCalledWith('/mock/home/MioWork', { recursive: true })
-        expect(settingsStore.set).toHaveBeenCalledWith('defaultProjectPath', '/mock/home/MioWork')
+        expect(mkdirSyncMock).toHaveBeenCalledWith('/mock/documents/MauWork', { recursive: true })
+        expect(mkdirSyncMock).toHaveBeenCalledWith('/mock/home/MauWork', { recursive: true })
+        expect(settingsStore.set).toHaveBeenCalledWith('defaultProjectPath', '/mock/home/MauWork')
         expect(warnSpy).toHaveBeenCalledWith(
-          '[ProjectService] Failed to create default workspace at /mock/documents/MioWork:',
+          '[ProjectService] Failed to create default workspace at /mock/documents/MauWork:',
           expect.any(Error)
         )
       } finally {

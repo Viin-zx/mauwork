@@ -15,7 +15,7 @@ import {
   isEncodedMacLightOcrArtifact
 } from './light-ocr-artifacts.mjs'
 
-const LINUX_APP_NAME = 'miowork'
+const LINUX_APP_NAME = 'mauwork'
 const VSS_EXTENSION_NAME = 'vss.duckdb_extension'
 const LIGHT_OCR_FACADE_PACKAGE = '@arcships/light-ocr'
 const LIGHT_OCR_RUNTIME_MANIFEST = path.join('runtime', 'ocr', 'manifest.json')
@@ -171,7 +171,7 @@ function getResourcesDir(context) {
   const { appOutDir, electronPlatformName, packager } = context
 
   if (electronPlatformName === 'darwin') {
-    const productFilename = packager?.appInfo?.productFilename ?? 'MioWork'
+    const productFilename = packager?.appInfo?.productFilename ?? 'MauWork'
     return path.join(appOutDir, `${productFilename}.app`, 'Contents', 'Resources')
   }
 
@@ -463,7 +463,7 @@ async function assertLightOcrDependencyPin(projectDir, expectedVersion) {
   const packageJson = await readJson(path.join(projectDir, 'package.json'))
   if (packageJson.dependencies?.[LIGHT_OCR_FACADE_PACKAGE] !== expectedVersion) {
     throw new Error(
-      `MioWork must depend on exactly ${LIGHT_OCR_FACADE_PACKAGE}@${expectedVersion}`
+      `MauWork must depend on exactly ${LIGHT_OCR_FACADE_PACKAGE}@${expectedVersion}`
     )
   }
 }

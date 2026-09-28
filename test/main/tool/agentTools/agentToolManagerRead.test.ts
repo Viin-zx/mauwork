@@ -508,7 +508,7 @@ describe('AgentToolManager read routing', () => {
       const result = (await manager.callTool(
         'exec',
         {
-          command: 'miowork tool call',
+          command: 'mauwork tool call',
           stdin: 'owned input',
           description: 'Call programmatic tool'
         },
@@ -523,7 +523,7 @@ describe('AgentToolManager read routing', () => {
       )) as { content: string }
 
       expect(executeCommand).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'miowork tool call', timeout: undefined }),
+        expect.objectContaining({ command: 'mauwork tool call', timeout: undefined }),
         expect.objectContaining({
           conversationId: 'conv1',
           stdin: 'owned input',
@@ -552,7 +552,7 @@ describe('AgentToolManager read routing', () => {
       await manager.callTool(
         'exec',
         {
-          command: 'miowork tool search --query calendar --limit 4',
+          command: 'mauwork tool search --query calendar --limit 4',
           description: 'Search programmatic tools'
         },
         'conv1',
@@ -566,7 +566,7 @@ describe('AgentToolManager read routing', () => {
 
       expect(executeCommand).toHaveBeenCalledWith(
         expect.objectContaining({
-          command: 'miowork tool search --query calendar --limit 4'
+          command: 'mauwork tool search --query calendar --limit 4'
         }),
         expect.objectContaining({
           conversationId: 'conv1',
@@ -588,7 +588,7 @@ describe('AgentToolManager read routing', () => {
         manager.callTool(
           'exec',
           {
-            command: 'miowork tool call',
+            command: 'mauwork tool call',
             stdin: '{}',
             description: 'Call programmatic tool'
           },
@@ -609,7 +609,7 @@ describe('AgentToolManager read routing', () => {
         manager.callTool(
           'exec',
           {
-            command: 'miowork tool call',
+            command: 'mauwork tool call',
             stdin: '😀',
             description: 'Call programmatic tool'
           },
@@ -636,7 +636,7 @@ describe('AgentToolManager read routing', () => {
         manager.callTool(
           'exec',
           {
-            command: 'miowork tool call',
+            command: 'mauwork tool call',
             stdin: '{}',
             timeoutMs: 1_000,
             description: 'Call programmatic tool'

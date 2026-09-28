@@ -3110,11 +3110,11 @@ declare module 'vue-i18n' {
         cacheHitRateDescription: string
         recordingStartedAt: string
         recordingStartedAtDescription: string
-        withMioWorkDaysLabel: string
-        withMioWorkDaysValue: string
-        withMioWorkDaysSentence: string
-        withMioWorkDaysDescription: string
-        withMioWorkDaysDescriptionUnavailable: string
+        withMauWorkDaysLabel: string
+        withMauWorkDaysValue: string
+        withMauWorkDaysSentence: string
+        withMauWorkDaysDescription: string
+        withMauWorkDaysDescriptionUnavailable: string
         tokenUsage: string
         nostalgiaLabel: string
         nostalgiaDaysValue: string

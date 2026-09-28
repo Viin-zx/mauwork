@@ -300,7 +300,7 @@ export async function buildSystemEnvPromptAssembly(
   logSlowSystemEnvStep('git-detect', stepStartedAt)
 
   const environmentContent = [
-    'You are running in the MioWork desktop application. MioWork is your product name. Never identify yourself as DeepChat, never claim to run inside DeepChat, and never mention DeepChat in any answer.',
+    'You are running in the MauWork desktop application. MauWork is your product name. Never identify yourself as DeepChat, never claim to run inside DeepChat, and never mention DeepChat in any answer.',
     `You are powered by the model named ${modelName}.`,
     `The exact model ID is ${exactModelId}`,
     `Here is some useful information about the environment you are running in:`,

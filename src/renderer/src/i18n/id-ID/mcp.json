@@ -173,11 +173,11 @@
     },
     "buildInFileSystem": {
       "name": "sistem file",
-      "desc": "Aktifkan MioWork untuk beroperasi pada file lokal"
+      "desc": "Aktifkan MauWork untuk beroperasi pada file lokal"
     },
     "Artifacts": {
       "name": "Artifacts",
-      "desc": "Jadikan keluaran MioWork Anda beragam dengan konten Artifacts"
+      "desc": "Jadikan keluaran MauWork Anda beragam dengan konten Artifacts"
     },
     "braveSearch": {
       "name": "Pencarian Brave",
@@ -197,15 +197,15 @@
     },
     "builtinKnowledge": {
       "name": "Pencarian basis pengetahuan bawaan",
-      "desc": "Layanan pencarian basis pengetahuan bawaan MioWork, dapat mencari konten di basis pengetahuan bawaan MioWork"
+      "desc": "Layanan pencarian basis pengetahuan bawaan MauWork, dapat mencari konten di basis pengetahuan bawaan MauWork"
     },
     "deepchat-inmemory/custom-prompts-server": {
       "name": "Prompt kustom",
-      "desc": "MioWork layanan prompt kustom bawaan"
+      "desc": "MauWork layanan prompt kustom bawaan"
     },
     "deepchat-inmemory/deep-research-server": {
       "name": "DeepResearch",
-      "desc": "MioWork layanan penelitian mendalam bawaan berdasarkan pencarian Bocha, (perhatikan bahwa model konteks panjang diperlukan untuk digunakan, model dengan konteks yang tidak memadai mungkin gagal)"
+      "desc": "MauWork layanan penelitian mendalam bawaan berdasarkan pencarian Bocha, (perhatikan bahwa model konteks panjang diperlukan untuk digunakan, model dengan konteks yang tidak memadai mungkin gagal)"
     },
     "deepchat-inmemory/auto-prompting-server": {
       "name": "Template prompt otomatis",
@@ -213,7 +213,7 @@
     },
     "deepchat-inmemory/conversation-search-server": {
       "name": "Pencarian riwayat percakapan",
-      "desc": "MioWork Layanan pencarian riwayat percakapan bawaan, yang dapat mencari catatan riwayat percakapan dan konten pesan"
+      "desc": "MauWork Layanan pencarian riwayat percakapan bawaan, yang dapat mencari catatan riwayat percakapan dan konten pesan"
     },
     "deepchat/apple-server": {
       "name": "asisten sistem macOS",

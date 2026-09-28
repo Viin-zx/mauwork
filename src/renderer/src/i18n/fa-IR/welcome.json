@@ -35,7 +35,7 @@
     "back": "بازگشت"
   },
   "page": {
-    "title": "به MioWork Agent خوش آمدید",
+    "title": "به MauWork Agent خوش آمدید",
     "description": "برای شروع، یک ارائه‌دهنده مدل متصل کنید",
     "guide": {
       "title": "راهنمای راه‌اندازی",
@@ -72,8 +72,8 @@
   },
   "agentPage": {
     "title": "یک ایجنت انتخاب کنید و خلق را شروع کنید",
-    "deepchatType": "ایجنت MioWork",
+    "deepchatType": "ایجنت MauWork",
     "acpType": "ایجنت ACP",
-    "manageAgents": "مدیریت ایجنت‌های MioWork"
+    "manageAgents": "مدیریت ایجنت‌های MauWork"
   }
 }

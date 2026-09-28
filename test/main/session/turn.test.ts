@@ -640,7 +640,7 @@ describe('SessionTurn', () => {
     const harness = createHarness({ providerId: 'acp' })
 
     await expect(harness.coordinator.compactSession('s1')).rejects.toThrow(
-      'Manual compaction is only available for MioWork agent sessions.'
+      'Manual compaction is only available for MauWork agent sessions.'
     )
     expect(harness.compaction.compact).not.toHaveBeenCalled()
   })

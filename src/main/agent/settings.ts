@@ -721,7 +721,7 @@ export class AgentSettings implements AgentSettingsPort {
 
   private initializeUnifiedAgents(): void {
     this.repository.ensureBuiltinDeepChatAgent({
-      name: 'MioWork',
+      name: 'MauWork',
       config: this.buildLegacyBuiltinDeepChatConfig()
     })
 

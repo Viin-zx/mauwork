@@ -76,7 +76,7 @@ export interface SystemPromptBuildInput {
 const CLI_PROGRAMMATIC_TOOL_ADAPTER_PROMPT = [
   '## Programmatic Tool Access',
   'If an instruction or active Skill names a tool that is not in your native tool list, do not call that name directly.',
-  'Use `exec` to run `miowork tool search --query "<terms>" [--limit <n>]`. Search results already include each tool\'s input signature and a copyable call example; when these suffice, copy the example\'s `command` and `stdin` fields into `exec` to run `miowork tool call` directly. Use a bounded `miowork tool batch` only when composing multiple calls. Use `exec` to run `miowork tool describe --target <name>` only when you need the complete input schema. Describe targets may use exact double quotes, but prefer the unquoted returned name; never use single quotes or escapes. Pass call and batch JSON through the `exec` stdin field; never use shell redirection. Omit the `timeoutMs`, `background`, and `yieldMs` exec fields for these Programmatic commands.',
+  'Use `exec` to run `mauwork tool search --query "<terms>" [--limit <n>]`. Search results already include each tool\'s input signature and a copyable call example; when these suffice, copy the example\'s `command` and `stdin` fields into `exec` to run `mauwork tool call` directly. Use a bounded `mauwork tool batch` only when composing multiple calls. Use `exec` to run `mauwork tool describe --target <name>` only when you need the complete input schema. Describe targets may use exact double quotes, but prefer the unquoted returned name; never use single quotes or escapes. Pass call and batch JSON through the `exec` stdin field; never use shell redirection. Omit the `timeoutMs`, `background`, and `yieldMs` exec fields for these Programmatic commands.',
   "Discovery does not authorize a target. Only targets in this Run's frozen Programmatic Surface can be requested; every child call independently rechecks current authority and policy before execution. Do not invoke native tools through the Programmatic Tool CLI."
 ].join('\n')
 
@@ -502,13 +502,13 @@ function buildVerificationPolicyPrompt(workdir: string | null): string {
 
   const manifest = readPackageJsonManifest(normalizedWorkdir)
   const verificationScripts = getVerificationScriptNames(manifest)
-  const isMioWorkWorkspace =
-    String(manifest?.name ?? '').toLowerCase() === 'miowork' ||
+  const isMauWorkWorkspace =
+    String(manifest?.name ?? '').toLowerCase() === 'mauwork' ||
     ['format', 'i18n', 'lint'].every((scriptName) => verificationScripts.includes(scriptName))
 
-  if (isMioWorkWorkspace) {
+  if (isMauWorkWorkspace) {
     lines.push(
-      'In the MioWork repository, prioritize `pnpm run format`, `pnpm run i18n`, and `pnpm run lint` after feature work.'
+      'In the MauWork repository, prioritize `pnpm run format`, `pnpm run i18n`, and `pnpm run lint` after feature work.'
     )
   } else if (verificationScripts.length > 0) {
     const suggestedScripts = verificationScripts

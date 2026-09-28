@@ -32,7 +32,7 @@ unbundled, and unverified for that target.
 - Parameterize unpacked output paths for Linux x64 and ARM64.
 - Bundle and verify CUA only for Linux x64.
 - Bundle and verify Feishu for both Linux architectures.
-- Emit `miowork-package-linux-arm64` with a target manifest and keep
+- Emit `mauwork-package-linux-arm64` with a target manifest and keep
   `latest-linux-arm64.yml` separate during fail-closed release assembly.
 - Preserve the existing manifest-based CUA visibility gate and unsupported-target packaging error.
 

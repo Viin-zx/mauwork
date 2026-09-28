@@ -1131,6 +1131,6 @@ describe('afterPack', () => {
         arch: 'x64',
         packager: { projectDir }
       })
-    ).rejects.toThrow('MioWork must depend on exactly @arcships/light-ocr@0.5.7')
+    ).rejects.toThrow('MauWork must depend on exactly @arcships/light-ocr@0.5.7')
   })
 })

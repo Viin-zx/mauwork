@@ -1,7 +1,7 @@
 {
   "input": {
     "suggestions": "Cadangan",
-    "placeholder": "Hantar mesej kepada MioWork, {'@'} boleh merujuk fail, / boleh menggunakan arahan",
+    "placeholder": "Hantar mesej kepada MauWork, {'@'} boleh merujuk fail, / boleh menggunakan arahan",
     "fileArea": "kawasan fail",
     "inputArea": "kawasan input",
     "functionSwitch": "Suis fungsi",
@@ -11,7 +11,7 @@
     "voiceRecognitionUnsupportedTitle": "Persekitaran semasa tidak menyokong rakaman tempatan",
     "voiceRecognitionUnsupportedDescription": "Sila gunakan ciri ini dalam pelayar atau persekitaran desktop yang menyokong rakaman mikrofon.",
     "voiceRecognitionPermissionDeniedTitle": "Tidak dapat mengakses mikrofon",
-    "voiceRecognitionPermissionDeniedDescription": "Sila benarkan MioWork menggunakan mikrofon dan cuba lagi.",
+    "voiceRecognitionPermissionDeniedDescription": "Sila benarkan MauWork menggunakan mikrofon dan cuba lagi.",
     "voiceRecognitionErrorTitle": "Transkripsi audio gagal",
     "voiceRecognitionErrorDescription": "Gagal melengkapkan transkripsi audio, sila cuba sebentar lagi.",
     "send": "hantar",
@@ -60,7 +60,7 @@
         "agentCore": "alat teras",
         "agentImageGeneration": "penjanaan imej",
         "agentSkills": "Alat kemahiran",
-        "deepchatSettings": "Tetapan MioWork",
+        "deepchatSettings": "Tetapan MauWork",
         "yobrowser": "YoBrowser"
       }
     },
@@ -442,12 +442,12 @@
   },
   "onboarding": {
     "agentSwitch": {
-      "title": "Tukar kepada MioWork Agent",
-      "description": "Sebelum memulakan sembang, tukar kembali kepada aliran perbualan MioWork daripada ACP Agent.",
+      "title": "Tukar kepada MauWork Agent",
+      "description": "Sebelum memulakan sembang, tukar kembali kepada aliran perbualan MauWork daripada ACP Agent.",
       "caption": "Klik butang Agent yang diserlahkan di bar sisi untuk meneruskan."
     },
     "switchModel": {
-      "description": "Pilih model yang anda mahu gunakan untuk perbualan MioWork pertama anda.",
+      "description": "Pilih model yang anda mahu gunakan untuk perbualan MauWork pertama anda.",
       "caption": "Gunakan penukar model yang diserlahkan untuk memilih mana-mana model yang tersedia."
     },
     "firstChat": {
@@ -624,7 +624,7 @@
       "reasons": {
         "session_unavailable": "Sesi ini tidak lagi tersedia.",
         "agent_unavailable": "Agent yang dipilih tidak tersedia.",
-        "deepchat_agent_required": "Kerjasama proaktif memerlukan MioWork Agent.",
+        "deepchat_agent_required": "Kerjasama proaktif memerlukan MauWork Agent.",
         "regular_parent_required": "Kerjasama proaktif tidak tersedia dalam sesi anak.",
         "agent_policy_unavailable": "Dasar kerjasama tidak dapat dimuatkan.",
         "subagents_disabled": "Dayakan Subagents untuk Agent ini bagi menggunakan kerjasama proaktif."

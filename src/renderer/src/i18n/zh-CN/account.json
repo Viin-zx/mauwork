@@ -59,7 +59,7 @@
   "qrPayRetry": "重新购买",
   "qrPayOrderNo": "订单号",
   "qrPayAgreePrefix": "我已阅读并同意",
-  "qrPaySubscriptionAgreement": "《MioWork订阅协议》",
+  "qrPaySubscriptionAgreement": "《MauWork订阅协议》",
   "qrPayAgreeHint": "请勾选订阅协议后扫码支付",
   "planResetPeriod": "重置周期",
   "planPurchaseLimit": "限购",

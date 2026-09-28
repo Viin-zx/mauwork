@@ -2,7 +2,7 @@
   "steps": {
     "welcome": {
       "title": "Witamy",
-      "description": "Zacznijmy konfigurować MioWork"
+      "description": "Zacznijmy konfigurować MauWork"
     },
     "provider": {
       "title": "Dostawca",
@@ -17,7 +17,7 @@
       "description": "Wszystko gotowe i gotowe do pracy!"
     }
   },
-  "title": "Witamy w MioWork",
+  "title": "Witamy w MauWork",
   "description": "Przeprowadzimy Cię przez konfigurację.",
   "provider": {
     "select": "Wybierz dostawcę",
@@ -35,7 +35,7 @@
     "back": "Powrót"
   },
   "page": {
-    "title": "Witamy w MioWork Agent",
+    "title": "Witamy w MauWork Agent",
     "description": "Aby rozpocząć, połącz się z dostawcą modelu",
     "guide": {
       "title": "Przewodnik konfiguracji",
@@ -72,8 +72,8 @@
   },
   "agentPage": {
     "title": "Wybierz Agent, aby rozpocząć tworzenie",
-    "deepchatType": "MioWork Agent",
+    "deepchatType": "MauWork Agent",
     "acpType": "ACP Agent",
-    "manageAgents": "Zarządzaj MioWork Agent"
+    "manageAgents": "Zarządzaj MauWork Agent"
   }
 }

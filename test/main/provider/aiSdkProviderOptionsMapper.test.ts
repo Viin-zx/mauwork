@@ -948,7 +948,7 @@ describe('AI SDK provider options', () => {
     })
 
     expect(result.providerOptions?.openai).toMatchObject({
-      instructions: 'You are MioWork, an AI assistant. Follow the user instructions.',
+      instructions: 'You are MauWork, an AI assistant. Follow the user instructions.',
       store: false
     })
   })

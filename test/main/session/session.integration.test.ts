@@ -3379,7 +3379,7 @@ describe('Session application coordinators', () => {
       })
 
       await expect(turn.compactSession('s-compat')).rejects.toThrow(
-        'Manual compaction is only available for MioWork agent sessions.'
+        'Manual compaction is only available for MauWork agent sessions.'
       )
       expect(deepChatAgent.compactSession).not.toHaveBeenCalled()
     })

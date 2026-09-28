@@ -173,11 +173,11 @@
     },
     "buildInFileSystem": {
       "name": "sistem fail",
-      "desc": "Dayakan MioWork untuk beroperasi pada fail tempatan"
+      "desc": "Dayakan MauWork untuk beroperasi pada fail tempatan"
     },
     "Artifacts": {
       "name": "Artifacts",
-      "desc": "Kandungan Artifacts yang pelbagai untuk output MioWork anda"
+      "desc": "Kandungan Artifacts yang pelbagai untuk output MauWork anda"
     },
     "braveSearch": {
       "name": "Carian Brave",
@@ -197,15 +197,15 @@
     },
     "builtinKnowledge": {
       "name": "Carian asas pengetahuan terbina dalam",
-      "desc": "MioWork mempunyai perkhidmatan pencarian pangkalan pengetahuan terbina dalam, yang boleh mencari kandungan pangkalan pengetahuan terbina dalam MioWork."
+      "desc": "MauWork mempunyai perkhidmatan pencarian pangkalan pengetahuan terbina dalam, yang boleh mencari kandungan pangkalan pengetahuan terbina dalam MauWork."
     },
     "deepchat-inmemory/custom-prompts-server": {
       "name": "Perkataan gesaan tersuai",
-      "desc": "Perkhidmatan kata gesaan tersuai terbina dalam MioWork"
+      "desc": "Perkhidmatan kata gesaan tersuai terbina dalam MauWork"
     },
     "deepchat-inmemory/deep-research-server": {
       "name": "DeepResearch",
-      "desc": "MioWork mempunyai perkhidmatan penyelidikan mendalam terbina dalam berdasarkan carian Bocha (perhatikan bahawa model konteks yang panjang diperlukan untuk menggunakannya dan model dengan konteks yang tidak mencukupi mungkin gagal)"
+      "desc": "MauWork mempunyai perkhidmatan penyelidikan mendalam terbina dalam berdasarkan carian Bocha (perhatikan bahawa model konteks yang panjang diperlukan untuk menggunakannya dan model dengan konteks yang tidak mencukupi mungkin gagal)"
     },
     "deepchat-inmemory/auto-prompting-server": {
       "name": "Kata gesaan templat automatik",
@@ -213,7 +213,7 @@
     },
     "deepchat-inmemory/conversation-search-server": {
       "name": "Carian sejarah perbualan",
-      "desc": "MioWork mempunyai perkhidmatan carian sejarah perbualan terbina dalam yang boleh mencari rekod perbualan sejarah dan kandungan mesej."
+      "desc": "MauWork mempunyai perkhidmatan carian sejarah perbualan terbina dalam yang boleh mencari rekod perbualan sejarah dan kandungan mesej."
     },
     "deepchat/apple-server": {
       "name": "Pembantu sistem macOS",

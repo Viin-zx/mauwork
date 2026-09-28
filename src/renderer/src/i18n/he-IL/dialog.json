@@ -69,7 +69,7 @@
     "moveAndDeleteAgent": "העבר ומחק סוכן",
     "moveConversation": "העבר שיחה",
     "agentType": {
-      "deepchat": "MioWork",
+      "deepchat": "MauWork",
       "acp": "ACP"
     },
     "blockReason": {
@@ -84,7 +84,7 @@
       "draft": "טיוטה",
       "subagent": "תת-סוכן"
     },
-    "deepChatTargetOnly": "ניתן לבחור רק סוכני MioWork כיעדי העברה. אפשר להעביר שיחות ACP אל MioWork, אך לא אל ACP."
+    "deepChatTargetOnly": "ניתן לבחור רק סוכני MauWork כיעדי העברה. אפשר להעביר שיחות ACP אל MauWork, אך לא אל ACP."
   },
   "deleteMessage": {
     "title": "למחוק את ההודעה הזו?",

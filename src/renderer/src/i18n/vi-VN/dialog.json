@@ -69,7 +69,7 @@
     "moveAndDeleteAgent": "Chuyển và xóa agent",
     "moveConversation": "Chuyển cuộc trò chuyện",
     "agentType": {
-      "deepchat": "MioWork",
+      "deepchat": "MauWork",
       "acp": "ACP"
     },
     "blockReason": {
@@ -84,7 +84,7 @@
       "draft": "Bản nháp",
       "subagent": "Agent con"
     },
-    "deepChatTargetOnly": "Chỉ có thể chọn agent MioWork làm đích chuyển. Cuộc trò chuyện ACP có thể chuyển sang MioWork, nhưng không thể chuyển vào ACP."
+    "deepChatTargetOnly": "Chỉ có thể chọn agent MauWork làm đích chuyển. Cuộc trò chuyện ACP có thể chuyển sang MauWork, nhưng không thể chuyển vào ACP."
   },
   "deleteMessage": {
     "title": "Xóa tin nhắn này?",

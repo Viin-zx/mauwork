@@ -13,7 +13,7 @@ import type { NewEnvironmentRow } from '@/project/data/tables/newEnvironments'
 import type { SettingsStore } from '@/config/settingsStore'
 
 const PROJECT_SNAPSHOT_VERSION_SETTINGS_KEY = 'projectSnapshotVersion'
-const DEFAULT_WORKSPACE_DIRECTORY_NAME = 'MioWork'
+const DEFAULT_WORKSPACE_DIRECTORY_NAME = 'MauWork'
 
 export class ProjectService {
   private sqlitePresenter: ProjectDatabase

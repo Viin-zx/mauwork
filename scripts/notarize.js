@@ -13,7 +13,7 @@ export default async function notarizing(context) {
     return
   }
 
-  const appPath = `${appOutDir}/MioWork.app`
+  const appPath = `${appOutDir}/MauWork.app`
   console.info(`Notarizing macOS app: ${appPath}`)
   await notarizeReleaseArtifact(appPath)
 }

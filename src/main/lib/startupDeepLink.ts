@@ -1,5 +1,5 @@
 const STARTUP_DEEPLINK_ENV_KEY = 'STARTUP_DEEPLINK'
-const SECONDARY_STARTUP_ENV_KEYS = ['DEEPLINK_URL', 'miowork_deeplink'] as const
+const SECONDARY_STARTUP_ENV_KEYS = ['DEEPLINK_URL', 'mauwork_deeplink'] as const
 let pendingStartupDeepLink: string | null = null
 
 export const isDeepLinkUrl = (value: string | null | undefined): value is string => {
@@ -8,7 +8,7 @@ export const isDeepLinkUrl = (value: string | null | undefined): value is string
   }
 
   const normalized = value.trim()
-  return normalized.startsWith('miowork://') || normalized.startsWith('miowork:')
+  return normalized.startsWith('mauwork://') || normalized.startsWith('mauwork:')
 }
 
 export const normalizeDeepLinkUrl = (value: string): string => value.trim()

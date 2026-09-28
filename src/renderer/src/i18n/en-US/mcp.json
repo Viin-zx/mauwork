@@ -182,7 +182,7 @@
   "title": "MCP Settings",
   "inmemory": {
     "Artifacts": {
-      "desc": "Produce richer Artifacts in MioWork",
+      "desc": "Produce richer Artifacts in MauWork",
       "name": "Artifacts"
     },
     "bochaSearch": {
@@ -190,7 +190,7 @@
       "name": "Bocha Search"
     },
     "buildInFileSystem": {
-      "desc": "Allow MioWork to interact with the local file system.",
+      "desc": "Allow MauWork to interact with the local file system.",
       "name": "File System"
     },
     "braveSearch": {
@@ -210,11 +210,11 @@
       "desc": "FastGPT knowledge base search service, can search FastGPT knowledge base content"
     },
     "deepchat-inmemory/custom-prompts-server": {
-      "desc": "MioWork built-in custom prompts service",
+      "desc": "MauWork built-in custom prompts service",
       "name": "Custom Prompts"
     },
     "deepchat-inmemory/deep-research-server": {
-      "desc": "MioWork built-in deep research powered by Bocha Search. Long-context models are recommended.",
+      "desc": "MauWork built-in deep research powered by Bocha Search. Long-context models are recommended.",
       "name": "DeepResearch"
     },
     "deepchat-inmemory/auto-prompting-server": {
@@ -223,10 +223,10 @@
     },
     "deepchat-inmemory/conversation-search-server": {
       "name": "Conversation History Search",
-      "desc": "MioWork built-in conversation history search for past chats and messages."
+      "desc": "MauWork built-in conversation history search for past chats and messages."
     },
     "builtinKnowledge": {
-      "desc": "MioWork built-in knowledge base search for MioWork docs and guides.",
+      "desc": "MauWork built-in knowledge base search for MauWork docs and guides.",
       "name": "Built-in knowledge base search"
     },
     "deepchat/apple-server": {

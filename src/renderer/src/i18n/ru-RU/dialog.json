@@ -69,7 +69,7 @@
     "moveAndDeleteAgent": "Переместить и удалить агента",
     "moveConversation": "Переместить беседу",
     "agentType": {
-      "deepchat": "MioWork",
+      "deepchat": "MauWork",
       "acp": "ACP"
     },
     "blockReason": {
@@ -84,7 +84,7 @@
       "draft": "Черновик",
       "subagent": "Субагент"
     },
-    "deepChatTargetOnly": "В качестве целей перемещения можно выбирать только агентов MioWork. Беседы ACP можно переместить в MioWork, но не в ACP."
+    "deepChatTargetOnly": "В качестве целей перемещения можно выбирать только агентов MauWork. Беседы ACP можно переместить в MauWork, но не в ACP."
   },
   "deleteMessage": {
     "title": "Удалить это сообщение?",

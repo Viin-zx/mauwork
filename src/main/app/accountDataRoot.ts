@@ -79,7 +79,7 @@ export function getAccountSkillsDir(): string {
 
 /** 旧版本使用的全局 skill 目录 */
 function getLegacySkillsDir(): string {
-  return path.join(app.getPath('home'), '.miowork', 'skills')
+  return path.join(app.getPath('home'), '.mauwork', 'skills')
 }
 
 /**

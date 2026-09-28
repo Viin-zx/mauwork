@@ -142,7 +142,7 @@ describe('bundled CLI client', () => {
     const invocation = runWithCapturedOutput(['help'], {})
 
     await expect(invocation.result).resolves.toBe(0)
-    expect(invocation.stdout.read()).toContain('Usage: miowork <domain> <verb> [options]')
+    expect(invocation.stdout.read()).toContain('Usage: mauwork <domain> <verb> [options]')
     expect(invocation.stderr.read()).toBe('')
   })
 
@@ -188,7 +188,7 @@ describe('bundled CLI client', () => {
     })
 
     await expect(invocation.result).resolves.toBe(0)
-    expect(invocation.stdout.read()).toContain('MioWork 9.8.7')
+    expect(invocation.stdout.read()).toContain('MauWork 9.8.7')
     expect(invocation.stdout.read()).toContain('Protocol 1, surface 2')
     expect(invocation.stderr.read()).toBe('')
     expect(dispatch).toHaveBeenCalledOnce()
@@ -352,7 +352,7 @@ describe('bundled CLI client', () => {
       })
     )
     expect(stdout.read()).toContain('Run run-1 started (generating)')
-    expect(stdout.read()).toContain('miowork run watch --run run-1')
+    expect(stdout.read()).toContain('mauwork run watch --run run-1')
     expect(stderr.read()).toBe('')
   })
 
@@ -618,7 +618,7 @@ describe('bundled CLI client', () => {
     await expect(invocation.result).resolves.toBe(0)
     expect(invocation.stdout.read()).toContain('Generated 1 image artifact in 25ms')
     expect(invocation.stdout.read()).toContain(
-      'miowork artifact get --id artifact_identifier_123 --out generated-image-1.png'
+      'mauwork artifact get --id artifact_identifier_123 --out generated-image-1.png'
     )
     expect(dispatchStream).toHaveBeenCalledWith(
       'images.generate',

@@ -352,7 +352,7 @@ describe('CI package contract', () => {
   })
 
   it('derives macOS application evidence from distribution verification commands', async () => {
-    const appPath = '/tmp/MioWork.app'
+    const appPath = '/tmp/MauWork.app'
     const runCommand = vi.fn(async (command: string, args: string[]) => {
       if (command === '/usr/bin/codesign' && args[0] === '--display') {
         return {
@@ -399,13 +399,13 @@ describe('CI package contract', () => {
     const runCommand = vi.fn(async (command: string, args: string[]) => {
       if (command === '/usr/bin/unzip') {
         return {
-          stdout: 'MioWork.app/\nMioWork.app/Contents/Info.plist\n',
+          stdout: 'MauWork.app/\nMauWork.app/Contents/Info.plist\n',
           stderr: ''
         }
       }
       expect(command).toBe('/usr/bin/ditto')
       extractionRoot = args.at(-1)!
-      await mkdir(path.join(extractionRoot, 'MioWork.app'))
+      await mkdir(path.join(extractionRoot, 'MauWork.app'))
       return { stdout: '', stderr: '' }
     })
     const verifyCuaMacHelper = vi.fn(async () => {})
@@ -425,7 +425,7 @@ describe('CI package contract', () => {
       expect.any(Object)
     )
     expect(extractionRoot).not.toBe('')
-    const extractedAppPath = path.join(extractionRoot, 'MioWork.app')
+    const extractedAppPath = path.join(extractionRoot, 'MauWork.app')
     expect(verifyCuaMacHelper).toHaveBeenCalledWith(extractedAppPath, {
       teamId: 'Y7P5QLKLYG',
       runCommand
@@ -448,13 +448,13 @@ describe('CI package contract', () => {
         runCommand: async (command: string, args: string[]) => {
           if (command === '/usr/bin/unzip') {
             return {
-              stdout: 'MioWork.app/\nMioWork.app/Contents/Info.plist\n',
+              stdout: 'MauWork.app/\nMauWork.app/Contents/Info.plist\n',
               stderr: ''
             }
           }
           extractionRoot = args.at(-1)!
           await Promise.all([
-            mkdir(path.join(extractionRoot, 'MioWork.app')),
+            mkdir(path.join(extractionRoot, 'MauWork.app')),
             writeFile(path.join(extractionRoot, 'unexpected.txt'), 'unexpected')
           ])
           return { stdout: '', stderr: '' }
@@ -462,7 +462,7 @@ describe('CI package contract', () => {
         verifyCuaMacHelper,
         verifyMacApp
       })
-    ).rejects.toThrow(/exactly one root MioWork.app/)
+    ).rejects.toThrow(/exactly one root MauWork.app/)
     expect(verifyCuaMacHelper).not.toHaveBeenCalled()
     expect(verifyMacApp).not.toHaveBeenCalled()
     expect(extractionRoot).not.toBe('')
@@ -471,16 +471,16 @@ describe('CI package contract', () => {
 
   it('rejects unsafe or ambiguous updater ZIP entry paths before extraction', () => {
     expect(
-      validateMacZipEntries('MioWork.app/\nMioWork.app/Contents/Info.plist\n')
-    ).toEqual(['MioWork.app/', 'MioWork.app/Contents/Info.plist'])
+      validateMacZipEntries('MauWork.app/\nMauWork.app/Contents/Info.plist\n')
+    ).toEqual(['MauWork.app/', 'MauWork.app/Contents/Info.plist'])
 
     for (const unsafeEntries of [
-      '../MioWork.app/Contents/Info.plist\n',
-      '/MioWork.app/Contents/Info.plist\n',
-      'MioWork.app\\Contents\\Info.plist\n',
+      '../MauWork.app/Contents/Info.plist\n',
+      '/MauWork.app/Contents/Info.plist\n',
+      'MauWork.app\\Contents\\Info.plist\n',
       'Other.app/Contents/Info.plist\n',
-      'MioWork.app/Contents/../escape\n',
-      'MioWork.app/Contents/Info.plist\nMioWork.app/Contents/Info.plist\n'
+      'MauWork.app/Contents/../escape\n',
+      'MauWork.app/Contents/Info.plist\nMauWork.app/Contents/Info.plist\n'
     ]) {
       expect(() => validateMacZipEntries(unsafeEntries)).toThrow(/unsafe entry|duplicate entry/)
     }
@@ -981,7 +981,7 @@ describe('package manifest staging', () => {
       purpose: 'distribution',
       reportPaths: [smokePath],
       actualSourceSha: sourceSha,
-      macAppPath: '/tmp/MioWork.app',
+      macAppPath: '/tmp/MauWork.app',
       appleTeamId: 'Y7P5QLKLYG',
       verifyCuaMacHelper,
       verifyMacApp,
@@ -1019,7 +1019,7 @@ describe('package manifest staging', () => {
       purpose: 'distribution',
       reportPaths: [smokePath],
       actualSourceSha: sourceSha,
-      macAppPath: '/tmp/MioWork.app',
+      macAppPath: '/tmp/MauWork.app',
       verifyCuaMacHelper,
       verifyMacApp,
       verifyMacZip,

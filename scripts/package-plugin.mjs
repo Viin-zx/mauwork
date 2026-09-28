@@ -18,7 +18,7 @@ const CUA_DARWIN_MANAGED_HELPER_DETECT = `app-helper:${CUA_DARWIN_HELPER_APP}/Co
 const CUA_PLUGIN_ID = 'com.deepchat.plugins.cua'
 const CUA_INTEGRITY_DESCRIPTOR_NAME = 'integrity.json'
 const CUA_EMBEDDED_ADAPTER_CONTRACT = Object.freeze({
-  hostBundleId: 'com.miowork.app',
+  hostBundleId: 'com.mauwork.app',
   driverVersion: '0.19.2',
   contractVersion: '0.6.0',
   toolsListSchemaVersion: '1',

@@ -589,14 +589,14 @@ function buildProviderContextOverflowAfterRecoveryErrorMessage(
     : ''
   const summary =
     disposition === 'retry_projection_unchanged'
-      ? 'The provider reported a context overflow. MioWork skipped a second provider call because recovery would not remove or rewrite any provider messages; lowering only the requested output limit is not a reliable recovery for an input overflow.'
+      ? 'The provider reported a context overflow. MauWork skipped a second provider call because recovery would not remove or rewrite any provider messages; lowering only the requested output limit is not a reliable recovery for an input overflow.'
       : disposition === 'retry_projection_cannot_fit'
-        ? 'The provider reported a context overflow. After applying the available context ceiling, the protected request still cannot fit, so MioWork did not send a doomed retry.'
-        : 'The provider still reported a context overflow after MioWork compacted or trimmed the request.'
+        ? 'The provider reported a context overflow. After applying the available context ceiling, the protected request still cannot fit, so MauWork did not send a doomed retry.'
+        : 'The provider still reported a context overflow after MauWork compacted or trimmed the request.'
 
   return [
     summary,
-    `MioWork local estimate: usable context ${formatTokenCount(diagnostics.usableContextLength)} tokens, estimated input ${formatTokenCount(diagnostics.inputTokens)} tokens, tool schemas ${formatTokenCount(diagnostics.toolReserveTokens)} tokens, requested output ${formatTokenCount(diagnostics.requestedMaxTokens)} tokens, effective output ${formatTokenCount(diagnostics.effectiveMaxTokens)} tokens, remaining output room ${formatTokenCount(diagnostics.remainingOutputTokens)} tokens.`,
+    `MauWork local estimate: usable context ${formatTokenCount(diagnostics.usableContextLength)} tokens, estimated input ${formatTokenCount(diagnostics.inputTokens)} tokens, tool schemas ${formatTokenCount(diagnostics.toolReserveTokens)} tokens, requested output ${formatTokenCount(diagnostics.requestedMaxTokens)} tokens, effective output ${formatTokenCount(diagnostics.effectiveMaxTokens)} tokens, remaining output room ${formatTokenCount(diagnostics.remainingOutputTokens)} tokens.`,
     `${providerFacts} Configured context length: ${formatTokenCount(configuredContextLength)} tokens.${sessionCeilingMessage}${metadataGuidance}`,
     formatRequestContextLedger(ledger),
     'The provider may count tokens, system prompts, or tool schemas differently. Try shortening the latest input or attachments, reducing active tools, skills, or system prompt content, lowering max output tokens, or increasing context length.'
@@ -2431,7 +2431,7 @@ export class DeepChatLoopRunner {
               modelId: state.modelId,
               requestSeq: 0,
               payload: {
-                endpoint: 'miowork://interleaved-reasoning-gap',
+                endpoint: 'mauwork://interleaved-reasoning-gap',
                 headers: {},
                 body: gap
               }

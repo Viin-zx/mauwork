@@ -30,10 +30,10 @@ async function runGeneratedLauncher(outputDirectory: string) {
 
 async function provisionElectronHost(outputDirectory: string): Promise<void> {
   const appRoot = path.resolve(outputDirectory, '..', '..', '..')
-  const hostName = process.platform === 'win32' ? 'MioWork.exe' : 'MioWork'
+  const hostName = process.platform === 'win32' ? 'MauWork.exe' : 'MauWork'
   const hosts = [
     path.join(appRoot, hostName),
-    path.join(appRoot, 'MacOS', 'MioWork'),
+    path.join(appRoot, 'MacOS', 'MauWork'),
     path.join(appRoot, 'deepchat')
   ]
   for (const host of hosts) {
@@ -90,7 +90,7 @@ describe('CLI bundle', () => {
       expect(WINDOWS_LAUNCHER).toContain('setlocal')
       expect(WINDOWS_LAUNCHER).toContain('ELECTRON_RUN_AS_NODE=1')
       expect(WINDOWS_LAUNCHER).toContain('node_modules\\electron\\dist\\electron.exe')
-      expect(WINDOWS_LAUNCHER).toContain('..\\..\\..\\MioWork.exe')
+      expect(WINDOWS_LAUNCHER).toContain('..\\..\\..\\MauWork.exe')
       expect(WINDOWS_LAUNCHER).toContain('if exist "%electron_host%\\" goto missing_runtime')
       expect(WINDOWS_LAUNCHER).not.toContain('where node')
       expect(WINDOWS_LAUNCHER).not.toContain('runtime\\node')

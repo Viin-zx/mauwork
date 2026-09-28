@@ -1,6 +1,6 @@
 {
   "input": {
-    "placeholder": "MioWork ལ་འཕྲིན་ཐུང་སྐུར། {'@'} ཡིས་ཡིག་ཆ་འདྲེན་ཆོག །/ ཡིས་བཀའ་བརྡ་སྤྱོད་ཆོག",
+    "placeholder": "MauWork ལ་འཕྲིན་ཐུང་སྐུར། {'@'} ཡིས་ཡིག་ཆ་འདྲེན་ཆོག །/ ཡིས་བཀའ་བརྡ་སྤྱོད་ཆོག",
     "fileArea": "ཡིག་ཆའི་ཁུལ།",
     "inputArea": "ནང་འཇུག་ཁུལ།",
     "functionSwitch": "བྱེད་ནུས་ཀྱི་སྒོ་འབྱེད་སྒོ་རྒྱག",
@@ -10,7 +10,7 @@
     "voiceRecognitionUnsupportedTitle": "ད་ལྟའི་ཁོར་ཡུག་གིས་རང་འཕྲུལ་སྒྲ་ཕབ་ལ་རྒྱབ་སྐྱོར་མི་བྱེད།",
     "voiceRecognitionUnsupportedDescription": "སྐད་སྦུག་སྒྲ་ཕབ་ལ་རྒྱབ་སྐྱོར་ཡོད་པའི་ལྟ་ཆས་སམ་མདུན་ངོས་ཁོར་ཡུག་ཏུ་བྱེད་ནུས་འདི་སྤྱོད་རོགས།",
     "voiceRecognitionPermissionDeniedTitle": "སྐད་སྦུག་ལ་འཛུལ་སྤྱོད་མ་ཐུབ།",
-    "voiceRecognitionPermissionDeniedDescription": "MioWork ལ་སྐད་སྦུག་སྤྱོད་ཆོག་པའི་དབང་ཆ་སྤྲད་ནས་བསྐྱར་དུ་ཚོད་ལྟ་བྱེད་རོགས།",
+    "voiceRecognitionPermissionDeniedDescription": "MauWork ལ་སྐད་སྦུག་སྤྱོད་ཆོག་པའི་དབང་ཆ་སྤྲད་ནས་བསྐྱར་དུ་ཚོད་ལྟ་བྱེད་རོགས།",
     "voiceRecognitionErrorTitle": "སྒྲ་ཡི་གེར་བསྒྱུར་མ་ཐུབ།",
     "voiceRecognitionErrorDescription": "སྒྲ་ཡི་གེར་བསྒྱུར་མ་ཐུབ། ཅུང་ཙམ་ནས་བསྐྱར་དུ་ཚོད་ལྟ་བྱེད་རོགས།",
     "send": "སྐུར་བ།",
@@ -59,7 +59,7 @@
         "agentCore": "ལྟེ་བའི་ལག་ཆ།",
         "agentImageGeneration": "པར་རིས་སྐྱེད་པ།",
         "agentSkills": "རྩལ་ནུས་ལག་ཆ།",
-        "deepchatSettings": "MioWork སྒྲིག་འགོད།",
+        "deepchatSettings": "MauWork སྒྲིག་འགོད།",
         "yobrowser": "YoBrowser"
       }
     },
@@ -527,12 +527,12 @@
   },
   "onboarding": {
     "agentSwitch": {
-      "title": "MioWork རིག་ནུས་ལས་རོགས་ལ་བརྗེ།",
-      "description": "ཁ་བརྡ་མ་བྱས་གོང་། ཁ་བརྡ་མ་བྱས་གོང་། ACP Agent ནས་ཁ་བརྡ་བྱེད་བཞིན་MioWork ལ་བསྒྱུར་དགོས།",
+      "title": "MauWork རིག་ནུས་ལས་རོགས་ལ་བརྗེ།",
+      "description": "ཁ་བརྡ་མ་བྱས་གོང་། ཁ་བརྡ་མ་བྱས་གོང་། ACP Agent ནས་ཁ་བརྡ་བྱེད་བཞིན་MauWork ལ་བསྒྱུར་དགོས།",
       "caption": "གཞོགས་ངོས་ཀྱི་འབུར་དུ་ཐོན་པའི་Agent མཐེབ་གནོན་གྱིས་མུ་མཐུད་དུ་སྤེལ་དགོས།"
     },
     "switchModel": {
-      "description": "ཁྱོད་ཀྱིས་ཐེངས་དང་པོར་ཁ་བརྡ་བྱེད་MioWork པའི་དཔེ་དབྱིབས་འདེམ་དགོས།",
+      "description": "ཁྱོད་ཀྱིས་ཐེངས་དང་པོར་ཁ་བརྡ་བྱེད་MauWork པའི་དཔེ་དབྱིབས་འདེམ་དགོས།",
       "caption": "འབུར་དུ་ཐོན་པའི་དཔེ་དབྱིབས་བརྗེ་ཆས་བཀོལ་ནས་སྤྱོད་ཆོག་པའི་དཔེ་དབྱིབས་གང་རུང་ཞིག་འདེམས་དགོས།"
     },
     "firstChat": {
@@ -624,7 +624,7 @@
       "reasons": {
         "session_unavailable": "སྐབས་འདིའི་གྲོས་ཚོགས་ལ་མི་འགྲིག",
         "agent_unavailable": "མིག་སྔར་བདམས་པའི་Agent བཀོལ་སྤྱོད་བྱེད་མི་ཐུབ་པ་རེད།",
-        "deepchat_agent_required": "རང་འགུལ་གྱི་མཉམ་ལས་ལ་MioWork Agent བཀོལ་སྤྱོད་བྱ་དགོས།",
+        "deepchat_agent_required": "རང་འགུལ་གྱི་མཉམ་ལས་ལ་MauWork Agent བཀོལ་སྤྱོད་བྱ་དགོས།",
         "regular_parent_required": "སྐབས་བགོས་གྲོས་ཚོགས་ཤིག་གི་ནང་དུ་རང་འགུལ་གྱི་མཉམ་ལས་བྱེད་མི་རུང།",
         "agent_policy_unavailable": "མཉམ་ལས་ཀྱི་སྲིད་ཇུས་ནང་འཇུག་བྱེད་མི་ཐུབ་པ་རེད།",
         "subagents_disabled": "རང་འགུལ་གྱི་མཉམ་ལས་མ་བྱས་གོང་ལ་ཐོག་མར་Agent འདིའི་ཆེད་དུ་Subagent བྱེད་རོགས།"

@@ -2,7 +2,7 @@
   "steps": {
     "welcome": {
       "title": "Добро пожаловать",
-      "description": "Начнем настройку MioWork"
+      "description": "Начнем настройку MauWork"
     },
     "provider": {
       "title": "Провайдер моделей",
@@ -17,7 +17,7 @@
       "description": "Всё готово к работе!"
     }
   },
-  "title": "Добро пожаловать в MioWork",
+  "title": "Добро пожаловать в MauWork",
   "description": "Давайте завершим процесс настройки",
   "provider": {
     "select": "Выбрать провайдера",
@@ -35,7 +35,7 @@
     "back": "Назад"
   },
   "page": {
-    "title": "Добро пожаловать в MioWork Agent",
+    "title": "Добро пожаловать в MauWork Agent",
     "description": "Подключите провайдера моделей, чтобы начать",
     "guide": {
       "title": "Гид по настройке",
@@ -72,8 +72,8 @@
   },
   "agentPage": {
     "title": "Выберите агента, чтобы начать работу",
-    "deepchatType": "Агент MioWork",
+    "deepchatType": "Агент MauWork",
     "acpType": "Агент ACP",
-    "manageAgents": "Управление агентами MioWork"
+    "manageAgents": "Управление агентами MauWork"
   }
 }

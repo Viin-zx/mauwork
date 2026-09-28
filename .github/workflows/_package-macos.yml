@@ -58,7 +58,7 @@ jobs:
       TARGET_PLATFORM: darwin
       TARGET_ARCH: ${{ inputs.arch }}
       PACKAGE_PURPOSE: ${{ inputs.artifact-purpose }}
-      APP_DIRECTORY: ${{ inputs.arch == 'arm64' && 'dist/mac-arm64/MioWork.app' || 'dist/mac/MioWork.app' }}
+      APP_DIRECTORY: ${{ inputs.arch == 'arm64' && 'dist/mac-arm64/MauWork.app' || 'dist/mac/MauWork.app' }}
     steps:
       - name: Validate immutable source input
         run: |
@@ -260,7 +260,7 @@ jobs:
         if: ${{ success() }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: miowork-package-darwin-${{ inputs.arch }}-${{ inputs.artifact-purpose }}
+          name: mauwork-package-darwin-${{ inputs.arch }}-${{ inputs.artifact-purpose }}
           path: package-output/
           if-no-files-found: error
           compression-level: 0
@@ -270,7 +270,7 @@ jobs:
         if: ${{ always() && inputs.artifact-purpose == 'verification' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: miowork-package-diagnostics-darwin-${{ inputs.arch }}
+          name: mauwork-package-diagnostics-darwin-${{ inputs.arch }}
           path: |
             package-output/manifest.json
             package-output/reports/

@@ -1,5 +1,5 @@
-appId: com.miowork.app
-productName: MioWork
+appId: com.mauwork.app
+productName: MauWork
 directories:
   buildResources: build
 files:
@@ -45,7 +45,7 @@ asarUnpack:
 extraResources:
   - from: ./out/cli/
     to: app.asar.unpacked/cli
-    filter: ['miowork', 'miowork.cmd', 'miowork.mjs']
+    filter: ['mauwork', 'mauwork.cmd', 'mauwork.mjs']
   - from: ./runtime/
     to: app.asar.unpacked/runtime
     filter: ['**/*']
@@ -84,7 +84,7 @@ electronLanguages:
   - he-IL
   - he
 win:
-  executableName: MioWork
+  executableName: MauWork
 nsis:
   artifactName: ${name}-${version}-windows-${arch}.${ext}
   shortcutName: ${productName}
@@ -132,4 +132,4 @@ dmg:
 npmRebuild: true
 publish:
   provider: generic
-  url: https://miowork-releases.oss-cn-hangzhou.aliyuncs.com/updates
+  url: https://mauwork-releases.oss-cn-hangzhou.aliyuncs.com/updates

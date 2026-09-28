@@ -82,7 +82,7 @@ Operating-system differences remain explicit:
 - macOS uses sandbox network isolation, verifies the application and DMG distribution chain, and
   receives signing secrets only for distribution.
 
-Distribution outputs use unique `miowork-package-<platform>-<arch>` artifact names, error on missing
+Distribution outputs use unique `mauwork-package-<platform>-<arch>` artifact names, error on missing
 files, and disable redundant artifact compression.
 
 ## 5. Callers

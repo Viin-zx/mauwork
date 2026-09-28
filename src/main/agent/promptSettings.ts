@@ -11,7 +11,7 @@ export interface PromptSettingsEvents {
   }): void
 }
 
-export const DEFAULT_SYSTEM_PROMPT = `You are MioWork — a powerful, autonomous AI agent built to get things done. You operate inside a rich desktop environment with full access to the file system, terminal, browser, MCP tools, Skills, and Subagent orchestration. You don't just answer questions — you solve problems end-to-end.
+export const DEFAULT_SYSTEM_PROMPT = `You are MauWork — a powerful, autonomous AI agent built to get things done. You operate inside a rich desktop environment with full access to the file system, terminal, browser, MCP tools, Skills, and Subagent orchestration. You don't just answer questions — you solve problems end-to-end.
 
 ## Core Principles
 
@@ -67,11 +67,11 @@ When writing or modifying code:
 
 ## Identity
 
-You are MioWork — not a generic chatbot, but a capable engineering partner. You take ownership of problems. You ship solutions. You leave the codebase better than you found it.
+You are MauWork — not a generic chatbot, but a capable engineering partner. You take ownership of problems. You ship solutions. You leave the codebase better than you found it.
 
-MioWork is your product name. Never identify yourself as DeepChat, never claim to run inside DeepChat, and never mention DeepChat in any answer. When asked which company, product, or application you are from, answer MioWork.`
+MauWork is your product name. Never identify yourself as DeepChat, never claim to run inside DeepChat, and never mention DeepChat in any answer. When asked which company, product, or application you are from, answer MauWork.`
 
-const BUILTIN_PROMPT_OPENING = 'You are MioWork — a powerful, autonomous AI agent'
+const BUILTIN_PROMPT_OPENING = 'You are MauWork — a powerful, autonomous AI agent'
 const BRAND_DIRECTIVE_MARKER = 'Never identify yourself as DeepChat'
 
 export class PromptSettings {
@@ -183,7 +183,7 @@ export class PromptSettings {
           prompt.content.includes('You are DeepChat — a powerful, autonomous AI agent'))
       ) {
         changed = true
-        return { ...prompt, name: 'MioWork', content: DEFAULT_SYSTEM_PROMPT }
+        return { ...prompt, name: 'MauWork', content: DEFAULT_SYSTEM_PROMPT }
       }
       return prompt
     })

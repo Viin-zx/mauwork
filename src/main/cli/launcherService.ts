@@ -43,8 +43,8 @@ export type CliLauncherStatus = Readonly<{
 
 const LAUNCHER_MARKER_VERSION = 1
 const LAUNCHER_MARKER_FILENAME = 'launcher.json'
-const MANAGED_BLOCK_START = '# >>> MioWork CLI >>>'
-const MANAGED_BLOCK_END = '# <<< MioWork CLI <<<'
+const MANAGED_BLOCK_START = '# >>> MauWork CLI >>>'
+const MANAGED_BLOCK_END = '# <<< MauWork CLI <<<'
 const MAX_MARKER_BYTES = 16 * 1024
 const MAX_SHELL_CONFIG_BYTES = 1024 * 1024
 
@@ -319,13 +319,13 @@ export class CliLauncherService {
 
   private get commandPath(): string | null {
     if (this.platform === 'darwin' || this.platform === 'linux') {
-      return path.join(this.options.homeDirectory, '.local', 'bin', 'miowork')
+      return path.join(this.options.homeDirectory, '.local', 'bin', 'mauwork')
     }
     if (this.platform === 'win32') {
       const localAppData =
         this.options.localAppDataDirectory ??
         path.join(this.options.homeDirectory, 'AppData', 'Local')
-      return path.join(localAppData, 'Microsoft', 'WindowsApps', 'miowork.cmd')
+      return path.join(localAppData, 'Microsoft', 'WindowsApps', 'mauwork.cmd')
     }
     return null
   }
@@ -336,10 +336,10 @@ export class CliLauncherService {
     const resolvedDirectory = path.resolve(directory)
     const appRoot = resolveCliAppRoot(resolvedDirectory)
     const hostCandidates = [
-      path.join(appRoot, 'MacOS', 'MioWork'),
+      path.join(appRoot, 'MacOS', 'MauWork'),
       path.join(appRoot, 'deepchat.bin'),
-      path.join(appRoot, 'MioWork.exe'),
-      path.join(appRoot, 'MioWork'),
+      path.join(appRoot, 'MauWork.exe'),
+      path.join(appRoot, 'MauWork'),
       path.join(appRoot, 'miochat'),
       path.join(
         appRoot,
@@ -368,8 +368,8 @@ export class CliLauncherService {
     }
     if (!electronHost) return null
     const source: CliSource = {
-      posixLauncher: path.join(resolvedDirectory, 'miowork'),
-      modulePath: path.join(resolvedDirectory, 'miowork.mjs'),
+      posixLauncher: path.join(resolvedDirectory, 'mauwork'),
+      modulePath: path.join(resolvedDirectory, 'mauwork.mjs'),
       electronHost
     }
     const requiredPaths =
@@ -832,7 +832,7 @@ export class CliLauncherService {
           '.config',
           'fish',
           'conf.d',
-          'miowork-cli.fish'
+          'mauwork-cli.fish'
         )
       case 'profile':
         return path.join(this.options.homeDirectory, '.profile')

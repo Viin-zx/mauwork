@@ -1,6 +1,6 @@
 {
   "input": {
-    "placeholder": "MioWork غا ئۇچۇر يوللاش، {'@'} ھۆججەتنى ئىسەلەشكە بولىدۇ، / بۇيرۇقنى ئىشلىتىشكە بولىدۇ",
+    "placeholder": "MauWork غا ئۇچۇر يوللاش، {'@'} ھۆججەتنى ئىسەلەشكە بولىدۇ، / بۇيرۇقنى ئىشلىتىشكە بولىدۇ",
     "fileArea": "ھۆججەت رايونى",
     "inputArea": "كىرگۈزۈش رايونى",
     "functionSwitch": "ئىقتىدار ئاچقۇچى",
@@ -10,7 +10,7 @@
     "voiceRecognitionUnsupportedTitle": "ھازىرقى مۇھىت يەرلىك سىزغۇچنى قوللىمايدۇ",
     "voiceRecognitionUnsupportedDescription": "بۇ ئىقتىدارنى قوللىنىش ئۈچۈن ميكروفوننى قوللايدىغان تور كۆرگۈچ ياكى كومپيۇتېر مۇھىتىدە ئىشلەتكىلى بولىدۇ.",
     "voiceRecognitionPermissionDeniedTitle": "ميكروفونغا كىرىش مۇمكىن ئەمەس",
-    "voiceRecognitionPermissionDeniedDescription": "MioWork نىڭ ميكروفوننى ئىشلىتىشىگە رۇخسەت بېرىپ قايتا سىناڭ.",
+    "voiceRecognitionPermissionDeniedDescription": "MauWork نىڭ ميكروفوننى ئىشلىتىشىگە رۇخسەت بېرىپ قايتا سىناڭ.",
     "voiceRecognitionErrorTitle": "ئاۋازنى تېكىستكە ئايلاندۇرۇش مەغلۇب بولدى",
     "voiceRecognitionErrorDescription": "ئاۋازنى تېكىستكە ئايلاندۇرۇش تاماملىنىشقا مۇۋاپىق بولمىدى، كېيىن قايتا سىناڭ.",
     "send": "ئەۋەتىش",
@@ -59,7 +59,7 @@
         "agentCore": "يادرولۇق قوراللار",
         "agentImageGeneration": "رەسىم ھاسىل قىلىش",
         "agentSkills": "مەھارەت قوراللىرى",
-        "deepchatSettings": "MioWork نى تەڭشەش",
+        "deepchatSettings": "MauWork نى تەڭشەش",
         "yobrowser": "YoBrowser"
       }
     },
@@ -527,12 +527,12 @@
   },
   "onboarding": {
     "agentSwitch": {
-      "title": "MioWork Agent غا ئۆتۈش",
-      "description": "سۆھبەت باشلىماس تۇنجىسى، ACP Agent تىن MioWork سۆھبەت ئاقىمىغا قايتىڭ.",
+      "title": "MauWork Agent غا ئۆتۈش",
+      "description": "سۆھبەت باشلىماس تۇنجىسى، ACP Agent تىن MauWork سۆھبەت ئاقىمىغا قايتىڭ.",
       "caption": "تەرىپ يانتۇ قىسمىدىكى يورۇقلانغان Agent كۇنۇپكىسىنى چېكىپ داۋام قىلىڭ."
     },
     "switchModel": {
-      "description": "بىرىنچى MioWork سۆھبىتى ئۈچۈن ئىشلىتىدىغان مودېلنى تاللاڭ.",
+      "description": "بىرىنچى MauWork سۆھبىتى ئۈچۈن ئىشلىتىدىغان مودېلنى تاللاڭ.",
       "caption": "يورۇقلانغان مودېل ئالماشتۇرغۇچنى ئىشلىتىپ، ئىستەلگەن بار مودېلنى تاللاش كەرەك."
     },
     "firstChat": {
@@ -624,7 +624,7 @@
       "reasons": {
         "session_unavailable": "نۆۋەتتىكى سۆھبەت قوللىنىشقا قولايلىق ئەمەس.",
         "agent_unavailable": "نۆۋەتتىكى تاللانغان Agent قوللىنىشقا قولايلىق ئەمەس.",
-        "deepchat_agent_required": "ئاكتىپ ھەمكارلىق MioWork Agentنى ئىشلىتىشنى تەلەپ قىلىدۇ.",
+        "deepchat_agent_required": "ئاكتىپ ھەمكارلىق MauWork Agentنى ئىشلىتىشنى تەلەپ قىلىدۇ.",
         "regular_parent_required": "بولاق سۆھبەتتە ئاكتىپ ھەمكارلىقنى ئىشلىتكىلى بولمايدۇ.",
         "agent_policy_unavailable": "ھەمكارلىق سىياسىتىنى يۈكلەشكە بولمىدى.",
         "subagents_disabled": "ئاكتىپ ھەمكارلىقتىن ئالدى بىلەن بۇ Agent ئۈچۈن Subagentنى ئېچىڭ."

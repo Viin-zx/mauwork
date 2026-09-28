@@ -59,7 +59,7 @@
   "qrPayRetry": "Purchase Again",
   "qrPayOrderNo": "Order No.",
   "qrPayAgreePrefix": "I have read and agree to the",
-  "qrPaySubscriptionAgreement": "MioWork Subscription Agreement",
+  "qrPaySubscriptionAgreement": "MauWork Subscription Agreement",
   "qrPayAgreeHint": "Please check the subscription agreement before scanning",
   "planResetPeriod": "Reset period",
   "planPurchaseLimit": "Purchase limit",

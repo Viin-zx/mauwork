@@ -56,7 +56,7 @@
     "moveAndDeleteAgent": "Move and Delete Agent",
     "moveConversation": "Move Conversation",
     "agentType": {
-      "deepchat": "MioWork",
+      "deepchat": "MauWork",
       "acp": "ACP"
     },
     "blockReason": {
@@ -71,7 +71,7 @@
       "draft": "Draft",
       "subagent": "Subagent"
     },
-    "deepChatTargetOnly": "Only MioWork agents can be selected as transfer targets. ACP conversations can move to MioWork, but not into ACP."
+    "deepChatTargetOnly": "Only MauWork agents can be selected as transfer targets. ACP conversations can move to MauWork, but not into ACP."
   },
   "error": {
     "title": "Error"

@@ -2,7 +2,7 @@
   "steps": {
     "welcome": {
       "title": "Chào mừng",
-      "description": "Hãy bắt đầu thiết lập MioWork"
+      "description": "Hãy bắt đầu thiết lập MauWork"
     },
     "provider": {
       "title": "nhà cung cấp",
@@ -17,7 +17,7 @@
       "description": "Tất cả đã sẵn sàng và sẵn sàng để đi!"
     }
   },
-  "title": "Chào mừng đến với MioWork",
+  "title": "Chào mừng đến với MauWork",
   "description": "Hãy hướng dẫn bạn cách thiết lập.",
   "provider": {
     "select": "Chọn nhà cung cấp",
@@ -35,7 +35,7 @@
     "back": "Quay lại"
   },
   "page": {
-    "title": "Chào mừng đến với MioWork Agent",
+    "title": "Chào mừng đến với MauWork Agent",
     "description": "Kết nối nhà cung cấp mô hình để bắt đầu",
     "guide": {
       "title": "Hướng dẫn thiết lập",
@@ -72,8 +72,8 @@
   },
   "agentPage": {
     "title": "Chọn Agent để bắt đầu tạo",
-    "deepchatType": "MioWork Agent",
+    "deepchatType": "MauWork Agent",
     "acpType": "ACP Agent",
-    "manageAgents": "Quản lý MioWork Agent"
+    "manageAgents": "Quản lý MauWork Agent"
   }
 }

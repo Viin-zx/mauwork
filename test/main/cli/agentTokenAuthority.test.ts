@@ -398,19 +398,19 @@ describe('AgentCliTokenAuthority', () => {
 
   it('binds exact call and batch commands to canonical owned stdin', () => {
     const first = parseAgentCliProgrammaticExecInvocation({
-      command: 'miowork tool call',
+      command: 'mauwork tool call',
       stdin: '{"arguments":{"limit":2,"query":"weather"},"target":"remote_search"}'
     })
     const reordered = parseAgentCliProgrammaticExecInvocation({
-      command: 'miowork tool call',
+      command: 'mauwork tool call',
       stdin: '{ "target": "remote_search", "arguments": { "query": "weather", "limit": 2 } }'
     })
     const changed = parseAgentCliProgrammaticExecInvocation({
-      command: 'miowork tool call',
+      command: 'mauwork tool call',
       stdin: '{"arguments":{"limit":3,"query":"weather"},"target":"remote_search"}'
     })
     const batch = parseAgentCliProgrammaticExecInvocation({
-      command: 'miowork tool batch',
+      command: 'mauwork tool batch',
       stdin: '{"steps":[{"target":"remote_search","arguments":{}}]}'
     })
 
@@ -435,13 +435,13 @@ describe('AgentCliTokenAuthority', () => {
 
   it('binds canonical search and describe scalar arguments without general shell parsing', () => {
     const search = parseAgentCliProgrammaticExecInvocation({
-      command: 'miowork tool search --query "calendar mail" --limit 4'
+      command: 'mauwork tool search --query "calendar mail" --limit 4'
     })
     const describe = parseAgentCliProgrammaticExecInvocation({
-      command: 'miowork tool describe --target calendar_search'
+      command: 'mauwork tool describe --target calendar_search'
     })
     const quotedDescribe = parseAgentCliProgrammaticExecInvocation({
-      command: 'miowork tool describe --target "calendar_search"'
+      command: 'mauwork tool describe --target "calendar_search"'
     })
 
     expect(search).toMatchObject({
@@ -466,43 +466,43 @@ describe('AgentCliTokenAuthority', () => {
   })
 
   it.each([
-    { command: 'miowork tool search', stdin: '{}' },
-    { command: 'miowork tool search --query calendar mail' },
-    { command: 'miowork tool search --query ""' },
-    { command: 'miowork tool search --query " calendar"' },
-    { command: 'miowork tool search --query "calendar  mail"' },
-    { command: 'miowork tool search --query "calendar mail "' },
-    { command: 'miowork tool search --query "calendar mail' },
-    { command: 'miowork tool search --query "calendar $HOME"' },
-    { command: 'miowork tool search --query "calendar $(whoami)"' },
-    { command: 'miowork tool search --query "calendar `whoami`"' },
-    { command: 'miowork tool search --query "calendar; mail"' },
-    { command: 'miowork tool search --query "calendar\\ mail"' },
-    { command: 'miowork tool search --query "calendar mail" extra' },
-    { command: 'miowork tool search --query calendar --limit 2 --limit 3' },
-    { command: 'miowork tool search --limit 2 --query calendar' },
-    { command: 'miowork tool search --query calendar --limit 0x4' },
-    { command: 'miowork tool search --query calendar --limit +4' },
-    { command: 'miowork tool search --query calendar | cat' },
-    { command: 'miowork tool describe --target $TARGET' },
-    { command: "miowork tool describe --target 'calendar_search'" },
-    { command: 'miowork tool describe --target ""' },
-    { command: 'miowork tool describe --target "calendar_search' },
-    { command: 'miowork tool describe --target calendar_search"' },
-    { command: 'miowork tool describe --target "calendar search"' },
-    { command: 'miowork tool describe --target "calendar_search" extra' },
-    { command: 'miowork tool describe --target "calendar_$TARGET"' },
-    { command: 'miowork tool describe --target "calendar_$(whoami)"' },
-    { command: 'miowork tool describe --target "calendar_\\"search"' },
-    { command: 'miowork tool call' },
-    { command: 'miowork tool batch' },
-    { command: 'miowork tool call --target remote', stdin: '{}' },
-    { command: 'miowork tool call', stdin: '' },
-    { command: 'miowork tool call', stdin: '[]' },
-    { command: 'miowork tool batch', stdin: '{' },
-    { command: 'miowork tool call', stdin: '{"target":"remote","arguments":{},"forEach":[]}' },
+    { command: 'mauwork tool search', stdin: '{}' },
+    { command: 'mauwork tool search --query calendar mail' },
+    { command: 'mauwork tool search --query ""' },
+    { command: 'mauwork tool search --query " calendar"' },
+    { command: 'mauwork tool search --query "calendar  mail"' },
+    { command: 'mauwork tool search --query "calendar mail "' },
+    { command: 'mauwork tool search --query "calendar mail' },
+    { command: 'mauwork tool search --query "calendar $HOME"' },
+    { command: 'mauwork tool search --query "calendar $(whoami)"' },
+    { command: 'mauwork tool search --query "calendar `whoami`"' },
+    { command: 'mauwork tool search --query "calendar; mail"' },
+    { command: 'mauwork tool search --query "calendar\\ mail"' },
+    { command: 'mauwork tool search --query "calendar mail" extra' },
+    { command: 'mauwork tool search --query calendar --limit 2 --limit 3' },
+    { command: 'mauwork tool search --limit 2 --query calendar' },
+    { command: 'mauwork tool search --query calendar --limit 0x4' },
+    { command: 'mauwork tool search --query calendar --limit +4' },
+    { command: 'mauwork tool search --query calendar | cat' },
+    { command: 'mauwork tool describe --target $TARGET' },
+    { command: "mauwork tool describe --target 'calendar_search'" },
+    { command: 'mauwork tool describe --target ""' },
+    { command: 'mauwork tool describe --target "calendar_search' },
+    { command: 'mauwork tool describe --target calendar_search"' },
+    { command: 'mauwork tool describe --target "calendar search"' },
+    { command: 'mauwork tool describe --target "calendar_search" extra' },
+    { command: 'mauwork tool describe --target "calendar_$TARGET"' },
+    { command: 'mauwork tool describe --target "calendar_$(whoami)"' },
+    { command: 'mauwork tool describe --target "calendar_\\"search"' },
+    { command: 'mauwork tool call' },
+    { command: 'mauwork tool batch' },
+    { command: 'mauwork tool call --target remote', stdin: '{}' },
+    { command: 'mauwork tool call', stdin: '' },
+    { command: 'mauwork tool call', stdin: '[]' },
+    { command: 'mauwork tool batch', stdin: '{' },
+    { command: 'mauwork tool call', stdin: '{"target":"remote","arguments":{},"forEach":[]}' },
     {
-      command: 'miowork tool call',
+      command: 'mauwork tool call',
       stdin: `${'{"nested":'.repeat(66)}null${'}'.repeat(66)}`
     }
   ])('rejects non-exact Programmatic exec invocation %#', (input) => {

@@ -1,6 +1,6 @@
 {
   "input": {
-    "placeholder": "ᠮᠡᠳᠡᠭᠡ ᠪᠡᠨ MioWork ᠂ {'@'} ᠨᠢ ᠪᠢᠴᠢᠭ᠌ ᠮᠠᠲ᠋ᠧᠷᠢᠶᠠᠯ ᠢ ᠯᠠᠪᠯᠠᠵᠤ ᠪᠣᠯᠬᠤ / ᠵᠠᠷᠯᠢᠭ ᠢ ᠬᠡᠷᠡᠭᠯᠡᠵᠦ ᠪᠣᠯᠣᠨ᠎ᠠ",
+    "placeholder": "ᠮᠡᠳᠡᠭᠡ ᠪᠡᠨ MauWork ᠂ {'@'} ᠨᠢ ᠪᠢᠴᠢᠭ᠌ ᠮᠠᠲ᠋ᠧᠷᠢᠶᠠᠯ ᠢ ᠯᠠᠪᠯᠠᠵᠤ ᠪᠣᠯᠬᠤ / ᠵᠠᠷᠯᠢᠭ ᠢ ᠬᠡᠷᠡᠭᠯᠡᠵᠦ ᠪᠣᠯᠣᠨ᠎ᠠ",
     "fileArea": "ᠳᠠᠩᠰᠠ ᠡᠪᠬᠡᠮᠡᠯ ᠦᠨ ᠣᠷᠣᠨ",
     "inputArea": "ᠣᠷᠣᠭᠤᠯᠬᠤ ᠣᠷᠣᠨ",
     "functionSwitch": "ᠶᠢᠨ ᠴᠢᠳᠠᠮᠵᠢ ᠶᠢ ᠰᠣᠯᠢᠬᠤ",
@@ -10,7 +10,7 @@
     "voiceRecognitionUnsupportedTitle": "ᠣᠳᠣ ᠶᠢᠨ ᠪᠠᠶᠢᠳᠠᠯ ᠳᠤ ᠣᠷᠣᠨ ᠨᠤᠲᠤᠭ ᠤᠨ ᠲᠡᠮᠳᠡᠭᠯᠡᠬᠦ ᠶᠢ ᠳᠡᠮᠵᠢᠬᠦ ᠦᠭᠡᠶ",
     "voiceRecognitionUnsupportedDescription": "ᠮᠢᠺᠷᠣᠹᠦ᠋ ᠪᠡᠷ ᠰᠢᠩᠭᠡᠭᠡᠬᠦ ᠶᠢ ᠳᠡᠮᠵᠢᠬᠦ ᠠᠹᠷᠢᠺᠠ ᠪᠤᠶᠤ ᠫᠦᠨᠴᠦᠭᠡᠢ ᠶᠢᠨ ᠣᠷᠴᠢᠨ ᠳᠤ ᠡᠨᠡ ᠬᠦ ᠴᠢᠳᠠᠮᠵᠢ ᠶᠢ ᠬᠡᠷᠡᠭ᠍ᠯᠡᠭᠡᠷᠡᠢ ᠃",
     "voiceRecognitionPermissionDeniedTitle": "ᠢ ᠨᠡᠭᠡᠭᠡᠵᠦ ᠳᠡᠶᠢᠯᠬᠦ ᠦᠭᠡᠢ",
-    "voiceRecognitionPermissionDeniedDescription": "MioWork ᠢ ᠬᠡᠷᠡᠭ᠍ᠯᠡᠬᠦ ᠶᠢ ᠵᠥᠪᠰᠢᠶᠡᠷᠡᠭᠡᠳ ᠲᠠᠬᠢᠵᠤ ᠲᠤᠷᠰᠢᠭᠠᠷᠠᠢ ᠃",
+    "voiceRecognitionPermissionDeniedDescription": "MauWork ᠢ ᠬᠡᠷᠡᠭ᠍ᠯᠡᠬᠦ ᠶᠢ ᠵᠥᠪᠰᠢᠶᠡᠷᠡᠭᠡᠳ ᠲᠠᠬᠢᠵᠤ ᠲᠤᠷᠰᠢᠭᠠᠷᠠᠢ ᠃",
     "voiceRecognitionErrorTitle": "ᠶᠢᠨ ᠳᠠᠭᠤᠨ ᠤ ᠮᠠᠶᠢᠭ ᠢ ᠵᠥᠪᠠᠳᠬᠤᠬᠤ",
     "voiceRecognitionErrorDescription": "ᠳᠠᠭᠤᠨ ᠤ ᠮᠠᠲ᠋ᠧᠷᠢᠶᠠᠯ ᠢ ᠠᠪᠴᠤ ᠳᠠᠭᠤᠰᠤᠭᠰᠠᠨ ᠦᠭᠡᠢ ᠂ ᠰᠡᠭᠦᠯᠡᠷ ᠳᠠᠬᠢᠨ ᠰᠢᠯᠭᠠᠭᠠᠷᠠᠢ ᠃",
     "send": "ᠶᠠᠪᠤᠭᠤᠯᠤᠶ᠎ᠠ",
@@ -59,7 +59,7 @@
         "agentCore": "ᠪᠠᠭᠠᠵᠢ",
         "agentImageGeneration": "ᠶᠢᠨ ᠪᠥᠲᠥᠭᠡᠯᠲᠡ",
         "agentSkills": "ᠮᠡᠷᠭᠡᠵᠢᠯ ᠪᠠᠭᠠᠵᠢ",
-        "deepchatSettings": "MioWork ᠲᠣᠬᠢᠷᠠᠭᠤᠯᠭ᠎ᠠ",
+        "deepchatSettings": "MauWork ᠲᠣᠬᠢᠷᠠᠭᠤᠯᠭ᠎ᠠ",
         "yobrowser": "YoBrowser"
       }
     },
@@ -527,12 +527,12 @@
   },
   "onboarding": {
     "agentSwitch": {
-      "title": "ᠶᠢ ᠰᠣᠯᠢᠵᠤ MioWork Agent",
-      "description": "ᠶᠠᠷᠢᠯᠴᠠᠵᠤ ᠡᠬᠢᠯᠡᠬᠦ ᠡᠴᠡ ᠡᠮᠦᠨ᠎ᠡ ACP Agent ᠡᠴᠡ MioWork ᠃",
+      "title": "ᠶᠢ ᠰᠣᠯᠢᠵᠤ MauWork Agent",
+      "description": "ᠶᠠᠷᠢᠯᠴᠠᠵᠤ ᠡᠬᠢᠯᠡᠬᠦ ᠡᠴᠡ ᠡᠮᠦᠨ᠎ᠡ ACP Agent ᠡᠴᠡ MauWork ᠃",
       "caption": "ᠶᠢᠨ ᠬᠠᠵᠠᠭᠤ ᠶᠢᠨ Agent ᠳᠡᠬᠢ ᠢᠯᠡ ᠲᠣᠪᠣᠶᠢᠭᠰᠠᠨ ᠳᠠᠷᠤᠭᠤᠯ  ᠶᠢ ᠳᠠᠷᠤᠪᠠᠯ ᠳᠠᠬᠢᠨ ᠠᠵᠢᠯᠯᠠᠨ᠎ᠠ ᠃"
     },
     "switchModel": {
-      "description": "ᠠᠩᠬ᠎ᠠ ᠤᠳᠠᠭᠠᠨ ᠤ ᠶᠠᠷᠢᠯᠴᠠᠭᠠᠨ ᠳᠤ ᠬᠡᠷᠡᠭ᠍ᠯᠡᠬᠦ ᠭᠡᠰᠡᠨ ᠬᠡᠪ MioWork ᠢ ᠰᠤᠩᠭᠤ ᠃",
+      "description": "ᠠᠩᠬ᠎ᠠ ᠤᠳᠠᠭᠠᠨ ᠤ ᠶᠠᠷᠢᠯᠴᠠᠭᠠᠨ ᠳᠤ ᠬᠡᠷᠡᠭ᠍ᠯᠡᠬᠦ ᠭᠡᠰᠡᠨ ᠬᠡᠪ MauWork ᠢ ᠰᠤᠩᠭᠤ ᠃",
       "caption": "ᠲᠣᠪᠣᠶᠢᠮ᠎ᠠ ᠬᠡᠯᠪᠡᠷᠢ ᠶᠢᠨ ᠰᠣᠯᠢᠬᠤ ᠪᠠᠭᠠᠵᠢ ᠶᠢ ᠬᠡᠷᠡᠭᠯᠡᠵᠦ ᠪᠣᠯᠬᠤ ᠶᠠᠮᠠᠷᠪᠠ ᠬᠡᠪ ᠵᠠᠭᠪᠤᠷ ᠢ ᠰᠣᠩᠭᠣᠨ᠎ᠠ ᠃"
     },
     "firstChat": {
@@ -624,7 +624,7 @@
       "reasons": {
         "session_unavailable": "ᠲᠤᠰ ᠨᠢᠭᠡ ᠬᠤᠷᠠᠯ ᠪᠠᠢ᠌ᠬᠤ ᠦᠭᠡᠢ ᠃",
         "agent_unavailable": "ᠣᠳᠣ ᠶᠢᠨ ᠰᠣᠩᠭᠣᠵᠤ ᠪᠠᠢ᠌ᠭ᠎ᠠ Agent ᠢ ᠬᠡᠷᠡᠭ᠍ᠯᠡᠬᠦ ᠦᠭᠡᠢ ᠃",
-        "deepchat_agent_required": "ᠤᠨ ᠬᠠᠮᠵᠢᠯᠴᠠᠭ᠎ᠠ ᠳᠤ MioWork Agent ᠬᠡᠷᠡᠭᠲᠡᠢ ᠃",
+        "deepchat_agent_required": "ᠤᠨ ᠬᠠᠮᠵᠢᠯᠴᠠᠭ᠎ᠠ ᠳᠤ MauWork Agent ᠬᠡᠷᠡᠭᠲᠡᠢ ᠃",
         "regular_parent_required": "ᠶᠢᠨ ᠪᠠᠭ᠎ᠠ ᠬᠤᠷᠠᠯ ᠳᠤ ᠢᠳᠡᠪᠬᠢᠲᠡᠢ ᠪᠡᠷ ᠬᠠᠮᠵᠢᠯᠴᠠᠵᠤ ᠴᠢᠳᠠᠬᠤ ᠦᠭᠡᠢ ᠃",
         "agent_policy_unavailable": "ᠬᠠᠮᠲᠤᠷᠠᠨ ᠠᠵᠢᠯᠯᠠᠬᠤ ᠠᠷᠭ᠎ᠠ ᠪᠣᠳᠣᠯᠭ᠎ᠠ ᠬᠢᠵᠦ ᠳᠡᠶᠢᠯᠦᠭᠰᠡᠨ ᠦᠭᠡᠢ",
         "subagents_disabled": "Subagent ᠳᠤ ᠦᠢᠯᠡᠴᠢᠯᠡᠬᠦ Agent ᠡᠴᠡ ᠡᠮᠦᠨ᠎ᠡ ᠰᠠᠨᠠᠭᠠᠴᠢᠯᠠᠭ᠎ᠠ ᠠᠴᠠ ᠪᠠᠨ ᠬᠠᠮᠵᠢᠯᠴᠠᠬᠤ ᠠᠷᠭ᠎ᠠ ᠃"

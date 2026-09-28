@@ -31,7 +31,7 @@ const WINDOWS_PACKAGED_EXECUTABLE = resolve(
   REPO_ROOT,
   'dist',
   arch() === 'arm64' ? 'win-arm64-unpacked' : 'win-unpacked',
-  'MioWork.exe'
+  'MauWork.exe'
 )
 const MAX_MAIN_LOG_ATTACHMENT_BYTES = 512 * 1024
 const APP_CLOSE_TIMEOUT_MS = 10_000

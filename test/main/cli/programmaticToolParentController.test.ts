@@ -115,7 +115,7 @@ function setup(operationBinding = binding()) {
     },
     toolName: 'exec',
     toolSource: 'agent',
-    normalizedArguments: { command: 'miowork tool call' },
+    normalizedArguments: { command: 'mauwork tool call' },
     target: { serverName: 'agent-filesystem', originalName: 'exec' }
   })
   const armed = controller.armOuterDispatch({

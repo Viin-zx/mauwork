@@ -69,7 +69,7 @@
     "moveAndDeleteAgent": "Flyt og slet agent",
     "moveConversation": "Flyt samtale",
     "agentType": {
-      "deepchat": "MioWork",
+      "deepchat": "MauWork",
       "acp": "ACP"
     },
     "blockReason": {
@@ -84,7 +84,7 @@
       "draft": "Kladde",
       "subagent": "Underagent"
     },
-    "deepChatTargetOnly": "Kun MioWork-agenter kan vælges som overførselsmål. ACP-samtaler kan flyttes til MioWork, men ikke ind i ACP."
+    "deepChatTargetOnly": "Kun MauWork-agenter kan vælges som overførselsmål. ACP-samtaler kan flyttes til MauWork, men ikke ind i ACP."
   },
   "deleteMessage": {
     "title": "Slet denne besked?",

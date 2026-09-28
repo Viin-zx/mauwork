@@ -17,14 +17,14 @@ case "$0" in
   *) script_dir=. ;;
 esac
 script_dir=$(CDPATH= cd -P -- "$script_dir" && pwd)
-cli_module="$script_dir/miowork.mjs"
+cli_module="$script_dir/mauwork.mjs"
 electron_host=""
 for candidate in \\
-  "$script_dir/../../../MacOS/MioWork" \\
+  "$script_dir/../../../MacOS/MauWork" \\
   "$script_dir/../../../deepchat.bin" \\
-  "$script_dir/../../../MioWork" \\
+  "$script_dir/../../../MauWork" \\
   "$script_dir/../../../miochat" \\
-  "$script_dir/../../../MioWork.exe" \\
+  "$script_dir/../../../MauWork.exe" \\
   "$script_dir/../../node_modules/electron/dist/Electron.app/Contents/MacOS/Electron" \\
   "$script_dir/../../node_modules/electron/dist/electron" \\
   "$script_dir/../../node_modules/electron/dist/electron.exe"
@@ -37,16 +37,16 @@ done
 if [ -n "$electron_host" ] && [ -f "$cli_module" ]; then
   ELECTRON_RUN_AS_NODE=1 exec "$electron_host" "$cli_module" "$@"
 fi
-echo "MioWork CLI bundled resources are unavailable." >&2
+echo "MauWork CLI bundled resources are unavailable." >&2
 exit 127
 `
 
 export const WINDOWS_LAUNCHER = `@echo off\r
 setlocal\r
-set "cli_module=%~dp0miowork.mjs"\r
+set "cli_module=%~dp0mauwork.mjs"\r
 set "electron_host=%~dp0..\\..\\node_modules\\electron\\dist\\electron.exe"\r
-if not exist "%electron_host%" set "electron_host=%~dp0..\\..\\..\\MioWork.exe"\r
-if not exist "%electron_host%" set "electron_host=%~dp0..\\..\\..\\MioWork"\r
+if not exist "%electron_host%" set "electron_host=%~dp0..\\..\\..\\MauWork.exe"\r
+if not exist "%electron_host%" set "electron_host=%~dp0..\\..\\..\\MauWork"\r
 if not exist "%electron_host%" goto missing_runtime\r
 if exist "%electron_host%\\" goto missing_runtime\r
 if not exist "%cli_module%" goto missing_runtime\r
@@ -54,7 +54,7 @@ set ELECTRON_RUN_AS_NODE=1\r
 "%electron_host%" "%cli_module%" %*\r
 exit /b %errorlevel%\r
 :missing_runtime\r
-echo MioWork CLI bundled resources are unavailable. 1>&2\r
+echo MauWork CLI bundled resources are unavailable. 1>&2\r
 exit /b 127\r
 `
 
@@ -90,7 +90,7 @@ export async function buildCli(options = {}) {
         external: [/^node:/],
         output: {
           format: 'es',
-          entryFileNames: 'miowork.mjs',
+          entryFileNames: 'mauwork.mjs',
           inlineDynamicImports: true,
           banner: '#!/usr/bin/env node'
         }
@@ -100,9 +100,9 @@ export async function buildCli(options = {}) {
   })
 
   await mkdir(outDir, { recursive: true })
-  await writeFile(path.join(outDir, 'miowork'), POSIX_LAUNCHER, { mode: 0o755 })
-  await chmod(path.join(outDir, 'miowork'), 0o755)
-  await writeFile(path.join(outDir, 'miowork.cmd'), WINDOWS_LAUNCHER, 'utf8')
+  await writeFile(path.join(outDir, 'mauwork'), POSIX_LAUNCHER, { mode: 0o755 })
+  await chmod(path.join(outDir, 'mauwork'), 0o755)
+  await writeFile(path.join(outDir, 'mauwork.cmd'), WINDOWS_LAUNCHER, 'utf8')
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {
