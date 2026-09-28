@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.1 (2026-09-28)
+- Updated app icons, logos, and DMG background assets to the new MauWork branding
+- 更新应用图标、Logo 与 DMG 背景等资源文件，统一为 MauWork 新品牌形象
+
 ## v1.2.0 (2026-09-28)
 - Renamed the project from MioWork to MauWork across the app and release channels
 - Added development environment configuration files with dynamic backend URL support
