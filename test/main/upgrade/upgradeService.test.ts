@@ -362,6 +362,47 @@ describe('UpgradeService', () => {
     expect(observeFailure).toHaveBeenCalledTimes(2)
   })
 
+  it('lands on a terminal state when checkForUpdates resolves without any updater event', async () => {
+    // 未打包（dev）时 electron-updater 直接 resolve 且不触发终态事件
+    vi.mocked(electronUpdater.autoUpdater.checkForUpdates).mockResolvedValue(undefined as never)
+    const settings = {
+      getChannel: vi.fn(() => 'stable')
+    } as any
+    const service = new UpgradeService(
+      settings,
+      () => false,
+      requestUpdateInstallMock,
+      publishEventMock
+    )
+
+    await service.checkUpdate('manualCheck')
+
+    expect(service.getUpdateStatus().status).toBe('not-available')
+  })
+
+  it('times out a never-settling update check and exposes a recoverable error state', async () => {
+    vi.mocked(electronUpdater.autoUpdater.checkForUpdates).mockReturnValue(
+      new Promise<never>(() => {})
+    )
+    const settings = {
+      getChannel: vi.fn(() => 'stable')
+    } as any
+    const service = new UpgradeService(
+      settings,
+      () => false,
+      requestUpdateInstallMock,
+      publishEventMock
+    )
+
+    const checking = service.checkUpdate('manualCheck')
+    await vi.advanceTimersByTimeAsync(20_000)
+    await checking
+
+    const status = service.getUpdateStatus()
+    expect(status.status).toBe('error')
+    expect(status.error).toContain('更新检查超时')
+  })
+
   it('reports asynchronous update-download failures without exposing the source error', async () => {
     const settings = {
       getChannel: vi.fn(() => 'stable')
@@ -724,5 +765,75 @@ describe('UpgradeService', () => {
       })
     )
     expect(existsSync(markerPath)).toBe(false)
+  })
+
+  it('lifts the previous-failure lock on a manual check so the update flow recovers', async () => {
+    const markerPath = path.join(userDataDirectory, 'auto_update_marker.json')
+    await writeFile(
+      markerPath,
+      JSON.stringify({
+        version: '1.1.0',
+        releaseDate: '2026-08-01',
+        releaseNotes: '',
+        timestamp: Date.now()
+      })
+    )
+    const settings = {
+      getChannel: vi.fn(() => 'stable')
+    } as any
+    const service = new UpgradeService(
+      settings,
+      () => false,
+      requestUpdateInstallMock,
+      publishEventMock
+    )
+
+    // marker 对账后封锁已生效
+    expect((service as any)._previousUpdateFailed).toBe(true)
+
+    await service.checkUpdate('manualCheck')
+    autoUpdaterState.listeners.get('update-available')!({
+      version: '1.1.0',
+      releaseDate: '2026-08-01',
+      releaseNotes: ''
+    })
+
+    expect((service as any)._previousUpdateFailed).toBe(false)
+    expect((service as any)._status).toBe('available')
+    // 手动检查不应触发自动下载
+    expect(electronUpdater.autoUpdater.downloadUpdate).not.toHaveBeenCalled()
+  })
+
+  it('keeps the previous-failure lock for automatic checks to force manual download', async () => {
+    const markerPath = path.join(userDataDirectory, 'auto_update_marker.json')
+    await writeFile(
+      markerPath,
+      JSON.stringify({
+        version: '1.1.0',
+        releaseDate: '2026-08-01',
+        releaseNotes: '',
+        timestamp: Date.now()
+      })
+    )
+    const settings = {
+      getChannel: vi.fn(() => 'stable')
+    } as any
+    const service = new UpgradeService(
+      settings,
+      () => false,
+      requestUpdateInstallMock,
+      publishEventMock
+    )
+
+    await service.checkUpdate('autoCheck')
+    autoUpdaterState.listeners.get('update-available')!({
+      version: '1.1.0',
+      releaseDate: '2026-08-01',
+      releaseNotes: ''
+    })
+
+    expect((service as any)._previousUpdateFailed).toBe(true)
+    expect((service as any)._status).toBe('error')
+    expect(electronUpdater.autoUpdater.downloadUpdate).not.toHaveBeenCalled()
   })
 })

@@ -116,6 +116,25 @@ const getUpdateMarkerFilePath = () => {
   return path.join(app.getPath('userData'), 'auto_update_marker.json')
 }
 
+// checkForUpdates 的网络请求没有内置超时，连接停滞时 promise 永不 settle，
+// 必须在调用侧兜底，否则状态会一直停在 checking
+const UPDATE_CHECK_TIMEOUT_MS = 20_000
+
+const withTimeout = <T>(promise: Promise<T>, ms: number, message: string): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error: unknown) => {
+        clearTimeout(timer)
+        reject(error)
+      }
+    )
+  })
+
 export class UpgradeService {
   private _lock: boolean = false
   private _status: UpdateStatus = 'not-available'
@@ -265,15 +284,25 @@ export class UpgradeService {
       this._progress = null
 
       if (this._previousUpdateFailed) {
-        logger.info('上次更新失败，本次不进行自动更新，改为手动更新')
-        this._status = 'error'
-        this._error = '自动更新可能不稳定，请手动下载更新'
-        this.emitStatusChanged({
-          status: this._status,
-          error: this._error,
-          info: this._versionInfo
+        if (this._lastCheckType === 'autoCheck') {
+          // 上次更新未完成（可能被取消或安装失败）时，自动路径保持封锁改走手动下载，
+          // 避免安装包损坏时反复自动重试
+          logger.info('上次更新失败，本次不进行自动更新，改为手动更新')
+          this._status = 'error'
+          this._error = '自动更新可能不稳定，请手动下载更新'
+          this.emitStatusChanged({
+            status: this._status,
+            error: this._error,
+            info: this._versionInfo
+          })
+          return
+        }
+        // 用户主动检查更新：解除上次失败的封锁，允许重新下载安装
+        logger.info('用户手动检查更新，解除上次失败的自动更新封锁', {
+          current: currentVersion,
+          remote: remoteVersion
         })
-        return
+        this._previousUpdateFailed = false
       }
 
       this._status = 'available'
@@ -466,7 +495,20 @@ export class UpgradeService {
       autoUpdater.allowPrerelease = updateChannel === UPDATE_CHANNEL_BETA
       autoUpdater.channel = updateChannel === UPDATE_CHANNEL_BETA ? UPDATE_CHANNEL_BETA : 'latest'
 
-      await autoUpdater.checkForUpdates()
+      await withTimeout(autoUpdater.checkForUpdates(), UPDATE_CHECK_TIMEOUT_MS, '更新检查超时')
+
+      // 未打包（dev）时 checkForUpdates 直接 resolve 且不触发任何事件，
+      // 若状态仍停留在 checking 则落到终态，避免按钮一直转圈
+      if (this._status === 'checking') {
+        logger.info('检查更新未触发任何终态事件，视为无可用更新')
+        this._status = 'not-available'
+        this._error = null
+        this._progress = null
+        this._versionInfo = null
+        this.emitStatusChanged({
+          status: this._status
+        })
+      }
       this._lastCheckTime = Date.now()
       this._automaticCheckFailureActive = false
     } catch (error: unknown) {

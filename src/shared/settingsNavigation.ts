@@ -156,7 +156,7 @@ export const SETTINGS_NAVIGATION_ITEMS: SettingsNavigationItem[] = [
     icon: 'lucide:cloud-cog',
     position: 3,
     groupKey: 'models',
-    keywords: ['provider', 'model', 'llm', 'openai', 'anthropic', '服务商', '模型'],
+    keywords: ['provider', 'model', 'llm', 'openai', 'anthropic', '服务商', '模型']
     // hiddenInSidebar: true
   },
   {
@@ -320,8 +320,7 @@ export const SETTINGS_NAVIGATION_ITEMS: SettingsNavigationItem[] = [
     icon: 'lucide:info',
     position: 11,
     groupKey: 'system',
-    keywords: ['about', 'version', 'info', '关于', '版本'],
-    hiddenInSidebar: true
+    keywords: ['about', 'version', 'info', '关于', '版本']
   },
   {
     routeName: 'settings-debug',

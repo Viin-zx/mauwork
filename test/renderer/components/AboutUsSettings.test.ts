@@ -19,30 +19,12 @@ const passthroughStub = (name: string) =>
     template: '<div><slot /></div>'
   })
 
-const selectStub = defineComponent({
-  name: 'Select',
-  props: {
-    modelValue: { type: String, default: '' },
-    disabled: { type: Boolean, default: false }
-  },
-  emits: ['update:modelValue'],
-  template:
-    '<div data-testid="update-channel-select" :data-value="modelValue" :data-disabled="String(disabled)"><slot /></div>'
-})
-
 const route = {
   name: 'settings-about'
 }
 
-const configClientMock = vi.hoisted(() => ({
-  getUpdateChannel: vi.fn(),
-  setUpdateChannel: vi.fn()
-}))
 const deviceClientMock = vi.hoisted(() => ({
   getAppVersion: vi.fn()
-}))
-const browserClientMock = vi.hoisted(() => ({
-  openExternal: vi.fn()
 }))
 const windowClientMock = vi.hoisted(() => ({
   startGuidedOnboarding: vi.fn(),
@@ -73,14 +55,8 @@ const upgradeStoreMock = {
   handleUpdate: vi.fn().mockResolvedValue(undefined)
 }
 
-vi.mock('@api/ConfigClient', () => ({
-  createConfigClient: () => configClientMock
-}))
 vi.mock('@api/DeviceClient', () => ({
   createDeviceClient: () => deviceClientMock
-}))
-vi.mock('@api/BrowserClient', () => ({
-  createBrowserClient: () => browserClientMock
 }))
 vi.mock('@api/WindowClient', () => ({
   createWindowClient: () => windowClientMock
@@ -109,9 +85,6 @@ vi.mock('vue-i18n', () => ({
         'about.title': 'DeepChat',
         'about.description': 'DeepChat description',
         'about.website': '访问我们的网站',
-        'about.updateChannel': '更新渠道',
-        'about.stableChannel': '稳定版',
-        'about.betaChannel': '内测版',
         'about.feedbackButton': '意见反馈',
         'about.disclaimerButton': '免责声明',
         'about.checkUpdateButton': '检查更新',
@@ -140,17 +113,11 @@ vi.mock('vue-router', () => ({
 describe('AboutUsSettings', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    configClientMock.getUpdateChannel.mockReset()
-    configClientMock.setUpdateChannel.mockReset()
     deviceClientMock.getAppVersion.mockReset()
-    browserClientMock.openExternal.mockReset()
     upgradeStoreMock.refreshStatus.mockReset()
     upgradeStoreMock.checkUpdate.mockReset()
     upgradeStoreMock.handleUpdate.mockReset()
-    configClientMock.getUpdateChannel.mockResolvedValue('stable')
-    configClientMock.setUpdateChannel.mockResolvedValue('stable')
     deviceClientMock.getAppVersion.mockResolvedValue('1.0.0-beta.3')
-    browserClientMock.openExternal.mockResolvedValue(undefined)
     upgradeStoreMock.refreshStatus.mockResolvedValue('error')
     upgradeStoreMock.checkUpdate.mockResolvedValue('error')
     upgradeStoreMock.handleUpdate.mockResolvedValue(undefined)
@@ -192,17 +159,6 @@ describe('AboutUsSettings', () => {
         stubs: {
           DcButton: buttonStub,
           Icon: true,
-          Dialog: passthroughStub('Dialog'),
-          DialogContent: passthroughStub('DialogContent'),
-          DialogDescription: passthroughStub('DialogDescription'),
-          DialogFooter: passthroughStub('DialogFooter'),
-          DialogHeader: passthroughStub('DialogHeader'),
-          DialogTitle: passthroughStub('DialogTitle'),
-          Select: selectStub,
-          SelectContent: passthroughStub('SelectContent'),
-          SelectItem: passthroughStub('SelectItem'),
-          SelectTrigger: passthroughStub('SelectTrigger'),
-          SelectValue: passthroughStub('SelectValue'),
           NodeRenderer: passthroughStub('NodeRenderer')
         }
       }
@@ -211,8 +167,7 @@ describe('AboutUsSettings', () => {
     await flushPromises()
 
     const buttons = wrapper.findAll('button').map((button) => button.text())
-    expect(buttons).toEqual(['意见反馈', '免责声明', 'GitHub 下载', '官网下载', '关闭'])
-    expect(wrapper.text()).not.toContain('检查更新')
+    expect(buttons).toEqual(['GitHub 下载', '官网下载', '检查更新'])
 
     const officialButton = wrapper.findAll('button').find((button) => button.text() === '官网下载')
     expect(officialButton).toBeTruthy()
@@ -238,17 +193,6 @@ describe('AboutUsSettings', () => {
         stubs: {
           DcButton: buttonStub,
           Icon: true,
-          Dialog: passthroughStub('Dialog'),
-          DialogContent: passthroughStub('DialogContent'),
-          DialogDescription: passthroughStub('DialogDescription'),
-          DialogFooter: passthroughStub('DialogFooter'),
-          DialogHeader: passthroughStub('DialogHeader'),
-          DialogTitle: passthroughStub('DialogTitle'),
-          Select: selectStub,
-          SelectContent: passthroughStub('SelectContent'),
-          SelectItem: passthroughStub('SelectItem'),
-          SelectTrigger: passthroughStub('SelectTrigger'),
-          SelectValue: passthroughStub('SelectValue'),
           NodeRenderer: passthroughStub('NodeRenderer')
         }
       }
@@ -282,17 +226,6 @@ describe('AboutUsSettings', () => {
         stubs: {
           DcButton: buttonStub,
           Icon: true,
-          Dialog: passthroughStub('Dialog'),
-          DialogContent: passthroughStub('DialogContent'),
-          DialogDescription: passthroughStub('DialogDescription'),
-          DialogFooter: passthroughStub('DialogFooter'),
-          DialogHeader: passthroughStub('DialogHeader'),
-          DialogTitle: passthroughStub('DialogTitle'),
-          Select: selectStub,
-          SelectContent: passthroughStub('SelectContent'),
-          SelectItem: passthroughStub('SelectItem'),
-          SelectTrigger: passthroughStub('SelectTrigger'),
-          SelectValue: passthroughStub('SelectValue'),
           NodeRenderer: passthroughStub('NodeRenderer')
         }
       }
@@ -327,17 +260,6 @@ describe('AboutUsSettings', () => {
         stubs: {
           DcButton: buttonStub,
           Icon: true,
-          Dialog: passthroughStub('Dialog'),
-          DialogContent: passthroughStub('DialogContent'),
-          DialogDescription: passthroughStub('DialogDescription'),
-          DialogFooter: passthroughStub('DialogFooter'),
-          DialogHeader: passthroughStub('DialogHeader'),
-          DialogTitle: passthroughStub('DialogTitle'),
-          Select: selectStub,
-          SelectContent: passthroughStub('SelectContent'),
-          SelectItem: passthroughStub('SelectItem'),
-          SelectTrigger: passthroughStub('SelectTrigger'),
-          SelectValue: passthroughStub('SelectValue'),
           NodeRenderer: passthroughStub('NodeRenderer')
         }
       }
@@ -362,52 +284,6 @@ describe('AboutUsSettings', () => {
     wrapper.unmount()
   })
 
-  it('keeps the committed update channel when persistence fails', async () => {
-    configClientMock.setUpdateChannel.mockRejectedValueOnce(new Error('disk unavailable'))
-
-    const { default: AboutUsSettings } =
-      await import('../../../src/renderer/settings/components/AboutUsSettings.vue')
-
-    const wrapper = mount(AboutUsSettings, {
-      global: {
-        stubs: {
-          DcButton: buttonStub,
-          Icon: true,
-          Dialog: passthroughStub('Dialog'),
-          DialogContent: passthroughStub('DialogContent'),
-          DialogDescription: passthroughStub('DialogDescription'),
-          DialogFooter: passthroughStub('DialogFooter'),
-          DialogHeader: passthroughStub('DialogHeader'),
-          DialogTitle: passthroughStub('DialogTitle'),
-          Select: selectStub,
-          SelectContent: passthroughStub('SelectContent'),
-          SelectItem: passthroughStub('SelectItem'),
-          SelectTrigger: passthroughStub('SelectTrigger'),
-          SelectValue: passthroughStub('SelectValue'),
-          NodeRenderer: passthroughStub('NodeRenderer')
-        }
-      }
-    })
-
-    await flushPromises()
-    const select = wrapper.getComponent(selectStub)
-    select.vm.$emit('update:modelValue', 'beta')
-    await flushPromises()
-
-    expect(configClientMock.setUpdateChannel).toHaveBeenCalledWith('beta')
-    expect(select.props('modelValue')).toBe('stable')
-    expect(notifyRenderer).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: 'error',
-        code: 'settings.about.updateChannelSaveFailed',
-        title: 'common.error.operationFailed'
-      })
-    )
-    expect(wrapper.text()).not.toContain('disk unavailable')
-
-    wrapper.unmount()
-  })
-
   it('does not render debug mock controls or create their clients', async () => {
     const { default: AboutUsSettings } =
       await import('../../../src/renderer/settings/components/AboutUsSettings.vue')
@@ -417,17 +293,6 @@ describe('AboutUsSettings', () => {
         stubs: {
           DcButton: buttonStub,
           Icon: true,
-          Dialog: passthroughStub('Dialog'),
-          DialogContent: passthroughStub('DialogContent'),
-          DialogDescription: passthroughStub('DialogDescription'),
-          DialogFooter: passthroughStub('DialogFooter'),
-          DialogHeader: passthroughStub('DialogHeader'),
-          DialogTitle: passthroughStub('DialogTitle'),
-          Select: selectStub,
-          SelectContent: passthroughStub('SelectContent'),
-          SelectItem: passthroughStub('SelectItem'),
-          SelectTrigger: passthroughStub('SelectTrigger'),
-          SelectValue: passthroughStub('SelectValue'),
           NodeRenderer: passthroughStub('NodeRenderer')
         }
       }
