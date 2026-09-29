@@ -52,7 +52,7 @@
           "
           @click="handleAgentSelect(agent.id)"
         >
-          <AgentAvatar :agent="agent" class-name="w-4 h-4" />
+          <AgentAvatar :agent="agent" class-name="w-6 h-6" />
         </DcButton>
 
         <!-- Spacer -->
