@@ -156,7 +156,7 @@ export const SETTINGS_NAVIGATION_ITEMS: SettingsNavigationItem[] = [
     icon: 'lucide:cloud-cog',
     position: 3,
     groupKey: 'models',
-    keywords: ['provider', 'model', 'llm', 'openai', 'anthropic', '服务商', '模型']
+    keywords: ['provider', 'model', 'llm', 'openai', 'anthropic', '服务商', '模型'],
     hiddenInSidebar: true
   },
   {
