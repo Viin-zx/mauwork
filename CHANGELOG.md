@@ -2,9 +2,11 @@
 
 ## v1.2.2 (2026-09-29)
 - Enlarged the sidebar agent avatars for better visibility
-- Updated app icon and logo assets
+- Hid the service provider entry from the settings sidebar
+- Updated app icon, logo, and tray icon assets
 - 放大侧边栏代理头像，显示更清晰
-- 更新应用图标与 Logo 资源
+- 隐藏设置侧边栏中的服务商入口
+- 更新应用图标、Logo 与托盘图标资源
 
 ## v1.2.1 (2026-09-28)
 - Updated app icons, logos, and DMG background assets to the new MauWork branding
