@@ -157,7 +157,7 @@ export const SETTINGS_NAVIGATION_ITEMS: SettingsNavigationItem[] = [
     position: 3,
     groupKey: 'models',
     keywords: ['provider', 'model', 'llm', 'openai', 'anthropic', '服务商', '模型']
-    // hiddenInSidebar: true
+    hiddenInSidebar: true
   },
   {
     routeName: 'settings-deepchat-agents',
