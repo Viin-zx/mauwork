@@ -3,9 +3,11 @@
 ## v1.2.2 (2026-09-29)
 - Enlarged the sidebar agent avatars for better visibility
 - Hid the service provider entry from the settings sidebar
+- Fixed the model configuration item's keyword array format in the settings navigation
 - Updated app icon, logo, and tray icon assets
 - 放大侧边栏代理头像，显示更清晰
 - 隐藏设置侧边栏中的服务商入口
+- 修复设置导航中模型配置项的关键词数组格式
 - 更新应用图标、Logo 与托盘图标资源
 
 ## v1.2.1 (2026-09-28)
