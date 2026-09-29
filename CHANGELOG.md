@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.2 (2026-09-29)
+- Enlarged the sidebar agent avatars for better visibility
+- Updated app icon and logo assets
+- 放大侧边栏代理头像，显示更清晰
+- 更新应用图标与 Logo 资源
+
 ## v1.2.1 (2026-09-28)
 - Updated app icons, logos, and DMG background assets to the new MauWork branding
 - 更新应用图标、Logo 与 DMG 背景等资源文件，统一为 MauWork 新品牌形象
