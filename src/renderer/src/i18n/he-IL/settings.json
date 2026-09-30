@@ -933,8 +933,8 @@
     "runModel": "הרץ מודל",
     "tts": {
       "instructions": {
-      "label": "Voice Instructions",
-      "placeholder": "Enter TTS instructions"
+        "label": "Voice Instructions",
+        "placeholder": "Enter TTS instructions"
       },
       "title": "המרת טקסט לדיבור (TTS)",
       "description": "יצירת דיבור מטקסט. קולות יופיעו ברשימת המודלים למטה.",

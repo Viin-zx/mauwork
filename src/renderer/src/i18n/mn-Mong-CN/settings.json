@@ -1373,8 +1373,8 @@
     },
     "tts": {
       "instructions": {
-      "label": "Voice Instructions",
-      "placeholder": "Enter TTS instructions"
+        "label": "Voice Instructions",
+        "placeholder": "Enter TTS instructions"
       },
       "title": "ᠢᠶᠠᠷ ᠦᠭᠡ ᠪᠣᠯᠭᠠᠬᠤ （ TTS ᠃",
       "description": "ᠢ ᠳᠠᠭᠤᠨ ᠢᠶᠠᠷ ᠬᠣᠪᠢᠷᠠᠭᠤᠯᠬᠤ ᠶᠢ voice ᠤᠨ ᠵᠠᠭᠪᠤᠷ ᠤᠨ ᠨᠠᠷᠢᠨ ᠬᠠᠭᠤᠳᠠᠰᠤᠨ ᠳᠤ ᠢᠯᠡᠷᠡᠭᠦᠯᠦᠨ᠎ᠡ ᠃",

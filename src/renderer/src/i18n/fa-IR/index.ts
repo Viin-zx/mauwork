@@ -21,7 +21,7 @@ import tapeInspector from './tapeInspector.json'
 import plan from './plan.json'
 import account from './account.json'
 import login from './login.json'
-import register from './register.json'
+import resetPassword from './resetPassword.json'
 
 const others = {
   Silicon: 'SiliconFlow',
@@ -60,6 +60,6 @@ export default {
   plan,
   account,
   login,
-  register,
+  resetPassword,
   ...others
 }

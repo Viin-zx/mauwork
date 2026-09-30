@@ -7,12 +7,9 @@
       </div>
 
       <!-- Heading -->
-      <h1 class="text-3xl font-semibold text-foreground mb-2">
+      <h1 class="text-3xl font-semibold text-foreground mb-10">
         {{ t('login.title') }}
       </h1>
-      <p class="text-sm text-muted-foreground text-center max-w-md mb-10">
-        {{ t('login.description') }}
-      </p>
 
       <!-- Login card -->
       <form
@@ -21,6 +18,34 @@
         @submit.prevent="handleSubmit"
       >
         <div class="flex flex-col gap-4">
+          <!-- 登录方式切换（置于输入框上方） -->
+          <div class="flex rounded-lg border border-border/60 p-1">
+            <button
+              type="button"
+              :class="[
+                'flex-1 rounded-md px-3 py-1.5 text-sm transition-colors',
+                mode === 'code'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              ]"
+              @click="switchMode('code')"
+            >
+              {{ t('login.tabSms') }}
+            </button>
+            <button
+              type="button"
+              :class="[
+                'flex-1 rounded-md px-3 py-1.5 text-sm transition-colors',
+                mode === 'password'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              ]"
+              @click="switchMode('password')"
+            >
+              {{ t('login.tabPassword') }}
+            </button>
+          </div>
+
           <!-- 手机号 -->
           <div class="flex flex-col gap-2">
             <Label for="login-phone" class="text-xs text-muted-foreground">
@@ -37,24 +62,8 @@
             />
           </div>
 
-          <!-- 密码（密码模式） -->
-          <div v-if="mode === 'password'" class="flex flex-col gap-2">
-            <Label for="login-password" class="text-xs text-muted-foreground">
-              {{ t('login.password') }}
-            </Label>
-            <Input
-              id="login-password"
-              v-model="password"
-              type="password"
-              autocomplete="current-password"
-              placeholder="请输入密码"
-              data-testid="login-password-input"
-              required
-            />
-          </div>
-
-          <!-- 验证码（验证码模式） -->
-          <div v-else class="flex flex-col gap-2">
+          <!-- 验证码（手机号登录模式） -->
+          <div v-if="mode === 'code'" class="flex flex-col gap-2">
             <Label for="login-code" class="text-xs text-muted-foreground">
               {{ t('login.code') }}
             </Label>
@@ -81,40 +90,101 @@
             </div>
           </div>
 
+          <!-- 密码（账密登录模式） -->
+          <div v-else class="flex flex-col gap-2">
+            <Label for="login-password" class="text-xs text-muted-foreground">
+              {{ t('login.password') }}
+            </Label>
+            <Input
+              id="login-password"
+              v-model="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="请输入密码"
+              data-testid="login-password-input"
+              required
+            />
+            <!-- 找回密码入口（仅账密登录模式） -->
+            <div class="text-right">
+              <button
+                type="button"
+                class="text-xs text-primary hover:underline"
+                @click="showResetDialog = true"
+              >
+                {{ t('login.forgotPassword') }}
+              </button>
+            </div>
+          </div>
+
           <p v-if="errorMessage" data-testid="login-error" class="text-xs text-destructive">
             {{ errorMessage }}
           </p>
 
-          <!-- 模式切换 -->
-          <div class="flex items-center justify-between text-xs">
-            <button type="button" class="text-primary hover:underline" @click="toggleMode">
-              {{ mode === 'password' ? t('login.switchToCode') : t('login.switchToPassword') }}
-            </button>
-            <button type="button" class="text-muted-foreground hover:underline" @click="goRegister">
-              {{ t('login.goRegister') }}
-            </button>
-          </div>
-
           <Button type="submit" class="w-full" data-testid="login-submit" :disabled="submitting">
             <Spinner v-if="submitting" class="h-4 w-4" />
-            <span>{{ submitting ? t('login.submitting') : t('login.submit') }}</span>
+            <span>{{ submitting ? t('login.submitting') : submitButtonText }}</span>
           </Button>
+
+          <!-- 协议勾选 -->
+          <div class="flex items-start gap-2">
+            <Checkbox id="login-agree" v-model:checked="agreed" class="mt-0.5" />
+            <label for="login-agree" class="text-xs text-muted-foreground leading-relaxed">
+              {{ t('login.agreePrefix') }}
+              <button
+                type="button"
+                class="text-primary hover:underline"
+                @click.prevent.stop="openAgreement('USER')"
+              >
+                {{ t('login.userAgreement') }}
+              </button>
+              {{ t('login.and') }}
+              <button
+                type="button"
+                class="text-primary hover:underline"
+                @click.prevent.stop="openAgreement('PRIVACY')"
+              >
+                {{ t('login.privacyAgreement') }}
+              </button>
+            </label>
+          </div>
         </div>
       </form>
     </div>
+
+    <!-- 协议弹窗 -->
+    <Dialog v-model:open="showAgreement">
+      <DialogContent class="max-w-2xl gap-0 p-0">
+        <DialogHeader class="shrink-0 border-b border-border px-6 py-4">
+          <DialogTitle>{{ currentAgreementTitle }}</DialogTitle>
+        </DialogHeader>
+        <div class="max-h-[70vh] overflow-y-auto px-6 py-4">
+          <div
+            class="prose prose-sm max-w-none text-sm leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline"
+            v-html="currentAgreementContent"
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 找回密码弹窗 -->
+    <ResetPasswordDialog v-model:open="showResetDialog" mode="forgot" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Button } from '@shadcn/components/ui/button'
 import { Input } from '@shadcn/components/ui/input'
 import { Label } from '@shadcn/components/ui/label'
 import { Spinner } from '@shadcn/components/ui/spinner'
+import { Checkbox } from '@shadcn/components/ui/checkbox'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@shadcn/components/ui/dialog'
 import { createAuthClient } from '@api/AuthClient'
+import type { Agreement } from '@api/AuthClient'
 import { setAuthState } from '@/router'
+import ResetPasswordDialog from '@/components/auth/ResetPasswordDialog.vue'
 
 const emit = defineEmits<{
   authenticated: []
@@ -125,7 +195,7 @@ const router = useRouter()
 const authClient = createAuthClient()
 
 type LoginMode = 'password' | 'code'
-const mode = ref<LoginMode>('password')
+const mode = ref<LoginMode>('code')
 const phone = ref('')
 const password = ref('')
 const code = ref('')
@@ -134,18 +204,59 @@ const submitting = ref(false)
 const sendingCode = ref(false)
 const errorMessage = ref('')
 const countdown = ref(0)
+const showResetDialog = ref(false)
+const agreed = ref(false)
+const agreements = ref<Agreement[]>([])
+const showAgreement = ref(false)
+const activeAgreementType = ref<'USER' | 'PRIVACY'>('USER')
 let timer: ReturnType<typeof setInterval> | null = null
+
+const agreementTitleMap: Record<string, string> = {
+  USER: 'login.userAgreement',
+  PRIVACY: 'login.privacyAgreement'
+}
+
+const currentAgreement = computed(() =>
+  agreements.value.find((a) => a.agreementType === activeAgreementType.value)
+)
+
+const currentAgreementTitle = computed(() => {
+  const key = agreementTitleMap[activeAgreementType.value]
+  return key ? t(key) : ''
+})
+
+const currentAgreementContent = computed(() => currentAgreement.value?.content ?? '')
+
+const submitButtonText = computed(() =>
+  mode.value === 'password' ? t('login.submit') : t('login.submitLoginRegister')
+)
+
+function openAgreement(type: 'USER' | 'PRIVACY') {
+  activeAgreementType.value = type
+  showAgreement.value = true
+}
 
 onMounted(() => {
   phone.value = ''
+  authClient
+    .getAgreements()
+    .then((result) => {
+      if (result.ok && result.agreements) {
+        agreements.value = result.agreements
+      }
+    })
+    .catch((error) => {
+      console.error('Failed to load agreements:', error)
+    })
 })
 
 onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
 
-function toggleMode() {
-  mode.value = mode.value === 'password' ? 'code' : 'password'
+function switchMode(target: LoginMode) {
+  if (mode.value === target) return
+  mode.value = target
   errorMessage.value = ''
   code.value = ''
   password.value = ''
@@ -178,8 +289,7 @@ async function handleSendCode() {
     } else {
       errorMessage.value = result.msg || '验证码发送失败'
     }
-  } catch (error) {
-    console.error('Send code failed:', error)
+  } catch {
     errorMessage.value = '验证码发送失败，请重试'
   } finally {
     sendingCode.value = false
@@ -190,6 +300,10 @@ async function handleSubmit() {
   if (submitting.value) return
   if (!/^1[3-9]\d{9}$/.test(phone.value)) {
     errorMessage.value = '请输入有效的手机号'
+    return
+  }
+  if (!agreed.value) {
+    errorMessage.value = t('login.errorNotAgreed')
     return
   }
   submitting.value = true
@@ -208,16 +322,11 @@ async function handleSubmit() {
     } else {
       errorMessage.value = result.msg || t('login.error')
     }
-  } catch (error) {
-    console.error('Login failed:', error)
+  } catch {
     errorMessage.value = t('login.error')
   } finally {
     submitting.value = false
   }
-}
-
-function goRegister() {
-  router.push({ name: 'register' })
 }
 </script>
 

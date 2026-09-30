@@ -1499,8 +1499,8 @@
     },
     "tts": {
       "instructions": {
-      "label": "Voice Instructions",
-      "placeholder": "Enter TTS instructions"
+        "label": "Voice Instructions",
+        "placeholder": "Enter TTS instructions"
       },
       "title": "Chuyển văn bản thành giọng nói (TTS)",
       "description": "Tạo lời nói từ văn bản. Giọng nói xuất hiện trong danh sách model bên dưới.",

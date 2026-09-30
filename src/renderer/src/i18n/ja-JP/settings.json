@@ -933,8 +933,8 @@
     "runModel": "モデルを実行",
     "tts": {
       "instructions": {
-      "label": "Voice Instructions",
-      "placeholder": "Enter TTS instructions"
+        "label": "Voice Instructions",
+        "placeholder": "Enter TTS instructions"
       },
       "title": "テキスト読み上げ (TTS)",
       "description": "テキストから音声を生成します。音声は下のモデル一覧に表示されます。",

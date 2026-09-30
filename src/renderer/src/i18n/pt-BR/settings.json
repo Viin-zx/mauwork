@@ -933,8 +933,8 @@
     "runModel": "Executar Modelo",
     "tts": {
       "instructions": {
-      "label": "Voice Instructions",
-      "placeholder": "Enter TTS instructions"
+        "label": "Voice Instructions",
+        "placeholder": "Enter TTS instructions"
       },
       "title": "Texto para fala (TTS)",
       "description": "Gere fala a partir de texto. As vozes aparecem na lista de modelos abaixo.",

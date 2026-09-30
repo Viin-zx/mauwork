@@ -83,5 +83,6 @@
   "errSubscriptionCreateFailed": "Subscription activation failed. Please try again later.",
   "errNewapiUnavailable": "Service temporarily unavailable. Please try again later.",
   "errInvalidArgument": "Invalid request. Please try again.",
-  "errNetwork": "Network error. Please check your connection and try again."
+  "errNetwork": "Network error. Please check your connection and try again.",
+  "changePassword": "Change Password"
 }

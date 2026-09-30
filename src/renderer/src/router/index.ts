@@ -16,15 +16,6 @@ const router = createRouter({
       }
     },
     {
-      path: '/register',
-      name: 'register',
-      component: () => import('@/pages/RegisterPage.vue'),
-      meta: {
-        public: true,
-        titleKey: 'routes.register'
-      }
-    },
-    {
       path: '/',
       redirect: '/chat'
     },

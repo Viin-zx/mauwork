@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { defineRouteContract } from '../common'
 
-/** 短信验证码场景：注册 / 登录 */
-export const smsSceneSchema = z.enum(['REGISTER', 'LOGIN'])
+/** 短信验证码场景：登录 / 重置密码 */
+export const smsSceneSchema = z.enum(['LOGIN', 'RESET_PASSWORD'])
 
 /** 当前登录用户信息（后端缺失字段会返回 null，因此均允许 null） */
 export const authUserSchema = z.object({
@@ -36,8 +36,10 @@ export const authGetMeRoute = defineRouteContract({
 export const authSendCodeRoute = defineRouteContract({
   name: 'auth.sendCode',
   input: z.object({
-    mobile: z.string().min(1),
-    scene: smsSceneSchema
+    mobile: z.string().optional(),
+    scene: smsSceneSchema,
+    /** 已登录修改密码时传 true，主进程会携带 Token，服务端用用户库手机号 */
+    authenticated: z.boolean().optional()
   }),
   output: z.object({
     ok: z.boolean(),
@@ -75,18 +77,20 @@ export const authLoginByCodeRoute = defineRouteContract({
   })
 })
 
-/** 注册（成功即登录） */
-export const authRegisterRoute = defineRouteContract({
-  name: 'auth.register',
+/** 短信重置密码（匿名找回密码 / 登录态修改密码） */
+export const authResetPasswordRoute = defineRouteContract({
+  name: 'auth.resetPassword',
   input: z.object({
-    mobile: z.string().min(1),
-    password: z.string().min(1),
-    smsRequestId: z.string().optional(),
-    smsCode: z.string().optional(),
-    nickname: z.string().optional()
+    mobile: z.string().optional(),
+    smsRequestId: z.string().min(1),
+    smsCode: z.string().min(1),
+    newPassword: z.string().min(1),
+    /** 已登录修改密码时传 true，主进程会携带 Token */
+    authenticated: z.boolean().optional()
   }),
   output: z.object({
     ok: z.boolean(),
+    errorCode: z.string().nullable().optional(),
     msg: z.string().optional()
   })
 })

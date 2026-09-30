@@ -112,6 +112,7 @@ declare module 'vue-i18n' {
     errNewapiUnavailable: string
     errInvalidArgument: string
     errNetwork: string
+    changePassword: string
     clickToOpen: string
     codeSnippet: string
     function: string
@@ -1661,11 +1662,17 @@ declare module 'vue-i18n' {
     getCode: string
     submit: string
     submitting: string
-    switchToCode: string
-    switchToPassword: string
-    goRegister: string
+    tabSms: string
+    tabPassword: string
+    forgotPassword: string
+    submitLoginRegister: string
     errorPassword: string
     errorCode: string
+    agreePrefix: string
+    userAgreement: string
+    and: string
+    privacyAgreement: string
+    errorNotAgreed: string
     enabledTitle: string
     enabledDescription: string
     enableToAccess: string
@@ -2164,15 +2171,25 @@ declare module 'vue-i18n' {
     resetToDefaultSuccess: string
     resetToDefaultFailed: string
     parameterRequired: string
+    forgotTitle: string
+    forgotDescription: string
+    forgotSubmit: string
+    changeTitle: string
+    changeDescription: string
+    changeSubmit: string
+    phonePlaceholder: string
+    codePlaceholder: string
+    newPassword: string
+    newPasswordPlaceholder: string
     confirmPassword: string
-    goLogin: string
-    agreePrefix: string
-    userAgreement: string
-    and: string
-    privacyAgreement: string
-    subscriptionAgreement: string
+    confirmPlaceholder: string
+    success: string
+    errorCodeSent: string
+    errorPhone: string
     errorPasswordMismatch: string
-    errorNotAgreed: string
+    errorPasswordTooShort: string
+    errorCodeRequired: string
+    errorCodeInvalid: string
     chat: string
     plugins: {
       title: string
@@ -4408,7 +4425,6 @@ declare module 'vue-i18n' {
       technicalDetails: string
       hooks: string
     }
-    success: string
     columns: {
       name: string
       kind: string

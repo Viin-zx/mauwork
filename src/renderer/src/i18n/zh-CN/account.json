@@ -83,5 +83,6 @@
   "errSubscriptionCreateFailed": "订阅开通失败，请稍后重试",
   "errNewapiUnavailable": "服务暂时不可用，请稍后重试",
   "errInvalidArgument": "请求参数有误，请重试",
-  "errNetwork": "网络连接失败，请检查网络后重试"
+  "errNetwork": "网络连接失败，请检查网络后重试",
+  "changePassword": "修改密码"
 }

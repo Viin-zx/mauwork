@@ -4,7 +4,7 @@ import {
   authGetMeRoute,
   authLoginRoute,
   authLoginByCodeRoute,
-  authRegisterRoute,
+  authResetPasswordRoute,
   authSendCodeRoute,
   authLogoutRoute,
   authGetPlansRoute,
@@ -103,7 +103,11 @@ export function createAuthRoutes(
       async (rawInput) => {
         const input = authSendCodeRoute.input.parse(rawInput)
         try {
-          const result = await auth.sendSmsCode(input.mobile, input.scene)
+          const result = await auth.sendSmsCode(
+            input.mobile ?? '',
+            input.scene,
+            input.authenticated ?? false
+          )
           return authSendCodeRoute.output.parse({ ok: true, ...result })
         } catch (error) {
           return authSendCodeRoute.output.parse({
@@ -146,23 +150,23 @@ export function createAuthRoutes(
       }
     ],
     [
-      authRegisterRoute.name,
+      authResetPasswordRoute.name,
       async (rawInput) => {
-        const input = authRegisterRoute.input.parse(rawInput)
+        const input = authResetPasswordRoute.input.parse(rawInput)
         try {
-          await auth.register({
-            mobile: input.mobile,
-            password: input.password,
+          await auth.resetPassword({
+            mobile: input.mobile ?? '',
             smsRequestId: input.smsRequestId,
             smsCode: input.smsCode,
-            nickname: input.nickname
+            newPassword: input.newPassword,
+            authenticated: input.authenticated ?? false
           })
-          fireLoggedIn()
-          return authRegisterRoute.output.parse({ ok: true })
+          return authResetPasswordRoute.output.parse({ ok: true })
         } catch (error) {
-          return authRegisterRoute.output.parse({
+          return authResetPasswordRoute.output.parse({
             ok: false,
-            msg: toErrorMessage(error, '注册失败，请重试')
+            errorCode: toErrorCode(error),
+            msg: toErrorMessage(error, '重置密码失败，请重试')
           })
         }
       }

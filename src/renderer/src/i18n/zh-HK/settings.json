@@ -928,8 +928,8 @@
     "runModel": "運行模型",
     "tts": {
       "instructions": {
-      "label": "Voice Instructions",
-      "placeholder": "Enter TTS instructions"
+        "label": "Voice Instructions",
+        "placeholder": "Enter TTS instructions"
       },
       "title": "文字轉語音 (TTS)",
       "description": "將文字生成語音，voice 會在下方模型列表中顯示。",

@@ -51,6 +51,15 @@
           <DcButton
             variant="outline"
             size="sm"
+            data-testid="settings-account-change-password"
+            @click="showChangePasswordDialog = true"
+          >
+            <Icon icon="lucide:key-round" class="mr-1 size-3.5" data-icon="inline-start" />
+            {{ t('account.changePassword') }}
+          </DcButton>
+          <DcButton
+            variant="outline"
+            size="sm"
             class="text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300"
             :disabled="loggingOut"
             data-testid="settings-account-logout"
@@ -448,6 +457,15 @@
         </div>
       </DialogContent>
     </Dialog>
+
+    <!-- 修改密码弹窗 -->
+    <ResetPasswordDialog
+      v-model:open="showChangePasswordDialog"
+      mode="change"
+      :initial-phone="user?.mobile || ''"
+      :masked-phone="user?.maskedPhone || ''"
+      @success="handlePasswordChanged"
+    />
   </SettingsPageShell>
 </template>
 
@@ -490,6 +508,7 @@ import {
 import { Separator } from '@shadcn/components/ui/separator'
 import { Spinner } from '@shadcn/components/ui/spinner'
 import SettingsPageShell from './control-center/SettingsPageShell.vue'
+import ResetPasswordDialog from '@/components/auth/ResetPasswordDialog.vue'
 
 const { t } = useI18n()
 const authClient = createAuthClient()
@@ -500,6 +519,7 @@ const loggingOut = ref(false)
 const user = ref<AuthUser | null>(null)
 const confirmAction = ref<'logout' | null>(null)
 const quota = ref<Quota | null>(null)
+const showChangePasswordDialog = ref(false)
 
 // 订阅状态
 const subscriptions = ref<Subscription[]>([])
@@ -1031,6 +1051,16 @@ async function doLogout() {
     loggingOut.value = false
     confirmAction.value = null
   }
+}
+
+/** 修改密码成功后，服务端已吊销全部会话，退出设置并回到登录页 */
+async function handlePasswordChanged() {
+  try {
+    await authClient.logout()
+  } catch {
+    // 忽略：服务端已吊销会话，本地登出只是清理
+  }
+  await windowClient.closeSettings()
 }
 
 // 弹窗关闭时：没有进行中的订单才停掉定时器；

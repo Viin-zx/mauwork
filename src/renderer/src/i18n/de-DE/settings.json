@@ -1373,8 +1373,8 @@
     },
     "tts": {
       "instructions": {
-      "label": "Voice Instructions",
-      "placeholder": "Enter TTS instructions"
+        "label": "Voice Instructions",
+        "placeholder": "Enter TTS instructions"
       },
       "title": "Text-to-Speech (TTS)",
       "description": "Text in Sprache umwandeln; voice wird in der Modellliste unten angezeigt.",

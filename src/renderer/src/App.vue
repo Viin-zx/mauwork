@@ -11,11 +11,13 @@ router.isReady().then(() => {
   isReady.value = true
 })
 
-const isAuthPage = computed(() => route.name === 'login' || route.name === 'register')
+const isAuthPage = computed(() => route.name === 'login')
 </script>
 
 <template>
   <div v-if="!isReady" class="h-screen w-screen" />
-  <RouterView v-else-if="isAuthPage" />
+  <div v-else-if="isAuthPage" class="h-screen w-screen">
+    <RouterView />
+  </div>
   <ChatMainApp v-else />
 </template>

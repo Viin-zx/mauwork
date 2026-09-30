@@ -7,10 +7,16 @@
   "getCode": "Get Code",
   "submit": "Sign in",
   "submitting": "Signing in…",
-  "switchToCode": "Sign in with code",
-  "switchToPassword": "Sign in with password",
-  "goRegister": "No account? Register",
+  "tabSms": "SMS Login",
+  "tabPassword": "Password Login",
+  "forgotPassword": "Forgot Password",
+  "submitLoginRegister": "Sign in / Register",
   "error": "Sign in failed, please try again",
   "errorPassword": "Phone or password is incorrect",
-  "errorCode": "Code is incorrect or expired"
+  "errorCode": "Code is incorrect or expired",
+  "agreePrefix": "I have read and agree to the",
+  "userAgreement": "User Agreement",
+  "and": "and",
+  "privacyAgreement": "Privacy Agreement",
+  "errorNotAgreed": "Please agree to the User Agreement and Privacy Agreement first"
 }

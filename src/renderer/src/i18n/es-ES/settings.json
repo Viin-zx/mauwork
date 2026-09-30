@@ -1373,8 +1373,8 @@
     },
     "tts": {
       "instructions": {
-      "label": "Voice Instructions",
-      "placeholder": "Enter TTS instructions"
+        "label": "Voice Instructions",
+        "placeholder": "Enter TTS instructions"
       },
       "title": "Texto a voz (TTS)",
       "description": "Generar voz a partir de texto. Las voces aparecen en la lista de modelos a continuación.",

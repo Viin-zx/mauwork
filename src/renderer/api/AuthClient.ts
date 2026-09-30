@@ -4,7 +4,7 @@ import {
   authGetMeRoute,
   authLoginRoute,
   authLoginByCodeRoute,
-  authRegisterRoute,
+  authResetPasswordRoute,
   authSendCodeRoute,
   authLogoutRoute,
   authGetPlansRoute,
@@ -23,7 +23,7 @@ import type { z } from 'zod'
 import { getDeepchatBridge } from './core'
 
 /** 短信验证码场景 */
-export type SmsScene = 'REGISTER' | 'LOGIN'
+export type SmsScene = 'LOGIN' | 'RESET_PASSWORD'
 
 /** 当前登录用户信息 */
 export type AuthUser = z.output<typeof authUserSchema>
@@ -58,9 +58,9 @@ export function createAuthClient(bridge: DeepchatBridge = getDeepchatBridge()) {
     return result.user ?? null
   }
 
-  /** 发送短信验证码，返回 smsRequestId 供注册/短信登录使用 */
-  async function sendCode(mobile: string, scene: SmsScene) {
-    return await bridge.invoke(authSendCodeRoute.name, { mobile, scene })
+  /** 发送短信验证码，返回 smsRequestId 供短信登录/重置密码使用 */
+  async function sendCode(mobile: string, scene: SmsScene, authenticated = false) {
+    return await bridge.invoke(authSendCodeRoute.name, { mobile, scene, authenticated })
   }
 
   /** 手机号 + 密码登录 */
@@ -73,15 +73,15 @@ export function createAuthClient(bridge: DeepchatBridge = getDeepchatBridge()) {
     return await bridge.invoke(authLoginByCodeRoute.name, { mobile, smsRequestId, smsCode })
   }
 
-  /** 注册（成功即登录） */
-  async function register(input: {
-    mobile: string
-    password: string
-    smsRequestId?: string
-    smsCode?: string
-    nickname?: string
+  /** 短信重置密码（匿名找回 / 登录态修改），返回 ok/errorCode/msg */
+  async function resetPassword(input: {
+    mobile?: string
+    smsRequestId: string
+    smsCode: string
+    newPassword: string
+    authenticated?: boolean
   }) {
-    return await bridge.invoke(authRegisterRoute.name, input)
+    return await bridge.invoke(authResetPasswordRoute.name, input)
   }
 
   async function logout(): Promise<boolean> {
@@ -171,7 +171,7 @@ export function createAuthClient(bridge: DeepchatBridge = getDeepchatBridge()) {
     sendCode,
     login,
     loginByCode,
-    register,
+    resetPassword,
     logout,
     getPlans,
     purchasePlan,

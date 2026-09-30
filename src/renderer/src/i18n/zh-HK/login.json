@@ -7,10 +7,16 @@
   "getCode": "獲取驗證碼",
   "submit": "登入",
   "submitting": "登入中…",
-  "switchToCode": "驗證碼登入",
-  "switchToPassword": "密碼登入",
-  "goRegister": "沒有帳號？去註冊",
+  "tabSms": "手機號登入",
+  "tabPassword": "帳密登入",
+  "forgotPassword": "忘記密碼",
+  "submitLoginRegister": "登入 / 註冊",
   "error": "登入失敗，請重試",
   "errorPassword": "手機號或密碼錯誤",
-  "errorCode": "驗證碼錯誤或已過期"
+  "errorCode": "驗證碼錯誤或已過期",
+  "agreePrefix": "我已閱讀並同意",
+  "userAgreement": "《用戶協議》",
+  "and": "和",
+  "privacyAgreement": "《隱私協議》",
+  "errorNotAgreed": "請先同意用戶協議和隱私協議"
 }

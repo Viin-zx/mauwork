@@ -9,7 +9,7 @@ const API_BASE_URL =
 const COUNTRY_CODE = '+86'
 const TOKEN_FILE_NAME = 'mio-auth.json'
 
-export type SmsScene = 'REGISTER' | 'LOGIN'
+export type SmsScene = 'LOGIN' | 'RESET_PASSWORD'
 
 interface MioUser {
   userId?: string
@@ -428,16 +428,24 @@ export class AuthService {
   }
 
   /** 发送短信验证码 */
-  async sendSmsCode(mobile: string, scene: SmsScene): Promise<SmsCodeResult> {
+  async sendSmsCode(
+    mobile: string,
+    scene: SmsScene,
+    authenticated = false
+  ): Promise<SmsCodeResult> {
+    const token = authenticated ? this.session?.accessToken : undefined
+    if (authenticated && !token) {
+      throw new MioApiError('登录已失效，请重新登录', 'TOKEN_INVALID')
+    }
+    const body: Record<string, unknown> = { scene, countryCode: COUNTRY_CODE }
+    if (!authenticated) {
+      body.mobile = mobile
+    }
     const data = await postJson<{
       smsRequestId?: string
       retryAfterSeconds?: number
       expiresIn?: number
-    }>('/auth/sms/code', {
-      countryCode: COUNTRY_CODE,
-      mobile,
-      scene
-    })
+    }>('/auth/sms/code', body, token)
     return {
       smsRequestId: data.smsRequestId,
       retryAfterSeconds: data.retryAfterSeconds,
@@ -469,24 +477,32 @@ export class AuthService {
     void this.fetchModelConfig().catch(() => {})
   }
 
-  /** 注册（成功即取得登录态） */
-  async register(input: {
+  /**
+   * 短信重置密码。authenticated=true 时携带 Token，服务端用用户库中的完整手机号，
+   * 请求体中的 mobile 仅用于回退兼容、不参与短信目标选择。
+   */
+  async resetPassword(input: {
     mobile: string
-    password: string
-    smsRequestId?: string
-    smsCode?: string
-    nickname?: string
+    smsRequestId: string
+    smsCode: string
+    newPassword: string
+    authenticated?: boolean
   }): Promise<void> {
-    const vo = await postJson<MioLoginVo>('/auth/register', {
-      countryCode: COUNTRY_CODE,
-      mobile: input.mobile,
-      password: input.password,
-      smsRequestId: input.smsRequestId,
-      smsCode: input.smsCode,
-      nickname: input.nickname
-    })
-    this.saveSession(vo)
-    void this.fetchModelConfig().catch(() => {})
+    const token = input.authenticated ? this.session?.accessToken : undefined
+    if (input.authenticated && !token) {
+      throw new MioApiError('登录已失效，请重新登录', 'TOKEN_INVALID')
+    }
+    await postJson(
+      '/auth/password/reset',
+      {
+        countryCode: COUNTRY_CODE,
+        mobile: input.mobile,
+        smsRequestId: input.smsRequestId,
+        smsCode: input.smsCode,
+        newPassword: input.newPassword
+      },
+      token
+    )
   }
 
   /**

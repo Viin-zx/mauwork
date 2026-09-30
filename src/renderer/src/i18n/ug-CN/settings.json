@@ -1499,8 +1499,8 @@
     },
     "tts": {
       "instructions": {
-      "label": "Voice Instructions",
-      "placeholder": "Enter TTS instructions"
+        "label": "Voice Instructions",
+        "placeholder": "Enter TTS instructions"
       },
       "title": "تېكىستكە ئايلاندۇرۇش (TTS)",
       "description": "تېكىستتىن تاۋۇش ھاسىل قىلسىڭىز، voice تۆۋەندىكى مودېل تىزىملىكىدە كۆرسىتىلىدۇ.",

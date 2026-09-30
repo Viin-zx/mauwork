@@ -1373,8 +1373,8 @@
     },
     "tts": {
       "instructions": {
-      "label": "Voice Instructions",
-      "placeholder": "Enter TTS instructions"
+        "label": "Voice Instructions",
+        "placeholder": "Enter TTS instructions"
       },
       "title": "Metinden Konuşmaya (TTS)",
       "description": "Metinden konuşma oluşturun. Sesler aşağıdaki model listesinde görünür.",
