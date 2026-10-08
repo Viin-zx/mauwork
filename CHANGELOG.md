@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.3 (2026-10-08)
+- Added password reset support for accounts
+- 添加账号密码重置功能支持
+
 ## v1.2.2 (2026-09-29)
 - Enlarged the sidebar agent avatars for better visibility
 - Hid the service provider entry from the settings sidebar
