@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.5 (2026-10-10)
+- Test release for verifying the auto-update flow
+- 测试版，用于验证自动更新流程
+
 ## v1.2.4 (2026-10-10)
 - Prompts users to manually install unsigned macOS builds when auto-update cannot apply them
 - 未签名的 macOS 构建无法自动更新时，提示用户手动安装
