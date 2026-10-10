@@ -12,7 +12,10 @@ const {
   appRelaunchMock,
   appExitMock,
   appGetPathMock,
-  appGetVersionMock
+  appGetVersionMock,
+  appIsPackagedMock,
+  shellOpenExternalMock,
+  dialogShowMessageBoxMock
 } = vi.hoisted(() => {
   const autoUpdaterState = {
     listeners: new Map<string, (...args: unknown[]) => void>(),
@@ -28,12 +31,18 @@ const {
     appRelaunchMock: vi.fn(),
     appExitMock: vi.fn(),
     appGetPathMock: vi.fn(() => ''),
-    appGetVersionMock: vi.fn(() => '1.0.0')
+    appGetVersionMock: vi.fn(() => '1.0.0'),
+    appIsPackagedMock: vi.fn(() => false),
+    shellOpenExternalMock: vi.fn(),
+    dialogShowMessageBoxMock: vi.fn(async () => ({ response: 0 }))
   }
 })
 
 vi.mock('electron', () => ({
   app: {
+    get isPackaged() {
+      return appIsPackagedMock()
+    },
     getPath: appGetPathMock,
     getVersion: appGetVersionMock,
     quit: appQuitMock,
@@ -41,7 +50,10 @@ vi.mock('electron', () => ({
     exit: appExitMock
   },
   shell: {
-    openExternal: vi.fn()
+    openExternal: shellOpenExternalMock
+  },
+  dialog: {
+    showMessageBox: dialogShowMessageBoxMock
   }
 }))
 
@@ -87,6 +99,11 @@ describe('UpgradeService', () => {
     appGetPathMock.mockReturnValue(userDataDirectory)
     appGetVersionMock.mockReset()
     appGetVersionMock.mockReturnValue('1.0.0')
+    appIsPackagedMock.mockReset()
+    appIsPackagedMock.mockReturnValue(false)
+    shellOpenExternalMock.mockReset()
+    dialogShowMessageBoxMock.mockReset()
+    dialogShowMessageBoxMock.mockResolvedValue({ response: 0 })
     vi.mocked(electronUpdater.autoUpdater.checkForUpdates).mockReset()
     vi.mocked(electronUpdater.autoUpdater.downloadUpdate).mockReset()
   })
@@ -110,7 +127,7 @@ describe('UpgradeService', () => {
     )
     ;(service as any)._status = 'downloaded'
 
-    expect(service.restartToUpdate()).toBe(true)
+    expect(await service.restartToUpdate()).toBe(true)
     expect(requestUpdateInstallMock).toHaveBeenCalledTimes(1)
     expect(publishEventMock).toHaveBeenCalledWith(
       'upgrade.willRestart',
@@ -136,7 +153,7 @@ describe('UpgradeService', () => {
     )
 
     expect(service.mockDownloadedUpdate()).toBe(true)
-    expect(service.restartToUpdate()).toBe(true)
+    expect(await service.restartToUpdate()).toBe(true)
 
     expect(requestUpdateInstallMock).toHaveBeenCalledTimes(1)
     await Promise.resolve()
@@ -144,6 +161,87 @@ describe('UpgradeService', () => {
     expect(appRelaunchMock).toHaveBeenCalledTimes(1)
     expect(appExitMock).toHaveBeenCalledTimes(1)
     expect(electronUpdater.autoUpdater.quitAndInstall).not.toHaveBeenCalled()
+  })
+
+  it('prompts manual install instead of auto-install on unsigned packaged macOS builds', async () => {
+    appIsPackagedMock.mockReturnValue(true)
+    const originalResourcesPath = process.resourcesPath
+    Object.defineProperty(process, 'resourcesPath', {
+      value: path.join(userDataDirectory, 'unsigned.app', 'Contents', 'Resources'),
+      configurable: true
+    })
+    dialogShowMessageBoxMock.mockResolvedValue({ response: 0 })
+
+    const settings = {
+      getChannel: vi.fn(() => 'stable')
+    } as any
+
+    const service = new UpgradeService(
+      settings,
+      () => false,
+      requestUpdateInstallMock,
+      publishEventMock
+    )
+    ;(service as any)._status = 'downloaded'
+    ;(service as any)._versionInfo = {
+      version: '1.2.3',
+      releaseDate: '',
+      releaseNotes: '',
+      githubUrl: '',
+      downloadUrl: ''
+    }
+
+    expect(await service.restartToUpdate()).toBe(true)
+
+    expect(dialogShowMessageBoxMock).toHaveBeenCalledTimes(1)
+    expect(shellOpenExternalMock).toHaveBeenCalledWith(
+      'https://mauwork-releases.oss-cn-hangzhou.aliyuncs.com/updates/MauWork-1.2.3-mac-x64.dmg'
+    )
+    expect(requestUpdateInstallMock).not.toHaveBeenCalled()
+    expect(electronUpdater.autoUpdater.quitAndInstall).not.toHaveBeenCalled()
+    expect(service.isUpdatingInProgress()).toBe(false)
+    expect(electronUpdater.autoUpdater.autoInstallOnAppQuit).toBe(false)
+
+    Object.defineProperty(process, 'resourcesPath', {
+      value: originalResourcesPath,
+      configurable: true
+    })
+    appIsPackagedMock.mockReturnValue(false)
+  })
+
+  it('keeps the downloaded update untouched when the manual install prompt is dismissed', async () => {
+    appIsPackagedMock.mockReturnValue(true)
+    const originalResourcesPath = process.resourcesPath
+    Object.defineProperty(process, 'resourcesPath', {
+      value: path.join(userDataDirectory, 'unsigned.app', 'Contents', 'Resources'),
+      configurable: true
+    })
+    dialogShowMessageBoxMock.mockResolvedValue({ response: 1 })
+
+    const settings = {
+      getChannel: vi.fn(() => 'stable')
+    } as any
+
+    const service = new UpgradeService(
+      settings,
+      () => false,
+      requestUpdateInstallMock,
+      publishEventMock
+    )
+    ;(service as any)._status = 'downloaded'
+
+    expect(await service.restartToUpdate()).toBe(true)
+
+    expect(dialogShowMessageBoxMock).toHaveBeenCalledTimes(1)
+    expect(shellOpenExternalMock).not.toHaveBeenCalled()
+    expect(electronUpdater.autoUpdater.quitAndInstall).not.toHaveBeenCalled()
+    expect((service as any)._status).toBe('downloaded')
+
+    Object.defineProperty(process, 'resourcesPath', {
+      value: originalResourcesPath,
+      configurable: true
+    })
+    appIsPackagedMock.mockReturnValue(false)
   })
 
   it('skips app-focus auto check when privacy mode is enabled', () => {
@@ -488,7 +586,7 @@ describe('UpgradeService', () => {
     )
     ;(service as any)._status = 'downloaded'
 
-    expect(service.restartToUpdate()).toBe(true)
+    expect(await service.restartToUpdate()).toBe(true)
     await Promise.resolve()
     await Promise.resolve()
 
@@ -515,7 +613,7 @@ describe('UpgradeService', () => {
     )
     ;(service as any)._status = 'downloaded'
 
-    expect(service.restartToUpdate()).toBe(true)
+    expect(await service.restartToUpdate()).toBe(true)
     await Promise.resolve()
     autoUpdaterState.listeners.get('error')!(new Error('SECRET_NATIVE_INSTALL_ERROR'))
 

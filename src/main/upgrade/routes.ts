@@ -98,7 +98,9 @@ export function createUpgradeRoutes(deps: {
       upgradeRestartToUpdateRoute.name,
       async (rawInput) => {
         upgradeRestartToUpdateRoute.input.parse(rawInput)
-        return upgradeRestartToUpdateRoute.output.parse({ restarted: upgrade.restartToUpdate() })
+        return upgradeRestartToUpdateRoute.output.parse({
+          restarted: await upgrade.restartToUpdate()
+        })
       }
     ]
   ])

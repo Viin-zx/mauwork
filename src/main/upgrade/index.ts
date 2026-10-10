@@ -1,5 +1,5 @@
 import logger from '@shared/logger'
-import { app, shell } from 'electron'
+import { app, dialog, shell } from 'electron'
 import type { DeepchatEventPublisher } from '@shared/contracts/events'
 import electronUpdater from 'electron-updater'
 import type { UpdateInfo } from 'electron-updater'
@@ -13,9 +13,26 @@ const { autoUpdater } = electronUpdater
 const GITHUB_OWNER = 'Viin-zx'
 const GITHUB_REPO = 'mauwork'
 const OFFICIAL_DOWNLOAD_URL = 'https://github.com/Viin-zx/mauwork/releases'
+const OSS_UPDATE_BASE_URL = 'https://mauwork-releases.oss-cn-hangzhou.aliyuncs.com/updates'
 const UPDATE_CHANNEL_STABLE = 'stable'
 const UPDATE_CHANNEL_BETA = 'beta'
 const PRERELEASE_VERSION_REGEX = /-(?:alpha|beta|rc|canary)(?:[.-]\d+)?$/i
+
+const buildMacManualDownloadUrl = (version: string): string => {
+  const arch = process.arch === 'arm64' ? 'arm64' : 'x64'
+  return `${OSS_UPDATE_BASE_URL}/MauWork-${version}-mac-${arch}.dmg`
+}
+
+// Squirrel.Mac 安装前会校验下载包的代码签名，未签名的应用包静默安装必然失败，
+// 只能兜底引导用户手动下载 dmg 安装。
+const isMacAppBundleSigned = (): boolean => {
+  try {
+    const bundleRoot = path.dirname(path.dirname(process.resourcesPath))
+    return fs.existsSync(path.join(bundleRoot, 'Contents', '_CodeSignature', 'CodeResources'))
+  } catch {
+    return true
+  }
+}
 
 const isPrereleaseVersion = (version: string): boolean => {
   return PRERELEASE_VERSION_REGEX.test(version)
@@ -153,6 +170,7 @@ export class UpgradeService {
   private _checkFailureObserved: boolean = false
   private _downloadFailureObserved: boolean = false
   private _installFailureObserved: boolean = false
+  private readonly _manualInstallRequired: boolean
   private readonly requestUpdateInstall: (installAction: () => void) => Promise<void>
 
   private emitStatusChanged(payload: {
@@ -197,11 +215,13 @@ export class UpgradeService {
   ) {
     this.requestUpdateInstall = requestUpdateInstall
     this._updateMarkerPath = getUpdateMarkerFilePath()
-
+    this._manualInstallRequired =
+      process.platform === 'darwin' && app.isPackaged === true && !isMacAppBundleSigned()
     // 配置自动更新
     autoUpdater.autoDownload = false // 默认不自动下载，由我们手动控制
     autoUpdater.allowDowngrade = false
-    autoUpdater.autoInstallOnAppQuit = true
+    // 未签名的 macOS 包无法静默安装，退出时也不能触发安装，否则会静默失败
+    autoUpdater.autoInstallOnAppQuit = !this._manualInstallRequired
 
     // 错误处理
     autoUpdater.on('error', (e) => {
@@ -685,7 +705,7 @@ export class UpgradeService {
   }
 
   // 重启并更新
-  restartToUpdate(): boolean {
+  async restartToUpdate(): Promise<boolean> {
     logger.info('重启并更新')
     if (this._status !== 'downloaded') {
       this.emitError('更新尚未下载完成')
@@ -697,12 +717,43 @@ export class UpgradeService {
         return true
       }
 
+      if (this._manualInstallRequired) {
+        return this.promptManualInstall()
+      }
+
       this._doQuitAndInstall()
       return true
     } catch (e) {
       this.notifyUpdaterFailure('install', 'unknown')
       console.error('重启更新失败', e)
       this.emitError(e instanceof Error ? e.message : String(e))
+      return false
+    }
+  }
+
+  private async promptManualInstall(): Promise<boolean> {
+    const version = this._versionInfo?.version ?? ''
+    const downloadUrl = version ? buildMacManualDownloadUrl(version) : OFFICIAL_DOWNLOAD_URL
+    try {
+      const { response } = await dialog.showMessageBox({
+        type: 'info',
+        title: '手动安装更新',
+        message: version ? `检测到新版本 ${version}` : '检测到新版本',
+        detail:
+          '当前版本的应用无法自动安装更新，请下载 dmg 安装包后手动安装到应用程序文件夹。',
+        buttons: ['打开下载页面', '取消'],
+        defaultId: 0,
+        cancelId: 1,
+        noLink: true
+      })
+      if (response === 0) {
+        await shell.openExternal(downloadUrl)
+      }
+      return true
+    } catch (error) {
+      this.notifyUpdaterFailure('install', 'unknown')
+      console.error('手动安装引导失败', error)
+      this.emitError(error instanceof Error ? error.message : String(error))
       return false
     }
   }
