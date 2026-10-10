@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.4 (2026-10-10)
+- Prompts users to manually install unsigned macOS builds when auto-update cannot apply them
+- 未签名的 macOS 构建无法自动更新时，提示用户手动安装
+
 ## v1.2.3 (2026-10-08)
 - Added password reset support for accounts
 - 添加账号密码重置功能支持
