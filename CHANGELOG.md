@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.6 (2026-10-12)
+- Added support for Gemini image models to generate images through the chat interface
+- Added compatibility with url-format image responses from OpenAI-compatible gateways
+- 支持 Gemini 图像模型经对话接口出图
+- 兼容 OpenAI 兼容网关返回的 url 格式图片响应
+
 ## v1.2.5 (2026-10-10)
 - Test release for verifying the auto-update flow
 - 测试版，用于验证自动更新流程
