@@ -252,6 +252,41 @@ function extractImagePrompt(messages: ChatMessage[]): string {
     .join('\n\n')
 }
 
+/**
+ * `@ai-sdk/openai-compatible` 的图片响应 schema 只接受 `data[].b64_json`，而不少 OpenAI 兼容
+ * 网关（自建 new-api 等）只回 `data[].url`。对象校验失败后 AI SDK 统一抛
+ * APICallError("Invalid JSON response")，这里从错误携带的原始响应体里取出图片 URL。
+ */
+function extractImageUrlsFromApiCallError(error: unknown): string[] {
+  if (!APICallError.isInstance(error)) {
+    return []
+  }
+
+  const responseBody = error.responseBody
+  if (typeof responseBody !== 'string' || !responseBody.trim()) {
+    return []
+  }
+
+  let payload: unknown
+  try {
+    payload = JSON.parse(responseBody)
+  } catch {
+    return []
+  }
+
+  const data =
+    typeof payload === 'object' && payload !== null ? (payload as { data?: unknown }).data : null
+  if (!Array.isArray(data)) {
+    return []
+  }
+
+  return data.flatMap((item) => {
+    const url =
+      typeof item === 'object' && item !== null ? (item as { url?: unknown }).url : undefined
+    return typeof url === 'string' && url.trim() ? [url.trim()] : []
+  })
+}
+
 function extractVideoPrompt(messages: ChatMessage[]): string {
   return extractImagePrompt(messages)
 }
@@ -1556,23 +1591,39 @@ export async function* runAiSdkCoreStream(
     const requestSignal = combineRequestSignal(timeout, signal)
     requestSignal?.throwIfAborted()
 
-    const result = await generateImage({
-      model: providerContext.imageModel,
-      maxRetries: 0,
-      prompt,
-      ...imageGenerationRequestOptions,
-      ...(requestSignal ? { abortSignal: requestSignal } : {})
-    })
+    let generatedImages: Array<{ source: string; mimeType: string }>
+    try {
+      const result = await generateImage({
+        model: providerContext.imageModel,
+        maxRetries: 0,
+        prompt,
+        ...imageGenerationRequestOptions,
+        ...(requestSignal ? { abortSignal: requestSignal } : {})
+      })
+      generatedImages = result.images.map((image) => ({
+        source: `data:${image.mediaType};base64,${image.base64}`,
+        mimeType: image.mediaType
+      }))
+    } catch (error) {
+      const urls = extractImageUrlsFromApiCallError(error)
+      if (urls.length === 0) {
+        throw error
+      }
+      // 下载到本地缓存后才知道真实类型；缓存文件名带扩展名，这里给一个占位 MIME。
+      generatedImages = urls.map((url) => ({ source: url, mimeType: 'image/png' }))
+    }
 
-    for (const image of result.images) {
-      const dataUrl = `data:${image.mediaType};base64,${image.base64}`
-      const cachedImage = await cacheImage(dataUrl, { signal: requestSignal })
+    for (const { source, mimeType } of generatedImages) {
+      const cachedImage = await cacheImage(source, {
+        signal: requestSignal,
+        allowPrivateNetwork: false
+      })
       requestSignal?.throwIfAborted()
       yield {
         type: 'image_data',
         image_data: {
           data: cachedImage,
-          mimeType: image.mediaType
+          mimeType
         }
       }
     }

@@ -839,6 +839,103 @@ describe('AI SDK runtime', () => {
     expect(mockGenerateImage).toHaveBeenCalledWith(expect.objectContaining({ abortSignal: signal }))
   })
 
+  it('uses data[].url images when an OpenAI-compatible gateway rejects the b64_json schema', async () => {
+    const context = {
+      providerKind: 'openai-compatible',
+      provider: {
+        id: 'zr-mioagent',
+        apiType: 'openai'
+      },
+      providerSettings: createProviderSettings(),
+      defaultHeaders: {},
+      shouldUseImageGeneration: () => true
+    } as any
+
+    mockGenerateImage.mockRejectedValueOnce(
+      new APICallError({
+        message: 'Invalid JSON response',
+        url: 'https://gateway.example.com/v1/images/generations',
+        requestBodyValues: {},
+        statusCode: 200,
+        responseBody: JSON.stringify({
+          created: 1,
+          data: [{ url: 'https://cdn.example.com/generated-image.png' }]
+        })
+      })
+    )
+
+    const events = []
+    for await (const event of runAiSdkCoreStream(
+      context,
+      [{ role: 'user', content: 'draw a cat' }],
+      'gpt-image-2.5-sunburst',
+      { apiEndpoint: 'image' } as any,
+      0.7,
+      1024,
+      []
+    )) {
+      events.push(event)
+    }
+
+    expect(mockCacheImage).toHaveBeenCalledWith(
+      'https://cdn.example.com/generated-image.png',
+      expect.objectContaining({ allowPrivateNetwork: false })
+    )
+    expect(events).toEqual([
+      {
+        type: 'image_data',
+        image_data: {
+          data: 'cached://image',
+          mimeType: 'image/png'
+        }
+      },
+      {
+        type: 'stop',
+        stop_reason: 'complete'
+      }
+    ])
+  })
+
+  it('rethrows image generation errors whose response body carries no image URL', async () => {
+    const context = {
+      providerKind: 'openai-compatible',
+      provider: {
+        id: 'zr-mioagent',
+        apiType: 'openai'
+      },
+      providerSettings: createProviderSettings(),
+      defaultHeaders: {},
+      shouldUseImageGeneration: () => true
+    } as any
+
+    mockGenerateImage.mockRejectedValueOnce(
+      new APICallError({
+        message: 'Invalid JSON response',
+        url: 'https://gateway.example.com/v1/images/generations',
+        requestBodyValues: {},
+        statusCode: 200,
+        responseBody: '<html>gateway error page</html>'
+      })
+    )
+
+    const drain = async () => {
+      for await (const _event of runAiSdkCoreStream(
+        context,
+        [{ role: 'user', content: 'draw a cat' }],
+        'gpt-image-2.5-sunburst',
+        { apiEndpoint: 'image' } as any,
+        0.7,
+        1024,
+        []
+      )) {
+        // Drain stream.
+      }
+    }
+
+    await expect(drain()).rejects.toThrow('Invalid JSON response')
+    expect(mockCacheImage).not.toHaveBeenCalled()
+  })
+
   it('does not forward gpt-image-2 image options when the config is empty', async () => {
     const context = {
       providerKind: 'openai-responses',
