@@ -287,6 +287,291 @@ function extractImageUrlsFromApiCallError(error: unknown): string[] {
   })
 }
 
+/**
+ * Gemini 图像模型（Nano Banana / *-flash-image / *-pro-image 系列）没有独立的图像生成端点：
+ * Google 只允许经对话接口（generateContent，responseModalities 含 IMAGE）出图，专供出图的
+ * `:predict`（Imagen）与 `/images/generations` 仅接受 `imagen-*` 模型，否则返回
+ * "only imagen models are supported"。命中这类模型时改走对话接口取图。
+ */
+function isGeminiChatImageModelId(modelId: string): boolean {
+  const id = modelId.trim().toLowerCase()
+  if (!id || id.includes('imagen')) {
+    return false
+  }
+
+  return id.includes('nano-banana') || id.includes('flash-image') || /gemini[^/]*image/.test(id)
+}
+
+type ExtractedGeneratedImage = { source: string; mimeType: string }
+
+const GENERATED_IMAGE_DATA_URL_PATTERN = /data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=]+/gi
+const GENERATED_IMAGE_MARKDOWN_PATTERN = /!\[[^\]]*\]\(\s*([^)\s]+)\s*\)/g
+const GENERATED_IMAGE_HTTP_URL_PATTERN = /https?:\/\/[^\s"'<>)\]]+/gi
+
+function inferDataUrlMimeType(dataUrl: string): string {
+  return /^data:([^;,]+)/i.exec(dataUrl)?.[1]?.trim() || 'image/png'
+}
+
+function isImageLikeUrl(url: string): boolean {
+  const normalized = url.trim().toLowerCase()
+  if (normalized.startsWith('data:image/')) {
+    return true
+  }
+  return /\.(png|jpe?g|webp|gif|bmp|avif)(\?|#|$)/.test(normalized)
+}
+
+function matchAllText(text: string, pattern: RegExp, group: number): string[] {
+  const regex = new RegExp(pattern.source, pattern.flags)
+  const results: string[] = []
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(text)) !== null) {
+    const value = match[group]?.trim()
+    if (value) {
+      results.push(value)
+    }
+    if (match.index === regex.lastIndex) {
+      regex.lastIndex += 1
+    }
+  }
+  return results
+}
+
+function collectImagesFromText(text: string, out: ExtractedGeneratedImage[]): void {
+  for (const dataUrl of text.match(GENERATED_IMAGE_DATA_URL_PATTERN) ?? []) {
+    out.push({ source: dataUrl, mimeType: inferDataUrlMimeType(dataUrl) })
+  }
+
+  for (const markdownUrl of matchAllText(text, GENERATED_IMAGE_MARKDOWN_PATTERN, 1)) {
+    out.push({ source: markdownUrl, mimeType: 'image/png' })
+  }
+
+  for (const rawUrl of text.match(GENERATED_IMAGE_HTTP_URL_PATTERN) ?? []) {
+    if (isImageLikeUrl(rawUrl)) {
+      out.push({ source: rawUrl, mimeType: 'image/png' })
+    }
+  }
+}
+
+function readGeneratedImageEntry(entry: unknown): ExtractedGeneratedImage | undefined {
+  if (!entry || typeof entry !== 'object') {
+    return undefined
+  }
+
+  const record = entry as Record<string, unknown>
+  const imageUrl = record.image_url
+  const urlFromImageUrl =
+    typeof imageUrl === 'string'
+      ? imageUrl
+      : imageUrl && typeof imageUrl === 'object'
+        ? (imageUrl as { url?: unknown }).url
+        : undefined
+
+  if (typeof urlFromImageUrl === 'string' && urlFromImageUrl.trim()) {
+    return { source: urlFromImageUrl.trim(), mimeType: 'image/png' }
+  }
+  if (typeof record.url === 'string' && record.url.trim()) {
+    return { source: record.url.trim(), mimeType: 'image/png' }
+  }
+
+  const inlineData =
+    (record.inlineData as { data?: unknown; mimeType?: unknown } | undefined) ??
+    (record.inline_data as { data?: unknown; mime_type?: unknown } | undefined)
+  if (typeof inlineData?.data === 'string' && inlineData.data.trim()) {
+    const camelMime = (inlineData as { mimeType?: unknown }).mimeType
+    const snakeMime = (inlineData as { mime_type?: unknown }).mime_type
+    const mimeType =
+      (typeof camelMime === 'string' && camelMime) ||
+      (typeof snakeMime === 'string' && snakeMime) ||
+      'image/png'
+    return { source: `data:${mimeType};base64,${inlineData.data}`, mimeType }
+  }
+
+  if (typeof record.b64_json === 'string' && record.b64_json.trim()) {
+    return { source: `data:image/png;base64,${record.b64_json}`, mimeType: 'image/png' }
+  }
+
+  const fileUri =
+    (record.fileData as { fileUri?: unknown } | undefined)?.fileUri ??
+    (record.file_data as { file_uri?: unknown } | undefined)?.file_uri
+  if (typeof fileUri === 'string' && fileUri.trim()) {
+    return { source: fileUri.trim(), mimeType: 'image/png' }
+  }
+
+  return undefined
+}
+
+/**
+ * 从对话接口响应里收集图片：兼容 OpenAI 风格（message.images / content 里的 markdown、data URL、
+ * 裸图片链接）与 Gemini 原生（candidates[].content.parts[].inlineData / fileData）。
+ */
+function extractGeneratedImages(payload: unknown): ExtractedGeneratedImage[] {
+  const images: ExtractedGeneratedImage[] = []
+  if (!payload || typeof payload !== 'object') {
+    return images
+  }
+
+  const root = payload as Record<string, unknown>
+  const choices = Array.isArray(root.choices) ? root.choices : []
+
+  for (const choice of choices) {
+    const message =
+      choice && typeof choice === 'object' ? (choice as { message?: unknown }).message : undefined
+    if (!message || typeof message !== 'object') {
+      continue
+    }
+
+    const record = message as Record<string, unknown>
+    if (Array.isArray(record.images)) {
+      for (const item of record.images) {
+        const image = readGeneratedImageEntry(item)
+        if (image) {
+          images.push(image)
+        }
+      }
+    }
+
+    const content = record.content
+    if (typeof content === 'string') {
+      collectImagesFromText(content, images)
+    } else if (Array.isArray(content)) {
+      for (const part of content) {
+        const image = readGeneratedImageEntry(part)
+        if (image) {
+          images.push(image)
+        } else if (part && typeof part === 'object') {
+          const text = (part as { text?: unknown }).text
+          if (typeof text === 'string') {
+            collectImagesFromText(text, images)
+          }
+        }
+      }
+    }
+  }
+
+  const candidates = Array.isArray(root.candidates) ? root.candidates : []
+  for (const candidate of candidates) {
+    const parts =
+      candidate && typeof candidate === 'object'
+        ? (candidate as { content?: { parts?: unknown } }).content?.parts
+        : undefined
+    if (!Array.isArray(parts)) {
+      continue
+    }
+    for (const part of parts) {
+      const image = readGeneratedImageEntry(part)
+      if (image) {
+        images.push(image)
+      }
+    }
+  }
+
+  if (Array.isArray(root.data)) {
+    for (const item of root.data) {
+      const image = readGeneratedImageEntry(item)
+      if (image) {
+        images.push(image)
+      }
+    }
+  }
+
+  return images
+}
+
+function dedupeGeneratedImages(images: ExtractedGeneratedImage[]): ExtractedGeneratedImage[] {
+  const seen = new Set<string>()
+  const result: ExtractedGeneratedImage[] = []
+  for (const image of images) {
+    if (seen.has(image.source)) {
+      continue
+    }
+    seen.add(image.source)
+    result.push(image)
+  }
+  return result
+}
+
+type GeminiChatImageRequest = {
+  url: string
+  headers: Record<string, string>
+  body: Record<string, unknown>
+}
+
+function buildGeminiChatImageRequest(
+  context: AiSdkRuntimeContext,
+  modelId: string,
+  prompt: string
+): GeminiChatImageRequest {
+  const provider = context.provider
+
+  if (context.providerKind === 'gemini') {
+    const baseUrl = normalizeGeminiBaseUrl((provider.baseUrl || '').trim() || undefined)
+    const requestModelId = modelId.trim().split('/').at(-1) || modelId
+    return {
+      url: `${baseUrl}/models/${encodeURIComponent(requestModelId)}:generateContent`,
+      headers: {
+        ...context.defaultHeaders,
+        'Content-Type': 'application/json',
+        'x-goog-api-key': provider.oauthToken || provider.apiKey || ''
+      },
+      body: {
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+      }
+    }
+  }
+
+  return {
+    url: `${normalizeOpenAICompatibleBaseUrl(provider.baseUrl)}/chat/completions`,
+    headers: {
+      ...context.defaultHeaders,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${provider.oauthToken || provider.apiKey || ''}`
+    },
+    body: {
+      model: modelId,
+      messages: [{ role: 'user', content: prompt }],
+      stream: false
+    }
+  }
+}
+
+async function executeGeminiChatImageGeneration(
+  context: AiSdkRuntimeContext,
+  request: GeminiChatImageRequest,
+  timeout: number | undefined,
+  signal?: AbortSignal
+): Promise<ExtractedGeneratedImage[]> {
+  const controller = new AbortController()
+  const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : undefined
+  const disposeCallerAbort = relayAbortSignal(signal, controller)
+
+  try {
+    const response = await fetchWithProviderHeaders(context.provider, request.url, {
+      method: 'POST',
+      headers: request.headers,
+      body: JSON.stringify(request.body),
+      signal: controller.signal
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '')
+      throw new Error(`Image generation request failed (${response.status}): ${errorText}`.trim())
+    }
+
+    const payload = (await response.json().catch(() => null)) as unknown
+    const images = dedupeGeneratedImages(extractGeneratedImages(payload))
+    if (images.length === 0) {
+      throw new Error('Image generation completed without image output')
+    }
+    return images
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId)
+    }
+    disposeCallerAbort()
+  }
+}
+
 function extractVideoPrompt(messages: ChatMessage[]): string {
   return extractImagePrompt(messages)
 }
@@ -1557,6 +1842,49 @@ export async function* runAiSdkCoreStream(
 
   if (shouldUseImageGenerationRuntime(context, modelId, normalizedModelConfig)) {
     const prompt = extractImagePrompt(messages)
+
+    if (
+      isGeminiChatImageModelId(modelId) &&
+      (context.providerKind === 'openai-compatible' || context.providerKind === 'gemini')
+    ) {
+      const requestSignal = combineRequestSignal(timeout, signal)
+      requestSignal?.throwIfAborted()
+
+      const chatImageRequest = buildGeminiChatImageRequest(context, modelId, prompt)
+      await context.emitRequestTrace?.(normalizedModelConfig, {
+        endpoint: chatImageRequest.url,
+        headers: context.buildTraceHeaders?.() ?? context.defaultHeaders,
+        body: chatImageRequest.body
+      })
+
+      const generatedImages = await executeGeminiChatImageGeneration(
+        context,
+        chatImageRequest,
+        timeout,
+        signal
+      )
+
+      for (const image of generatedImages) {
+        const cachedImage = await cacheImage(image.source, {
+          signal: requestSignal,
+          allowPrivateNetwork: false
+        })
+        requestSignal?.throwIfAborted()
+        yield {
+          type: 'image_data',
+          image_data: {
+            data: cachedImage,
+            mimeType: image.mimeType
+          }
+        }
+      }
+
+      yield {
+        type: 'stop',
+        stop_reason: 'complete'
+      }
+      return
+    }
 
     const providerContext = createAiSdkProviderContext({
       providerKind: context.providerKind,

@@ -936,6 +936,111 @@ describe('AI SDK runtime', () => {
     expect(mockCacheImage).not.toHaveBeenCalled()
   })
 
+  it('routes Gemini image models through the chat endpoint instead of the image endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: '画好了\n![image](data:image/png;base64,ZmFrZQ==)' } }]
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const context = {
+      providerKind: 'openai-compatible',
+      provider: {
+        id: 'zr-mioagent',
+        apiType: 'openai',
+        baseUrl: 'https://newapi.example.com/v1',
+        apiKey: 'test-key'
+      },
+      providerSettings: createProviderSettings(),
+      defaultHeaders: {},
+      shouldUseImageGeneration: () => true
+    } as any
+
+    const events = []
+    for await (const event of runAiSdkCoreStream(
+      context,
+      [{ role: 'user', content: 'draw a cat' }],
+      'gemini-nano-banana-2.1',
+      { apiEndpoint: 'image' } as any,
+      0.7,
+      1024,
+      []
+    )) {
+      events.push(event)
+    }
+
+    expect(mockGenerateImage).not.toHaveBeenCalled()
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://newapi.example.com/v1/chat/completions',
+      expect.objectContaining({ method: 'POST' })
+    )
+    expect(mockCacheImage).toHaveBeenCalledWith(
+      'data:image/png;base64,ZmFrZQ==',
+      expect.objectContaining({ allowPrivateNetwork: false })
+    )
+    expect(events).toEqual([
+      {
+        type: 'image_data',
+        image_data: {
+          data: 'cached://image',
+          mimeType: 'image/png'
+        }
+      },
+      {
+        type: 'stop',
+        stop_reason: 'complete'
+      }
+    ])
+  })
+
+  it('extracts inline image data from Gemini generateContent responses', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          { content: { parts: [{ inlineData: { data: 'ZmFrZQ==', mimeType: 'image/png' } }] } }
+        ]
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const context = {
+      providerKind: 'gemini',
+      provider: {
+        id: 'gemini',
+        apiType: 'gemini',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        apiKey: 'test-key'
+      },
+      providerSettings: createProviderSettings(),
+      defaultHeaders: {},
+      shouldUseImageGeneration: () => true
+    } as any
+
+    for await (const _event of runAiSdkCoreStream(
+      context,
+      [{ role: 'user', content: 'draw a cat' }],
+      'gemini-2.5-flash-image',
+      { apiEndpoint: 'image' } as any,
+      0.7,
+      1024,
+      []
+    )) {
+      // Drain stream.
+    }
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent',
+      expect.objectContaining({ method: 'POST' })
+    )
+    expect(mockCacheImage).toHaveBeenCalledWith(
+      'data:image/png;base64,ZmFrZQ==',
+      expect.objectContaining({ allowPrivateNetwork: false })
+    )
+  })
+
   it('does not forward gpt-image-2 image options when the config is empty', async () => {
     const context = {
       providerKind: 'openai-responses',
