@@ -84,20 +84,12 @@
   justify-content: center;
 }
 
-/* The swim morph's curves poke slightly past the viewBox edges, so clipping
-   would slice the tail mid-wag. The hero mark stays in the same primary ink
-   as its headline. */
+/* Hover sway: a slow continuous tilt about the artwork's lower center. */
 .fish {
   display: block;
-  overflow: visible;
   transform-origin: 50% 60%;
-  color: var(--dsw-alias-label-primary);
 }
 
-/* Hover swim: a slow continuous sway about the body center — the head
-   (left) lifts as the whale rises, then settles back with a small
-   counter-tilt, like treading water. Negative rotation = head up (the head
-   is the left half; origin 50% 60%). */
 @keyframes hero-fish-swim {
   0%,
   100% {
