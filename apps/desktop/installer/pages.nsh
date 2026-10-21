@@ -70,7 +70,7 @@ Function InstallerCreate
 
     ${NSD_CreateBitmap} 0 0 0 0 ""
     Pop $4
-    !insertmacro InstallerPlace $4 0 ${INSTALLER_BRAND_Y} ${INSTALLER_WINDOW_SIZE} ${INSTALLER_BRAND_HEIGHT}
+    !insertmacro InstallerPlace $4 ${INSTALLER_BRAND_X} ${INSTALLER_BRAND_Y} ${INSTALLER_BRAND_SIZE} ${INSTALLER_BRAND_SIZE}
     StrCpy $5 "brand"
     ${If} $InstallerTheme == "dark"
         StrCpy $5 "brand-dark"

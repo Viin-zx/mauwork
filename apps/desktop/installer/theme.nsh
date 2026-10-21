@@ -2,6 +2,10 @@
 !define INSTALLER_WINDOW_SIZE 600
 !define INSTALLER_BRAND_Y 174
 !define INSTALLER_BRAND_HEIGHT 196
+; The brand artwork is a square mark: center it inside the 600x196 band instead
+; of stretching it across the full width.
+!define INSTALLER_BRAND_SIZE 196
+!define INSTALLER_BRAND_X 202
 !define INSTALLER_BUTTON_X 240
 !define INSTALLER_BUTTON_Y 490
 !define INSTALLER_BUTTON_WIDTH 120
