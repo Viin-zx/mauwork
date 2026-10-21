@@ -1,0 +1,37 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/api/mio-account-controller/README.md
+/:
+  en: e6992937d27afb3d
+  zh: 5e475125eb4177d1
+/deepseek-ai-dsh-api-mio-account-controller:
+  en: ab5fea32179d3a2f
+  zh: e660882ca539fbfe
+/deepseek-ai-dsh-api-mio-account-controller/summary:
+  en: e3b3376631695b01
+  zh: b6703035f3ce1fa2
+/deepseek-ai-dsh-api-mio-account-controller/table-of-contents:
+  en: af856ba79fe31b8e
+  zh: 15b7d1a5d1856de2
+/deepseek-ai-dsh-api-mio-account-controller/use-this-package:
+  en: 0565970577f8eace
+  zh: 3ddf891025596034
+/deepseek-ai-dsh-api-mio-account-controller/understand-the-implementation:
+  en: d3314d74ed43fbe7
+  zh: e24981918ac4b606
+/deepseek-ai-dsh-api-mio-account-controller/further-exploration:
+  en: db3de22a8d82d7d1
+  zh: 358e7e55d05aebcc
+/deepseek-ai-dsh-api-mio-account-controller/model-experience:
+  en: ee1df7ca3467ee3f
+  zh: 84904a5148da3862
+/deepseek-ai-dsh-api-mio-account-controller/model-experience/kv-cache-effect:
+  en: ca3015e252db0114
+  zh: ebca9253cf15e8e9
+/deepseek-ai-dsh-api-mio-account-controller/known-limitations-and-deferred-work:
+  en: eb12b0ca9c82cb32
+  zh: 94c27cfc258932a0
+/deepseek-ai-dsh-api-mio-account-controller/known-limitations-and-deferred-work/dev-note:
+  en: 8bf6234613a5a0c5
+  zh: 2616326f615ebdb5

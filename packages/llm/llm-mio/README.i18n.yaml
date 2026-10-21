@@ -1,0 +1,46 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/llm/llm-mio/README.md
+/:
+  en: 63bbba4d0ac01f45
+  zh: cc6ecb9c91865254
+/deepseek-ai-dsh-llm-mio:
+  en: e3ceafba7eee60e3
+  zh: bd5391281242067f
+/deepseek-ai-dsh-llm-mio/summary:
+  en: 5d61dc588b238edd
+  zh: 78dc0aba76ba8ea6
+/deepseek-ai-dsh-llm-mio/table-of-contents:
+  en: af856ba79fe31b8e
+  zh: 15b7d1a5d1856de2
+/deepseek-ai-dsh-llm-mio/use-this-package:
+  en: e3d00d53b538c60a
+  zh: 5ab12cc702fc878c
+/deepseek-ai-dsh-llm-mio/understand-the-implementation:
+  en: cfb1281f5c8f5616
+  zh: a0ad06fff8046058
+/deepseek-ai-dsh-llm-mio/further-exploration:
+  en: ff726a7e71106a12
+  zh: 1e6b5dbf75d3f530
+/deepseek-ai-dsh-llm-mio/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-llm-mio/model-experience/model-catalog-and-request-rendering:
+  en: 25ec5c905b90814b
+  zh: e580cb647179c6a0
+/deepseek-ai-dsh-llm-mio/model-experience/model-catalog-and-request-rendering/what-the-model-sees:
+  en: 1cc1c32b6c150abf
+  zh: a06775f8ec0bec4c
+/deepseek-ai-dsh-llm-mio/model-experience/model-catalog-and-request-rendering/token-effect:
+  en: 9f807616e9b9d47e
+  zh: c2a8ec4357c5e1b5
+/deepseek-ai-dsh-llm-mio/model-experience/model-catalog-and-request-rendering/kv-cache-effect:
+  en: b8e86635afe094a8
+  zh: 50f99fa8d9337044
+/deepseek-ai-dsh-llm-mio/known-limitations-and-deferred-work:
+  en: 6318c768778f137b
+  zh: 5d2b693a82365327
+/deepseek-ai-dsh-llm-mio/known-limitations-and-deferred-work/dev-note:
+  en: b5a63eb3b3e1e77f
+  zh: 07342871d8a31c27

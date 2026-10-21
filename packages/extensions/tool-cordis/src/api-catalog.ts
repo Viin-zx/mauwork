@@ -1585,6 +1585,107 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'mioAccount',
+    summary: 'Account operations against the mioagent business backend.',
+    description: 'Account operations against the mioagent business backend. Implementations own session persistence and the model-access cache; consumers never see the access token or model key.',
+    methods: [
+      {
+        signature: 'abstract getState(): Promise<MioAccountView>',
+        description: 'Read stored login presence without network access.',
+        parameters: [],
+        returns: 'the safe user projection and token expiry, or the signed-out state.',
+      },
+      {
+        signature: 'abstract watch(signal: AbortSignal): AsyncIterable<MioAccountView>',
+        description: 'Subscribe to stored login state, including the current value first.',
+        parameters: [{ name: 'signal', description: 'subscription lifetime.' }],
+        returns: 'complete state snapshots as login state changes.',
+      },
+      {
+        signature: 'abstract sendSmsCode(request: MioSmsCodeRequest, signal?: AbortSignal): Promise<MioSmsCode>',
+        description: 'Request an SMS verification code for registration or login.',
+        parameters: [{ name: 'request', description: 'phone number and purpose.' }, { name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the issued code handle and its timing facts.',
+      },
+      {
+        signature: 'abstract register(request: MioRegisterRequest, signal?: AbortSignal): Promise<MioAccountView>',
+        description: 'Register a new user and store the returned login state.',
+        parameters: [{ name: 'request', description: 'registration fields.' }, { name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the stored account state.',
+      },
+      {
+        signature: 'abstract loginWithPassword(request: MioPasswordLoginRequest, signal?: AbortSignal): Promise<MioAccountView>',
+        description: 'Log in with a phone number and password, storing the returned login state.',
+        parameters: [{ name: 'request', description: 'credentials.' }, { name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the stored account state.',
+      },
+      {
+        signature: 'abstract loginWithSms(request: MioSmsLoginRequest, signal?: AbortSignal): Promise<MioAccountView>',
+        description: 'Log in with an SMS verification code, storing the returned login state.',
+        parameters: [{ name: 'request', description: 'phone number, code handle, and code.' }, { name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the stored account state.',
+      },
+      {
+        signature: 'abstract resetPassword(request: MioResetPasswordRequest, signal?: AbortSignal): Promise<void>',
+        description: 'Replace a forgotten password using a code issued for the `RESET_PASSWORD` scene.',
+        parameters: [{ name: 'request', description: 'phone number, code handle, code, and replacement password.' }, { name: 'signal', description: 'caller cancellation.' }],
+      },
+      {
+        signature: 'abstract logout(signal?: AbortSignal): Promise<MioAccountView>',
+        description: 'Revoke the server session and remove the stored login state.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the signed-out state.',
+      },
+      {
+        signature: 'abstract getProfile(signal?: AbortSignal): Promise<MioUser | null>',
+        description: 'Refresh the display profile from the business backend.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the refreshed user, or null when the session changed during the read.',
+      },
+      {
+        signature: 'abstract getAccountStatus(signal?: AbortSignal): Promise<MioAccountStatusView>',
+        description: 'Query NewAPI account provisioning progress.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the current account and credential status.',
+      },
+      {
+        signature: 'abstract retryAccount(signal?: AbortSignal): Promise<MioAccountStatusView>',
+        description: 'Ask the backend to retry account provisioning.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the latest account status.',
+      },
+      {
+        signature: 'abstract getModels(signal?: AbortSignal): Promise<MioModelCatalogView>',
+        description: 'Read the business model directory.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'every model the backend currently offers.',
+      },
+      {
+        signature: 'abstract getModelAccess(signal?: AbortSignal): Promise<MioModelAccess>',
+        description: 'Resolve the model endpoint and current key. Host-only; callers must not log, persist outside the credentials seam, or expose the returned key.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the endpoint, key, and credential version.',
+      },
+      {
+        signature: 'abstract invalidateModelAccess(): void',
+        description: 'Discard the cached model key after a model service rejects it.',
+        parameters: [],
+      },
+      {
+        signature: 'abstract getQuota(signal?: AbortSignal): Promise<MioQuotaView>',
+        description: 'Read the remaining upstream quota.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the quota snapshot.',
+      },
+      {
+        signature: 'abstract getAgreements(signal?: AbortSignal): Promise<readonly MioAgreement[]>',
+        description: 'Read user, privacy, and subscription agreements.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'agreement documents in the backend\'s fixed order.',
+      },
+    ],
+  },
+  {
     key: 'officeToPdf',
     summary: 'A provider lifetime owns all converters, queued calls, and temporary files.',
     description: 'A provider lifetime owns all converters, queued calls, and temporary files.',
@@ -4374,6 +4475,22 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'options', description: 'the full request. A LOOP-built request carries the process-local {@link markAgentLoopRequest} identity and arrives deep-frozen (mutation throws): its content is a pure function of the session log (the reconstructability Agent Note), so listeners read it, never rewrite it. Hand-built calls do not carry that marker; callers own their request inputs and must keep them unchanged until the stream settles.' }],
   },
   {
+    name: 'mio-account/changed',
+    mode: 'emit',
+    signature: '\'mio-account/changed\'(): void',
+    summary: 'Stored login state or model access changed; Host consumers re-read their inputs.',
+    description: 'Stored login state or model access changed; Host consumers re-read their inputs.',
+    parameters: [],
+  },
+  {
+    name: 'mio-account/session-expired',
+    mode: 'emit',
+    signature: '\'mio-account/session-expired\'(): void',
+    summary: 'The business backend rejected the stored access token and the Host removed it.',
+    description: 'The business backend rejected the stored access token and the Host removed it.',
+    parameters: [],
+  },
+  {
     name: 'permission-presets/catalog-changed',
     mode: 'emit',
     signature: '\'permission-presets/catalog-changed\'(): void',
@@ -6212,6 +6329,78 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'MessageSourceMap',
     declaration: 'export interface MessageSourceMap {\n    user: {\n        kind: \'user\';\n    };\n    model: ModelMessageSource;\n    tool: ToolMessageSource;\n    \'system-prompt\': SystemPromptMessageSource;\n}',
+  },
+  {
+    name: 'MioAccountStatusView',
+    declaration: 'export interface MioAccountStatusView {\n    readonly status: string;\n    readonly stage: string;\n    readonly credentialStatus: string;\n    readonly retryable: boolean;\n    readonly retryAfterSeconds: number;\n}',
+  },
+  {
+    name: 'MioAccountView',
+    declaration: 'export interface MioAccountView {\n    readonly status: \'signed-out\' | \'signed-in\';\n    readonly user: MioUser | null;\n    readonly expiresAt: number | null;\n}',
+  },
+  {
+    name: 'MioAgreement',
+    declaration: 'export interface MioAgreement {\n    readonly agreementType: string;\n    readonly title?: string | undefined;\n    readonly content: string;\n    readonly version?: string | undefined;\n    readonly updatedAt?: string | undefined;\n}',
+  },
+  {
+    name: 'MioModel',
+    declaration: 'export interface MioModel {\n    readonly modelId: string;\n    readonly displayName: string;\n    readonly providerName: string;\n    readonly modelType: MioModelType;\n    readonly requestTimeoutMs: number;\n    readonly isDefault: boolean;\n    readonly parameters: MioModelParameters;\n}',
+  },
+  {
+    name: 'MioModelAccess',
+    declaration: 'export interface MioModelAccess {\n    readonly baseUrl: string;\n    readonly apiKey: string;\n    readonly credentialVersion: number;\n    readonly expiresAt: string;\n}',
+  },
+  {
+    name: 'MioModelCatalogView',
+    declaration: 'export interface MioModelCatalogView {\n    readonly items: readonly MioModel[];\n    readonly fetchedAt: string;\n    readonly stale: boolean;\n}',
+  },
+  {
+    name: 'MioModelParameters',
+    declaration: 'export interface MioModelParameters {\n    readonly contextWindowTokens?: number | undefined;\n    readonly maxOutputTokens?: number | undefined;\n    readonly temperature?: number | null | undefined;\n    readonly topP?: number | null | undefined;\n    readonly reasoningEffort?: string | null | undefined;\n    readonly reasoningEnabled?: boolean | undefined;\n    readonly visionEnabled?: boolean | undefined;\n    readonly functionCallingEnabled?: boolean | undefined;\n    readonly speechRecognitionEnabled?: boolean | undefined;\n}',
+  },
+  {
+    name: 'MioModelType',
+    declaration: 'export type MioModelType = \'LANGUAGE\' | \'EMBEDDING\' | \'RERANK\' | \'IMAGE\' | \'VIDEO\' | \'TTS\';',
+  },
+  {
+    name: 'MioPasswordLoginRequest',
+    declaration: 'export interface MioPasswordLoginRequest {\n    readonly countryCode: string;\n    readonly mobile: string;\n    readonly password: string;\n}',
+  },
+  {
+    name: 'MioQuotaView',
+    declaration: 'export interface MioQuotaView {\n    readonly remainingQuota: number;\n    readonly usedQuota: number;\n    readonly unit: string;\n    readonly fetchedAt: string;\n}',
+  },
+  {
+    name: 'MioRegisterRequest',
+    declaration: 'export interface MioRegisterRequest {\n    readonly countryCode: string;\n    readonly mobile: string;\n    readonly smsRequestId?: string;\n    readonly smsCode?: string;\n    readonly password: string;\n    readonly nickname: string;\n}',
+  },
+  {
+    name: 'MioResetPasswordRequest',
+    declaration: 'export interface MioResetPasswordRequest {\n    readonly countryCode: string;\n    readonly mobile: string;\n    readonly smsRequestId: string;\n    readonly smsCode: string;\n    readonly newPassword: string;\n}',
+  },
+  {
+    name: 'MioSmsCode',
+    declaration: 'export interface MioSmsCode {\n    readonly smsRequestId: string;\n    readonly retryAfterSeconds: number;\n    readonly expiresIn: number;\n}',
+  },
+  {
+    name: 'MioSmsCodeRequest',
+    declaration: 'export interface MioSmsCodeRequest {\n    readonly countryCode: string;\n    readonly mobile: string;\n    readonly scene: MioSmsScene;\n}',
+  },
+  {
+    name: 'MioSmsLoginRequest',
+    declaration: 'export interface MioSmsLoginRequest {\n    readonly countryCode: string;\n    readonly mobile: string;\n    readonly smsRequestId: string;\n    readonly smsCode: string;\n}',
+  },
+  {
+    name: 'MioSmsScene',
+    declaration: 'export type MioSmsScene = \'REGISTER\' | \'LOGIN\' | \'RESET_PASSWORD\';',
+  },
+  {
+    name: 'MioUser',
+    declaration: 'export interface MioUser {\n    readonly userId: MioUserId;\n    readonly maskedPhone: string;\n    readonly nickname: string;\n    readonly accountStatus: string;\n    readonly credentialStatus: string;\n}',
+  },
+  {
+    name: 'MioUserId',
+    declaration: 'export type MioUserId = Branded<\'MioUserId\'>;',
   },
   {
     name: 'ModDefinition',

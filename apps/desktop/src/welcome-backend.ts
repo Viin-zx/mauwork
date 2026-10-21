@@ -2,13 +2,14 @@ import type { ProductEvent } from '@deepseek-ai/dsh-client-product-analytics/typ
 /** Native welcome operations using the shared Web authentication and RPC APIs. */
 
 import { randomUUID } from 'node:crypto'
-import { desktopAccountBackend, type DesktopAccountBackend } from './account-backend.ts'
+import type {
+  MioAccountView, MioAgreement, MioPasswordLoginRequest, MioResetPasswordRequest, MioSmsCode,
+  MioSmsCodeRequest, MioSmsLoginRequest,
+} from '@deepseek-ai/dsh-mio-account/types'
 
 /** Metadata needed before the native entry or workspace becomes visible. */
 export interface WelcomeState {
   readonly loggedIn: boolean
-  readonly hasApiKey: boolean
-  readonly writable: boolean
   readonly localePreference: string | null
 }
 
@@ -16,18 +17,24 @@ export interface WelcomeState {
 export interface DesktopWelcomeBackend {
   /** @returns the current Host policy; every read observes live configuration. */
   analyticsEnabled(): Promise<boolean>
-  readonly account: DesktopAccountBackend
   /** @param event - desktop-owned fields. @returns after local Host intake. */
   report(event: ProductEvent): Promise<void>
   /** @returns Configured-key presence and the shared language preference, without credential values. */
   read(): Promise<WelcomeState>
   /** @returns The saved UI language without account or provider requests. */
   readLocalePreference(): Promise<string | null>
-  /**
-   * @param apiKey - User-entered official provider key.
-   * @returns A safe write outcome without provider diagnostics.
-   */
-  save(apiKey: string): Promise<{ ok: boolean }>
+  /** @returns current mioagent account state. */
+  getState(): Promise<MioAccountView>
+  /** @param request - SMS code request. @returns the issued code metadata. */
+  sendSmsCode(request: MioSmsCodeRequest): Promise<MioSmsCode>
+  /** @param request - SMS login request. @returns the account view after login. */
+  loginWithSms(request: MioSmsLoginRequest): Promise<MioAccountView>
+  /** @param request - password login request. @returns the account view after login. */
+  loginWithPassword(request: MioPasswordLoginRequest): Promise<MioAccountView>
+  /** @param request - password reset request. @returns after reset completes. */
+  resetPassword(request: MioResetPasswordRequest): Promise<void>
+  /** @returns the list of agreements the user must accept. */
+  getAgreements(): Promise<readonly MioAgreement[]>
 }
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -38,12 +45,11 @@ function record(value: unknown): value is Record<string, unknown> {
  * Authenticate the native HTTP client through the Web application's launch URL.
  * @param authenticatedUrl - URL supplied by the running Desktop Host.
  * @param send - Electron session fetch, retaining the Web authentication cookie.
- * @returns metadata reads and write-only credential operations over standard RPC.
+ * @returns metadata reads and mioagent login operations over standard RPC.
  */
 export async function connectDesktopWelcome(
   authenticatedUrl: string,
   send: (input: string, init?: RequestInit) => Promise<Response>,
-  cookies: () => Promise<string> = () => Promise.resolve(''),
 ): Promise<DesktopWelcomeBackend> {
   const origin = new URL(authenticatedUrl).origin
   const authenticated = await send(authenticatedUrl, { credentials: 'include' })
@@ -63,24 +69,21 @@ export async function connectDesktopWelcome(
     if (!response.ok) throw new Error('desktop welcome: Web request failed')
     const envelope: unknown = await response.json()
     if (!record(envelope) || envelope.type !== 'server-response' || envelope.rpcId !== rpcId
-      || !record(envelope.result) || envelope.result.ok !== true) {
+      || !record(envelope.result)) {
       throw new Error('desktop welcome: Web RPC failed')
+    }
+    if (envelope.result.ok !== true) {
+      const failure = envelope.result.error
+      throw new Error(record(failure) && typeof failure.message === 'string' && failure.message !== ''
+        ? failure.message
+        : 'desktop welcome: Web RPC failed')
     }
     return envelope.result.value
   }
-  const account = desktopAccountBackend(origin, invoke, cookies)
-  const settingsAndReference = async () => {
+  const localePreference = async (): Promise<string | null> => {
     const settings = await invoke({ namespace: 'settings', method: 'describe', args: {} })
     if (!record(settings) || !Array.isArray(settings.namespaces)) throw new Error('desktop welcome: missing settings namespaces')
-    const official: unknown = settings.namespaces.find((item: unknown) => record(item) && item.ns === 'llm-deepseek')
-    if (official === undefined) return { settings: { namespaces: settings.namespaces }, ref: undefined }
-    if (!record(official) || !record(official.value) || typeof official.value.apiKeyEnv !== 'string') {
-      throw new Error('desktop welcome: missing official DeepSeek credential reference')
-    }
-    return { settings: { namespaces: settings.namespaces }, ref: official.value.apiKeyEnv }
-  }
-  const localePreference = (namespaces: unknown[]): string | null => {
-    const locale: unknown = namespaces.find((item: unknown) => record(item) && item.ns === 'locale')
+    const locale: unknown = settings.namespaces.find((item: unknown) => record(item) && item.ns === 'locale')
     if (!record(locale) || !record(locale.value)
       || (locale.value.preference !== undefined && typeof locale.value.preference !== 'string')) {
       throw new Error('desktop welcome: invalid locale preference')
@@ -88,40 +91,19 @@ export async function connectDesktopWelcome(
     return locale.value.preference ?? null
   }
   const read = async (): Promise<WelcomeState> => {
-    const { settings, ref } = await settingsAndReference()
-    const providers = await invoke({ namespace: 'llm', method: 'listConfigurableProviders', args: {} })
-    if (!Array.isArray(providers)) throw new Error('desktop welcome: invalid provider directory')
-    const namespaces = settings.namespaces
-    const refs = providers.flatMap((provider: unknown) => {
-      if (!record(provider) || typeof provider.settingsNs !== 'string' || !Array.isArray(provider.settingsPath)) {
-        throw new Error('desktop welcome: invalid provider settings address')
-      }
-      const namespace: unknown = namespaces.find((item: unknown) => record(item) && item.ns === provider.settingsNs)
-      let value: unknown = record(namespace) ? namespace.value : undefined
-      for (const key of provider.settingsPath as unknown[]) {
-        if (typeof key !== 'string') throw new Error('desktop welcome: invalid provider settings path')
-        value = record(value) ? value[key] : undefined
-      }
-      return record(value) && typeof value.apiKeyEnv === 'string' ? [value.apiKeyEnv] : []
-    })
-    const unique = [...new Set([...(ref === undefined ? [] : [ref]), ...refs])]
-    const states: Record<string, unknown> = {}
-    // credentials.describe accepts at most 64 references per request.
-    for (let offset = 0; offset < unique.length; offset += 64) {
-      const batch = await invoke({ namespace: 'credentials', method: 'describe', args: { refs: unique.slice(offset, offset + 64) } })
-      if (!record(batch)) throw new Error('desktop welcome: invalid credential metadata')
-      Object.assign(states, batch)
+    let loggedIn = false
+    try {
+      const state = await invoke({ namespace: 'mioAccount', method: 'getState', args: {} })
+      if (record(state) && state.status === 'signed-in') loggedIn = true
+    } catch {
+      // The mioAccount Remote may not exist; treat as not logged in.
     }
-    if (ref !== undefined && !record(states[ref])) throw new Error('desktop welcome: missing credential metadata')
     return {
-      loggedIn: (await account.state()).status === 'credential-stored',
-      hasApiKey: Object.values(states).some(value => record(value) && value.configured === true),
-      writable: ref !== undefined && record(states[ref]) && states[ref].writable === true,
-      localePreference: localePreference(namespaces),
+      loggedIn,
+      localePreference: await localePreference(),
     }
   }
   return {
-    account,
     read,
     async analyticsEnabled() {
       const enabled = await invoke({ namespace: 'productAnalytics', method: 'enabled', args: {} }, AbortSignal.timeout(1000))
@@ -129,22 +111,29 @@ export async function connectDesktopWelcome(
       return enabled
     },
     async report(event) { await invoke({ namespace: 'productAnalytics', method: 'report', args: { event } }, AbortSignal.timeout(1000)) },
-    async readLocalePreference() {
-      const settings = await invoke({ namespace: 'settings', method: 'describe', args: {} })
-      if (!record(settings) || !Array.isArray(settings.namespaces)) throw new Error('desktop welcome: missing settings namespaces')
-      return localePreference(settings.namespaces)
+    readLocalePreference: localePreference,
+    async getState() {
+      const state = await invoke({ namespace: 'mioAccount', method: 'getState', args: {} })
+      return state as MioAccountView
     },
-    async save(apiKey) {
-      if (!/^[\x21-\x7e]+$/.test(apiKey)) return { ok: false }
-      try {
-        const { ref } = await settingsAndReference()
-        if (ref === undefined) return { ok: false }
-        await invoke({ namespace: 'credentials', method: 'set', args: { ref, value: apiKey } })
-        return { ok: true }
-      } catch {
-        // Provider diagnostics may contain credentials; the native form owns failure copy.
-        return { ok: false }
-      }
+    async sendSmsCode(request) {
+      const result = await invoke({ namespace: 'mioAccount', method: 'sendSmsCode', args: { request } })
+      return result as MioSmsCode
+    },
+    async loginWithSms(request) {
+      const result = await invoke({ namespace: 'mioAccount', method: 'loginWithSms', args: { request } })
+      return result as MioAccountView
+    },
+    async loginWithPassword(request) {
+      const result = await invoke({ namespace: 'mioAccount', method: 'loginWithPassword', args: { request } })
+      return result as MioAccountView
+    },
+    async resetPassword(request) {
+      await invoke({ namespace: 'mioAccount', method: 'resetPassword', args: { request } })
+    },
+    async getAgreements() {
+      const result = await invoke({ namespace: 'mioAccount', method: 'getAgreements', args: {} })
+      return result as readonly MioAgreement[]
     },
   }
 }

@@ -438,6 +438,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'The Host owns browser authorization and local credentials; UI consumers receive state without tokens.',
   },
   {
+    key: 'mioAccount',
+    pkg: 'mio-account',
+    title: 'mioagent account',
+    mode: 'seam',
+    implementations: [],
+    consumers: ['api-mio-account-controller', 'llm-mio', 'client-ui-mio-account'],
+    note: 'The definition package ships its HTTP provider; the Host owns the access token, model key, and session lifecycle, while UI consumers receive state without either credential.',
+  },
+  {
     key: 'authorization',
     pkg: 'authorization',
     title: 'Authorization flow registry',

@@ -281,6 +281,7 @@
     { "path": "./packages/document/office-to-pdf" },
 
     { "path": "./packages/api/account-controller" },
+    { "path": "./packages/api/mio-account-controller" },
     { "path": "./packages/credentials/deepseek-account-platform" },
     { "path": "./packages/credentials/deepseek-account" },
     { "path": "./packages/client/ui-deliverables/tsconfig.host.json" },
@@ -351,6 +352,7 @@
     { "path": "./packages/settings/settings" },
     { "path": "./packages/credentials/credentials" },
     { "path": "./packages/credentials/credentials-local" },
+    { "path": "./packages/credentials/mio-account" },
     { "path": "./packages/credentials/authorization" },
     { "path": "./packages/experimental/tool-session-query" },
     { "path": "./packages/storage/storage" },
@@ -424,6 +426,7 @@
     { "path": "./packages/llm/llm-deepseek-api-key" },
     { "path": "./packages/llm/llm-deepseek-account" },
     { "path": "./packages/llm/llm-pi-ai" },
+    { "path": "./packages/llm/llm-mio" },
     { "path": "./packages/shell/bash-local" },
     { "path": "./packages/shell/shell-env" },
     { "path": "./packages/shell/pwsh-local" },

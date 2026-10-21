@@ -49,6 +49,16 @@ export const remoteDefaultResponses: RemoteTable = {
   stream: {
     // api-session-controller client `apply`: the control stream's opening baseline, then open.
     'session/control': openStream([{ type: 'baseline', value: { projections: {} } }]),
+    // ui-mio-account subscribes at apply; signed in keeps the full-screen gate closed.
+    'mioAccount/watch': openStream([{
+      status: 'signed-in',
+      user: {
+        userId: 'test-account', maskedPhone: '138****0000', nickname: 'Test account',
+        accountStatus: 'READY', credentialStatus: 'READY',
+      },
+      expiresAt: null,
+    }]),
+    'mioAccount/watchExpiry': openStream([]),
     // ui-settings-account shares the account snapshot across settings and the sidebar menu.
     'account/watch': openStream([{ status: 'signed-out', attempt: null, links: { usageUrl: 'https://platform.deepseek.com/usage', topUpUrl: 'https://platform.deepseek.com/top_up' } }]),
     // api-workspace-controller client `apply`: the follow stream's opening baseline, then open.

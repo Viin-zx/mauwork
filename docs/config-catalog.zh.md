@@ -1772,6 +1772,27 @@ export interface Config extends ProtocolConfig {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-deepseek-api-key -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-mio -->
+<a id="deepseek-aidsh-llm-mio"></a>
+
+## `@deepseek-ai/dsh-llm-mio`
+
+- `inject`: `llm` · `mioAccount`
+- `source`: [`packages/llm/llm-mio/src/index.ts:22`](../packages/llm/llm-mio/src/index.ts)
+
+```ts config-catalog
+/** Deployment choices of the mioagent model route. */
+export interface Config {
+  /** Route key registered with the LLM registry; defaults to `mio`. */
+  provider?: string
+  /** Display name shown by model selectors; defaults to `mioagent`. */
+  displayName?: string
+  /** Maximum age of the fetched model directory before it is read again. */
+  catalogTtlMs?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-mio -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-pi-ai -->
 <a id="deepseek-aidsh-llm-pi-ai"></a>
 
@@ -2279,6 +2300,27 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-message-feedback -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-mio-account -->
+<a id="deepseek-aidsh-mio-account"></a>
+
+## `@deepseek-ai/dsh-mio-account`
+
+- `inject`: `credentials`
+- `source`: [`packages/credentials/mio-account/src/index.ts:36`](../packages/credentials/mio-account/src/index.ts)
+
+```ts config-catalog
+/** Deployment choices of the mioagent business client. */
+export interface Config {
+  /** Business backend origin, for example `http://localhost:8080`. */
+  businessBaseUrl?: string
+  /** Deadline of one business request. */
+  requestTimeoutMs?: number
+  /** Maximum age of a resolved model key before the next access re-fetches it. */
+  modelAccessTtlMs?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-mio-account -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-office-to-pdf -->
 <a id="deepseek-aidsh-office-to-pdf"></a>
@@ -4595,6 +4637,7 @@ export interface Config {
 | `@deepseek-ai/dsh-acp-app` | `cmdlineArgs` | [`packages/bundle/acp-app/src/index.ts`](../packages/bundle/acp-app/src/index.ts) |
 | `@deepseek-ai/dsh-agent` | — | [`packages/core/agent/src/index.ts`](../packages/core/agent/src/index.ts) |
 | `@deepseek-ai/dsh-api-account-controller` | `deepseekAccount` · `agents` | [`packages/api/account-controller/src/index.ts`](../packages/api/account-controller/src/index.ts) |
+| `@deepseek-ai/dsh-api-mio-account-controller` | `mioAccount` | [`packages/api/mio-account-controller/src/index.ts`](../packages/api/mio-account-controller/src/index.ts) |
 | `@deepseek-ai/dsh-api-remote-access` | — | [`packages/api/remote-access/src/index.ts`](../packages/api/remote-access/src/index.ts) |
 | `@deepseek-ai/dsh-api-remotes` | `typertGateway` | [`packages/api/remotes/src/index.ts`](../packages/api/remotes/src/index.ts) |
 | `@deepseek-ai/dsh-authorization` | `credentials` | [`packages/credentials/authorization/src/index.ts`](../packages/credentials/authorization/src/index.ts) |
@@ -4620,6 +4663,7 @@ export interface Config {
 | `@deepseek-ai/dsh-client-ui-jobs` | — | [`packages/client/ui-jobs/src/index.ts`](../packages/client/ui-jobs/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-layout` | — | [`packages/client/ui-layout/src/index.ts`](../packages/client/ui-layout/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-message-feedback` | — | [`packages/client/ui-message-feedback/src/index.ts`](../packages/client/ui-message-feedback/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-mio-account` | — | [`packages/client/ui-mio-account/src/index.ts`](../packages/client/ui-mio-account/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-model-selection` | — | [`packages/client/ui-model-selection/src/index.ts`](../packages/client/ui-model-selection/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-open-in-app` | — | [`packages/client/ui-open-in-app/src/index.ts`](../packages/client/ui-open-in-app/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-permission-presets` | — | [`packages/client/ui-permission-presets/src/index.ts`](../packages/client/ui-permission-presets/src/index.ts) |

@@ -117,10 +117,16 @@
     - id: authorization
       name: '@deepseek-ai/dsh-authorization'
 
-    - id: deepseek-account
-      name: '@deepseek-ai/dsh-deepseek-account-platform'
+    # The mioagent business client owns login state, the model directory, quota,
+    # and agreements. The access token is stored in the credentials seam; the
+    # model key stays in memory. MIO_BUSINESS_BASE_URL overrides the deployment's
+    # HTTP(S) address, including an optional path prefix; the client appends the
+    # documented /mio/client/v1 API prefix. The default is the production service;
+    # development launchers set the development address.
+    - id: mio-account
+      name: '@deepseek-ai/dsh-mio-account'
       config:
-        desktopPlatform: !!js "ctx.get('profileContext')?.name === 'desktop' && ['darwin', 'win32'].includes(process.platform) ? process.platform : null"
+        businessBaseUrl: !!js process.env.MIO_BUSINESS_BASE_URL || 'https://mioagent.zrshuiwu.com/prod-api'
 
     - id: credentials
       name: '@deepseek-ai/dsh-credentials-local'
@@ -525,5 +531,5 @@
     - id: llm-deepseek
       name: '@deepseek-ai/dsh-llm-deepseek-api-key'
 
-    - id: llm-deepseek-account
-      name: '@deepseek-ai/dsh-llm-deepseek-account'
+    - id: llm-mio
+      name: '@deepseek-ai/dsh-llm-mio'

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, vi } from 'vitest'
 import { ok } from '@deepseek-ai/dsh-remote-mock'
 import { RemoteError } from '@deepseek-ai/dsh-typert-protocol'
 import { createClientTest, type TestClient, webApp } from '@deepseek-ai/dsh-client-test-runtime/src/assembly/index.ts'
+import { ClientRoster } from '@deepseek-ai/dsh-client-test-runtime/src/assembly/roster.ts'
 import type {
   AccountBonusBatch, AccountBonusOrderId, AccountDetails, AccountUserId, AccountView, SignInAttemptId,
 } from '@deepseek-ai/dsh-deepseek-account/types'
@@ -22,8 +23,25 @@ import type { AccountPlatformHostInjected } from '../src/client/AccountPlatformH
 import { AccountQuotaNotice } from '../src/client/AccountQuotaNotice.tsx'
 import type { AccountQuotaNoticeInjected } from '../src/client/AccountQuotaNotice.tsx'
 
-const it = createClientTest({ roster: webApp })
 const SELF = '@deepseek-ai/dsh-client-ui-settings-account'
+// The DeepSeek account UI is no longer part of the shipped Web roster; this
+// suite boots it beside the same composition so its registrations still run.
+const roster = ClientRoster.of([
+  ...webApp.without(['@deepseek-ai/dsh-client-ui-mio-account']).rows,
+  {
+    name: SELF,
+    inject: [
+      '@deepseek-ai/dsh-api-remotes',
+      '@deepseek-ai/dsh-client-locale',
+      '@deepseek-ai/dsh-client-ui-chat',
+      '@deepseek-ai/dsh-client-ui-layout',
+      '@deepseek-ai/dsh-client-ui-settings',
+      '@deepseek-ai/dsh-client-ui-theme',
+    ],
+    immediately: false,
+  },
+])
+const it = createClientTest({ roster: roster })
 const view: AccountView = {
   status: 'signed-out', attempt: null,
   links: { usageUrl: 'https://platform.deepseek.com/usage', topUpUrl: 'https://platform.deepseek.com/top_up' },

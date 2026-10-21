@@ -141,11 +141,11 @@
 
     # Configuration-surface reads and writes over Typert Remote. Each method
     # reports an actionable error when its settings-domain provider is absent.
-    - id: ui-settings-account
-      name: '@deepseek-ai/dsh-client-ui-settings-account'
+    - id: ui-mio-account
+      name: '@deepseek-ai/dsh-client-ui-mio-account'
 
-    - id: account-controller
-      name: '@deepseek-ai/dsh-api-account-controller'
+    - id: mio-account-controller
+      name: '@deepseek-ai/dsh-api-mio-account-controller'
 
     - id: settings-controller
       name: '@deepseek-ai/dsh-api-settings-controller'
@@ -309,8 +309,12 @@
     - id: ui-settings-general
       name: '@deepseek-ai/dsh-client-ui-settings-general'
 
+    # mioagent login owns credential setup: the gate resolves the account and
+    # its model route, so the first-run API-key onboarding stays out of the way.
     - id: ui-settings-models
       name: '@deepseek-ai/dsh-client-ui-settings-models'
+      config:
+        credentialOnboarding: false
 
     # Plugin management: the sidebar Plugins page installs, enables, disables,
     # and removes the profile's bundles through the `pluginManager` Remote.

@@ -418,6 +418,9 @@ if (isMain) {
     // The same launch vector as the root `dsh` script, so the served Host runs
     // from source exactly as `pnpm dsh web` would.
     if (options.serve) {
+      if (process.env.MIO_BUSINESS_BASE_URL === undefined || process.env.MIO_BUSINESS_BASE_URL === '') {
+        process.env.MIO_BUSINESS_BASE_URL = 'https://mioagent.dev.zrshuiwu.com/prod-api'
+      }
       spawnStage(supervisor, 'dsh web', process.execPath, [
         '--import', 'tsx/esm', 'apps/cli/src/bin.ts', 'web', ...options.appArgs,
       ], false)

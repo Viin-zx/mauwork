@@ -39,5 +39,5 @@
 - id: authorization
   disabled: true
 
-- id: deepseek-account
+- id: mio-account
   disabled: true

@@ -17,6 +17,9 @@
       "path": "../../packages/credentials/deepseek-account"
     },
     {
+      "path": "../../packages/credentials/mio-account"
+    },
+    {
       "path": "../../packages/client/product-analytics/tsconfig.client.json"
     }
   ]

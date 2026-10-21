@@ -112,6 +112,9 @@
       "path": "../account-controller"
     },
     {
+      "path": "../mio-account-controller"
+    },
+    {
       "path": "../../credentials/deepseek-account"
     }
   ]
