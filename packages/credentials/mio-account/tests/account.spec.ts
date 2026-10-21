@@ -608,6 +608,36 @@ describe('model catalog and access', () => {
     expect(requests[0]?.headers['authorization']).toBe('Bearer at-1')
   })
 
+  it('normalizes model metadata the directory omits', async () => {
+    const ctx = await signedIn()
+    replies.push(ok({
+      items: [
+        { modelId: 'model-a', modelType: 'LANGUAGE' },
+        {
+          modelId: 'embed-1', modelType: 'EMBEDDING', displayName: null, providerName: null,
+          requestTimeoutMs: null, isDefault: null, parameters: null,
+        },
+      ],
+      fetchedAt: '2026-10-20T00:00:00Z',
+      stale: false,
+    }))
+
+    expect(await ctx.mioAccount.getModels()).toEqual({
+      items: [
+        {
+          modelId: 'model-a', displayName: '', providerName: '', modelType: 'LANGUAGE',
+          requestTimeoutMs: 0, isDefault: false, parameters: {},
+        },
+        {
+          modelId: 'embed-1', displayName: '', providerName: '', modelType: 'EMBEDDING',
+          requestTimeoutMs: 0, isDefault: false, parameters: {},
+        },
+      ],
+      fetchedAt: '2026-10-20T00:00:00Z',
+      stale: false,
+    })
+  })
+
   it('caches model access per token, re-reads after expiry, and invalidates on demand', async () => {
     const ctx = await signedIn({ modelAccessTtlMs: 1_000 })
     const changed = changedEvents(ctx)

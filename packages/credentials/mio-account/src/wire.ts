@@ -73,12 +73,13 @@ const modelTypeSchema: z.ZodType<MioModelType> = z.enum([
 
 const modelSchema = z.object({
   modelId: z.string().min(1),
-  displayName: z.string().min(1),
-  providerName: z.string().min(1),
+  // The directory omits display and provider names for some service models.
+  displayName: z.string().nullish().transform(value => value ?? ''),
+  providerName: z.string().nullish().transform(value => value ?? ''),
   modelType: modelTypeSchema,
-  requestTimeoutMs: z.number().nonnegative(),
-  isDefault: z.boolean(),
-  parameters: modelParametersSchema.default({}),
+  requestTimeoutMs: z.number().nonnegative().nullish().transform(value => value ?? 0),
+  isDefault: z.boolean().nullish().transform(value => value ?? false),
+  parameters: modelParametersSchema.nullish().transform(value => value ?? {}),
 })
 
 /** Model directory snapshot. */

@@ -119,9 +119,12 @@ export interface MioModelParameters {
 export interface MioModel {
   /** Wire model id; the only value a model request may name. */
   readonly modelId: string
+  /** Display name; empty when the backend omits it. */
   readonly displayName: string
+  /** Provider display name; empty when the backend omits it. */
   readonly providerName: string
   readonly modelType: MioModelType
+  /** Declared request deadline; 0 when the backend omits it. */
   readonly requestTimeoutMs: number
   readonly isDefault: boolean
   readonly parameters: MioModelParameters

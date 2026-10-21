@@ -1775,8 +1775,8 @@ export interface Config extends ProtocolConfig {
 
 ## `@deepseek-ai/dsh-llm-mio`
 
-- `inject`: `llm` · `mioAccount`
-- `source`: [`packages/llm/llm-mio/src/index.ts:22`](../packages/llm/llm-mio/src/index.ts)
+- `inject`: `llm` · `mioAccount` · `agentDefaultModel`
+- `source`: [`packages/llm/llm-mio/src/index.ts:23`](../packages/llm/llm-mio/src/index.ts)
 
 ```ts config-catalog
 /** Deployment choices of the mioagent model route. */
@@ -1787,6 +1787,10 @@ export interface Config {
   displayName?: string
   /** Maximum age of the fetched model directory before it is read again. */
   catalogTtlMs?: number
+  /** Delay before re-reading account status while provisioning is incomplete. */
+  provisioningRetryMs?: number
+  /** Adopt the backend-declared default chat model when the current agent default is not routable. */
+  autoSelectDefaultModel?: boolean
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-mio -->

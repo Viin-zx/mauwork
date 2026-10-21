@@ -31,6 +31,10 @@ export interface MioAdapterOptions {
   readonly displayName: string
   /** Maximum age of the fetched model directory before it is read again. */
   readonly catalogTtlMs: number
+  /** Delay before re-reading provisioning status while the account is not ready. */
+  readonly provisioningRetryMs: number
+  /** Notified with the published chat models and the backend-declared default after one route refresh. */
+  readonly onModelsPublished?: (models: readonly { readonly id: string }[], defaultModelId: string | undefined) => void
 }
 
 /** One catalog entry projected into the pi-ai model vocabulary. */
@@ -38,7 +42,7 @@ function toPiModel(model: MioModel): PiAiModelProfile {
   const { parameters } = model
   return {
     id: model.modelId,
-    name: model.displayName,
+    ...model.displayName === '' ? {} : { name: model.displayName },
     ...parameters.contextWindowTokens === undefined ? {} : { contextWindow: parameters.contextWindowTokens },
     ...parameters.maxOutputTokens === undefined ? {} : { maxTokens: parameters.maxOutputTokens },
     input: parameters.visionEnabled === true ? ['text', 'image'] : ['text'],
@@ -58,6 +62,7 @@ export class MioAdapter extends PiAiAdapter {
   private dirty = true
   private lastRefreshAt = 0
   private registration: AdapterRegistrationHandle | undefined
+  private retryTimer: ReturnType<typeof setTimeout> | undefined
   private disposed = false
 
   /** @param options - account seam, route identity, and catalog lifetime. */
@@ -124,6 +129,7 @@ export class MioAdapter extends PiAiAdapter {
   /** Withdraw the route and stop observing account changes. */
   dispose(): void {
     this.disposed = true
+    this.clearProvisioningRetry()
     this.registration?.()
     this.registration = undefined
     this.profiles = new Map()
@@ -198,6 +204,7 @@ export class MioAdapter extends PiAiAdapter {
   private async refresh(): Promise<void> {
     const state = await this.options.account.getState()
     if (state.status !== 'signed-in' || state.user === null) {
+      this.clearProvisioningRetry()
       this.catalog = undefined
       this.setProfiles(new Map())
       return
@@ -207,16 +214,20 @@ export class MioAdapter extends PiAiAdapter {
     const catalog = await this.ensureCatalog()
     if (state.user.accountStatus !== 'READY' || state.user.credentialStatus !== 'READY') {
       this.setProfiles(new Map())
+      this.scheduleProvisioningRetry()
       return
     }
+    this.clearProvisioningRetry()
     const access = await this.options.account.getModelAccess()
     const models: PiAiModelProfile[] = []
     const seen = new Set<string>()
+    let defaultModelId: string | undefined
     for (const model of catalog.items) {
       // Only LANGUAGE models speak chat completions; the directory also lists
       // embedding, image, and other services this route cannot call.
       if (model.modelType !== 'LANGUAGE' || seen.has(model.modelId)) continue
       seen.add(model.modelId)
+      if (model.isDefault && defaultModelId === undefined) defaultModelId = model.modelId
       models.push(toPiModel(model))
     }
     if (models.length === 0) {
@@ -232,6 +243,7 @@ export class MioAdapter extends PiAiAdapter {
       models,
     }
     this.setProfiles(resolveProfiles({ [this.options.provider]: profile }))
+    if (this.profiles.size > 0) this.options.onModelsPublished?.(models, defaultModelId)
   }
 
   /** Fetch the directory when the cached snapshot is older than its lifetime. */
@@ -241,6 +253,42 @@ export class MioAdapter extends PiAiAdapter {
     const view = await this.options.account.getModels()
     this.catalog = { view, fetchedAt: Date.now() }
     return view
+  }
+
+  /**
+   * Re-read provisioning status after one delay, then republish the route.
+   * Runs only while a signed-in account is not ready; signing out or reaching
+   * readiness stops the loop.
+   */
+  private scheduleProvisioningRetry(): void {
+    if (this.disposed || this.retryTimer !== undefined) return
+    const timer = setTimeout(() => {
+      this.retryTimer = undefined
+      void (async () => {
+        try {
+          const state = await this.options.account.getState()
+          if (this.disposed || state.status !== 'signed-in' || state.user === null) {
+            this.clearProvisioningRetry()
+            return
+          }
+          await this.options.account.getAccountStatus()
+          this.markDirty()
+        } catch (error) {
+          this.options.context.logger.warn('llm-mio: could not read the mioagent account status')
+          this.options.context.logger.warn(error)
+          this.scheduleProvisioningRetry()
+        }
+      })()
+    }, this.options.provisioningRetryMs)
+    timer.unref()
+    this.retryTimer = timer
+  }
+
+  /** Stop waiting for provisioning progress. */
+  private clearProvisioningRetry(): void {
+    if (this.retryTimer === undefined) return
+    clearTimeout(this.retryTimer)
+    this.retryTimer = undefined
   }
 
   /** Publish a profile set and reconcile the registered route with it. */

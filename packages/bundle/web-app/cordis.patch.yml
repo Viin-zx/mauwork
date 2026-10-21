@@ -309,10 +309,13 @@
     - id: ui-settings-general
       name: '@deepseek-ai/dsh-client-ui-settings-general'
 
-    # mioagent login owns credential setup: the gate resolves the account and
-    # its model route, so the first-run API-key onboarding stays out of the way.
+    # mioagent owns model routing: models and their gateway credentials come
+    # from the account service, so shipped profiles keep the Models settings
+    # page and its API-key onboarding out of the product surface. Test-only
+    # profile assemblies still mount it to cover the plugin itself.
     - id: ui-settings-models
       name: '@deepseek-ai/dsh-client-ui-settings-models'
+      disabled: !!js "['desktop', 'web'].includes(ctx.get('profileContext')?.name)"
       config:
         credentialOnboarding: false
 

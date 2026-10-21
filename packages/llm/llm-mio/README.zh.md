@@ -20,7 +20,7 @@ mioagent 模型路由通过 pi-ai 的 OpenAI 兼容协议提供用户后端下�
 <a id="use-this-package"></a>
 ## 使用此包
 
-在插件行配置 `provider`（默认 `mio`）和 `displayName`（默认 `mioagent`）。`catalogTtlMs`（默认 60,000ms）限制模型目录的复用时长。仅当账号已登录且 `/account/status` 返回 `status: READY` 与 `credentialStatus: READY` 时，路由才会注册到 LLM 注册表；退登、token 过期或状态离开 `READY` 时会撤销路由，并通过 `llm/adapters-updated` 通知模型选择器。
+在插件行配置 `provider`（默认 `mio`）、`displayName`（默认 `mioagent`）、`catalogTtlMs`（默认 60,000ms）和 `provisioningRetryMs`（默认 5,000ms）。`autoSelectDefaultModel`（默认开启）会在已保存的默认选择指向其他提供者或后端已下架的模型时，把默认模型改为后端声明的默认对话模型（未声明时取第一个发布的模型）。仅当账号已登录且 `/account/status` 返回 `status: READY` 与 `credentialStatus: READY` 时，路由才会注册到 LLM 注册表；退登、token 过期或状态离开 `READY` 时会撤销路由，并通过 `llm/adapters-updated` 通知模型选择器。账号已登录但仍在开户时，适配器每隔 `provisioningRetryMs` 重新读取 `/account/status`，两个状态就绪后立即发布路由。
 
 登录后即通过账号服务读取模型目录，因此开户尚未完成时目录依然可见；模型端点与密钥只在两个状态都就绪后读取。只有 `LANGUAGE` 模型会成为可选项。每次请求使用后端的 `modelId`，并请求返回的 `baseUrl`，去除末尾斜杠以确保 pi-ai 只追加一次 `/chat/completions`。
 
@@ -60,7 +60,7 @@ mioagent 模型路由通过 pi-ai 的 OpenAI 兼容协议提供用户后端下�
 <a id="known-limitations-and-deferred-work"></a>
 
 - 后端上报的推理等级、温度默认值和工具调用能力未映射为请求选项；只有容量和模态进入适配器。不能调用工具的模型仍会提供给 Agent 循环。
-- 路由不会轮询开户状态。刚刚就绪的账号会在下一次模型操作或账号变化时可用，而不是由定时器触发。
+- 默认模型策略通过配置编辑器写入。没有 profile 条目的部署保留组合中的默认选择。
 
 <a id="dev-note"></a>
 ### 开发备注

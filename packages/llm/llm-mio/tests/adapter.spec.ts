@@ -9,6 +9,7 @@ import { MioAccount } from '@deepseek-ai/dsh-mio-account'
 import type { MioAccountStatusView, MioAccountView, MioAgreement, MioModelAccess, MioModelCatalogView, MioPasswordLoginRequest, MioQuotaView, MioRegisterRequest, MioResetPasswordRequest, MioSmsCode, MioSmsCodeRequest, MioSmsLoginRequest, MioUser } from '@deepseek-ai/dsh-mio-account/types'
 import * as LlmMio from '../src/index.ts'
 import { MioAdapter } from '../src/index.ts'
+import type { MioAdapterOptions } from '../src/index.ts'
 import { closeMockServers, mockServer, textEvents } from '../../llm-pi-ai/tests/mock-server.ts'
 
 const USER: MioUser = {
@@ -115,19 +116,25 @@ function imageMessage(): GenerateOptions['messages'] {
 }
 
 const roots: Context[] = []
+const adapters: MioAdapter[] = []
 afterEach(async () => {
+  for (const adapter of adapters.splice(0)) adapter.dispose()
   await Promise.all(roots.splice(0).map(ctx => ctx.fiber.dispose()))
   await closeMockServers()
   vi.restoreAllMocks()
 })
 
-/** Account double: only state, catalog, and model access drive the adapter. */
+/** Account double: only state, catalog, model access, and provisioning drive the adapter. */
 class TestAccount extends MioAccount {
   state: MioAccountView = SIGNED_OUT
   catalog: MioModelCatalogView = CATALOG
   access: MioModelAccess = ACCESS
+  status: MioAccountStatusView = {
+    status: 'READY', stage: 'done', credentialStatus: 'READY', retryable: false, retryAfterSeconds: 0,
+  }
   modelReads = 0
   accessReads = 0
+  statusReads = 0
   invalidations = 0
   stateGate: Promise<void> | undefined
 
@@ -146,6 +153,11 @@ class TestAccount extends MioAccount {
     return Promise.resolve(this.access)
   }
 
+  override getAccountStatus(): Promise<MioAccountStatusView> {
+    this.statusReads += 1
+    return Promise.resolve(this.status)
+  }
+
   override invalidateModelAccess(): void { this.invalidations += 1 }
 
   override watch(): AsyncIterable<MioAccountView> { throw new Error('unused') }
@@ -156,18 +168,29 @@ class TestAccount extends MioAccount {
   override resetPassword(_request: MioResetPasswordRequest): Promise<void> { throw new Error('unused') }
   override logout(): Promise<MioAccountView> { throw new Error('unused') }
   override getProfile(): Promise<MioUser | null> { throw new Error('unused') }
-  override getAccountStatus(): Promise<MioAccountStatusView> { throw new Error('unused') }
   override retryAccount(): Promise<MioAccountStatusView> { throw new Error('unused') }
   override getQuota(): Promise<MioQuotaView> { throw new Error('unused') }
   override getAgreements(): Promise<readonly MioAgreement[]> { throw new Error('unused') }
 }
 
-async function harness(catalogTtlMs = 60_000): Promise<{ ctx: Context; account: TestAccount; adapter: MioAdapter }> {
+async function harness(
+  catalogTtlMs = 60_000,
+  options: { provisioningRetryMs?: number; onModelsPublished?: MioAdapterOptions['onModelsPublished'] } = {},
+): Promise<{ ctx: Context; account: TestAccount; adapter: MioAdapter }> {
   const ctx = new Context()
   roots.push(ctx)
   await ctx.plugin(LlmRuntime)
   const account = new TestAccount(ctx)
-  const adapter = new MioAdapter({ context: ctx, account, provider: 'mio', displayName: 'mioagent', catalogTtlMs })
+  const adapter = new MioAdapter({
+    context: ctx,
+    account,
+    provider: 'mio',
+    displayName: 'mioagent',
+    catalogTtlMs,
+    provisioningRetryMs: options.provisioningRetryMs ?? 5_000,
+    ...options.onModelsPublished === undefined ? {} : { onModelsPublished: options.onModelsPublished },
+  })
+  adapters.push(adapter)
   return { ctx, account, adapter }
 }
 
@@ -210,6 +233,63 @@ describe('route publication', () => {
     expect(ctx.llm.listProviders()).toEqual([])
     expect(account.modelReads).toBe(1)
     expect(account.accessReads).toBe(0)
+  })
+
+  it('publishes the chat model projections to its observer', async () => {
+    const published = vi.fn()
+    const { account, adapter } = await harness(60_000, { onModelsPublished: published })
+    account.state = READY
+    await adapter.refreshNow()
+
+    expect(published).toHaveBeenCalledExactlyOnceWith([
+      expect.objectContaining({ id: 'model-a' }),
+      expect.objectContaining({ id: 'model-b' }),
+    ], 'model-a')
+  })
+
+  it('reports the backend-declared default among the published chat models', async () => {
+    const published = vi.fn()
+    const { account, adapter } = await harness(60_000, { onModelsPublished: published })
+    account.state = READY
+    account.catalog = {
+      ...CATALOG,
+      items: CATALOG.items.map(item => item.modelId === 'model-b'
+        ? { ...item, isDefault: true }
+        : { ...item, isDefault: false }),
+    }
+    await adapter.refreshNow()
+
+    expect(published.mock.calls[0]?.[1]).toBe('model-b')
+  })
+
+  it('polls provisioning status until the account becomes ready', async () => {
+    vi.useFakeTimers()
+    try {
+      const { ctx, account, adapter } = await harness(60_000, { provisioningRetryMs: 1_000 })
+      account.state = { ...READY, user: { ...USER, accountStatus: 'PROVISIONING', credentialStatus: 'PENDING' } }
+      await adapter.refreshNow()
+      expect(ctx.llm.listProviders()).toEqual([])
+      expect(account.statusReads).toBe(0)
+
+      account.state = READY
+      await vi.advanceTimersByTimeAsync(1_000)
+      await vi.advanceTimersByTimeAsync(0)
+      expect(account.statusReads).toBe(1)
+      await vi.advanceTimersByTimeAsync(0)
+      expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mioagent' }])
+    } finally { vi.useRealTimers() }
+  })
+
+  it('stops polling when disposed before the retry fires', async () => {
+    vi.useFakeTimers()
+    try {
+      const { account, adapter } = await harness(60_000, { provisioningRetryMs: 1_000 })
+      account.state = { ...READY, user: { ...USER, accountStatus: 'PROVISIONING', credentialStatus: 'PENDING' } }
+      await adapter.refreshNow()
+      adapter.dispose()
+      await vi.advanceTimersByTimeAsync(2_000)
+      expect(account.statusReads).toBe(0)
+    } finally { vi.useRealTimers() }
   })
 
   it('publishes nothing when the directory offers no chat model', async () => {
@@ -440,21 +520,72 @@ describe('model calls', () => {
 })
 
 describe('plugin composition', () => {
-  it('reconciles the route with account events', async () => {
+  /** Default-model double: records persisted selections without a config editor. */
+  class StubDefaultModel extends Service {
+    selection: { provider: string; model: string } = { provider: 'deepseek-official', model: 'deepseek-flash' }
+    saves: { provider: string; model: string }[] = []
+
+    constructor(ctx: Context) { super(ctx, 'agentDefaultModel') }
+
+    currentSelection(): { provider: string; model: string } { return this.selection }
+
+    async saveSelection(next: { provider: string; model: string }): Promise<void> {
+      this.saves.push({ provider: next.provider, model: next.model })
+      this.selection = next
+    }
+  }
+
+  it('reconciles the route with account events and adopts the first published model', async () => {
     const ctx = new Context()
     roots.push(ctx)
     await ctx.plugin(LlmRuntime)
     const account = new TestAccount(ctx)
+    const defaults = new StubDefaultModel(ctx)
     account.state = READY
     await ctx.plugin(LlmMio)
 
     await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mioagent' }]) })
+    await vi.waitFor(() => { expect(defaults.saves).toEqual([{ provider: 'mio', model: 'model-a' }]) })
     account.state = SIGNED_OUT
     ctx.emit('mio-account/changed')
     await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([]) })
     account.state = READY
     ctx.emit('mio-account/session-expired')
     await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mioagent' }]) })
+    expect(defaults.saves).toHaveLength(1)
+  })
+
+  it('keeps a routable stored default model', async () => {
+    const ctx = new Context()
+    roots.push(ctx)
+    await ctx.plugin(LlmRuntime)
+    const account = new TestAccount(ctx)
+    const defaults = new StubDefaultModel(ctx)
+    defaults.selection = { provider: 'mio', model: 'model-b' }
+    account.state = READY
+    await ctx.plugin(LlmMio)
+
+    await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mioagent' }]) })
+    expect(defaults.saves).toEqual([])
+    expect(defaults.selection).toEqual({ provider: 'mio', model: 'model-b' })
+  })
+
+  it('adopts the backend-declared default even when it is not first', async () => {
+    const ctx = new Context()
+    roots.push(ctx)
+    await ctx.plugin(LlmRuntime)
+    const account = new TestAccount(ctx)
+    const defaults = new StubDefaultModel(ctx)
+    account.state = READY
+    account.catalog = {
+      ...CATALOG,
+      items: CATALOG.items.map(item => item.modelId === 'model-b'
+        ? { ...item, isDefault: true }
+        : { ...item, isDefault: false }),
+    }
+    await ctx.plugin(LlmMio)
+
+    await vi.waitFor(() => { expect(defaults.saves).toEqual([{ provider: 'mio', model: 'model-b' }]) })
   })
 
   it('rejects an unnamed route or display name', async () => {

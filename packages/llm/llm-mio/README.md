@@ -20,7 +20,7 @@ The mioagent model route serves the user's backend-provided models through pi-ai
 <a id="use-this-package"></a>
 ## Use this package
 
-Configure `provider` (default `mio`) and `displayName` (default `mioagent`) on the plugin row. `catalogTtlMs` (default 60,000 ms) bounds how long the fetched model directory is reused. The route is registered with the LLM registry only when the account is signed in and `/account/status` reports `status: READY` and `credentialStatus: READY`; signing out, an expired token, or a status leaving `READY` withdraws it and notifies model selectors through `llm/adapters-updated`.
+Configure `provider` (default `mio`), `displayName` (default `mioagent`), `catalogTtlMs` (default 60,000 ms), and `provisioningRetryMs` (default 5,000 ms) on the plugin row. `autoSelectDefaultModel` (default true) repoints the agent default at the backend-declared default chat model (the first published one when none is declared) whenever the stored selection names another provider or a model the backend no longer serves. The route is registered with the LLM registry only when the account is signed in and `/account/status` reports `status: READY` and `credentialStatus: READY`; signing out, an expired token, or a status leaving `READY` withdraws it and notifies model selectors through `llm/adapters-updated`. While a signed-in account is still provisioning, the adapter re-reads `/account/status` every `provisioningRetryMs` and publishes the route as soon as both statuses become ready.
 
 The model directory is read through the account service after login, so it is available even while provisioning is still pending; the model endpoint and key are read only after both statuses are ready. Only `LANGUAGE` models become selectable. Each request names the backend's `modelId` and posts to the returned `baseUrl`, with the trailing slash removed so pi-ai appends `/chat/completions` exactly once.
 
@@ -60,7 +60,7 @@ No model request prefix changes; the route only supplies the endpoint, credentia
 <a id="known-limitations-and-deferred-work"></a>
 
 - Reasoning levels, temperature defaults, and tool-calling capability reported by the backend are not mapped into request options; only capacities and modalities reach the adapter. A model that cannot call tools is still offered to the agent loop.
-- The route does not poll account provisioning. A newly ready account becomes usable on the next model operation or account change, not on a timer.
+- The default-model policy commits through the configuration editor. A deployment without a profile entry keeps its composed default selection.
 
 <a id="dev-note"></a>
 ### Dev Note
