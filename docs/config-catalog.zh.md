@@ -3594,8 +3594,10 @@ export interface Config {
 ```ts config-catalog
 /** Plugin config: the deployment-authored fragment of the system prompt (see {@link Config.personaPrefix} for its contract). */
 export interface Config {
-  /** Include the fixed DeepSeek Harness identity before the deployment persona (default true). */
+  /** Include the fixed harness identity before the deployment persona (default true). */
   includeHarnessIdentity?: boolean
+  /** Product name used by the harness identity opener (default `DeepSeek Harness`). */
+  harnessName?: string
   /** Include optional runtime-context snapshots in model history (default true); required context remains. */
   includeRuntimeContext?: boolean
   /**

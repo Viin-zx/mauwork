@@ -510,6 +510,7 @@
     - id: system-prompt
       name: '@deepseek-ai/dsh-system-prompt'
       config:
+        harnessName: Mauwork
         personaPrefix: ''
 
     # Agents created at startup. The base stays empty; raw overlays may create

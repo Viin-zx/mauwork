@@ -239,6 +239,12 @@ describe('SystemPrompt', () => {
       expect(renderPrompt(await ctx.systemPrompt.assemble())).toBe(IDENTITY)
     })
 
+    it('names the configured product in the harness identity', async () => {
+      const ctx = new Context()
+      await ctx.plugin(SystemPrompt, { harnessName: 'Mauwork' })
+      expect(renderPrompt(await ctx.systemPrompt.assemble())).toBe('You are an AI agent powered by Mauwork.')
+    })
+
     it('can omit the harness identity for a deployment that owns the complete persona', async () => {
       const ctx = new Context()
       await ctx.plugin(SystemPrompt, {
