@@ -173,4 +173,32 @@ describe('password reset dialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'cancel' }))
     expect(onClose).toHaveBeenCalledTimes(1)
   })
+
+  it('shows the bound phone read-only and uses the authenticated reset flow', async () => {
+    const sendSmsCode = vi.fn(async () => SMS)
+    const resetPassword = vi.fn(async () => undefined)
+    mount({ mode: 'change', maskedPhone: '138****0000', sendSmsCode, resetPassword })
+
+    const phone = screen.getByRole('textbox', { name: 'phone' })
+    expect(phone).toHaveProperty('value', '138****0000')
+    expect(phone).toHaveProperty('disabled', true)
+
+    fireEvent.click(screen.getByRole('button', { name: 'getCode' }))
+    await act(async () => {})
+    expect(sendSmsCode).toHaveBeenCalledExactlyOnceWith({
+      countryCode: '+86', mobile: '', scene: 'RESET_PASSWORD', authenticated: true,
+    })
+
+    fillFields()
+    submit()
+    await act(async () => {})
+    expect(resetPassword).toHaveBeenCalledExactlyOnceWith({
+      countryCode: '+86',
+      mobile: '',
+      smsRequestId: 'sms-1',
+      smsCode: '654321',
+      newPassword: 'newsecret123',
+      authenticated: true,
+    } satisfies MioResetPasswordRequest)
+  })
 })

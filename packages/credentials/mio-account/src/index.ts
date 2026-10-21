@@ -122,10 +122,16 @@ export class MioAccountHttp extends MioAccount {
     }
   }
 
-  override sendSmsCode(request: MioSmsCodeRequest, signal?: AbortSignal): Promise<MioSmsCode> {
+  override async sendSmsCode(request: MioSmsCodeRequest, signal?: AbortSignal): Promise<MioSmsCode> {
+    const session = request.authenticated === true ? await this.requireSession() : undefined
     return this.client.request('/auth/sms/code', smsCodeSchema, {
       method: 'POST',
-      body: { countryCode: request.countryCode, mobile: request.mobile, scene: request.scene },
+      body: {
+        countryCode: request.countryCode,
+        ...session === undefined ? { mobile: request.mobile } : {},
+        scene: request.scene,
+      },
+      ...session === undefined ? {} : { token: session.accessToken },
       ...signal === undefined ? {} : { signal },
     })
   }
@@ -170,17 +176,27 @@ export class MioAccountHttp extends MioAccount {
   }
 
   override async resetPassword(request: MioResetPasswordRequest, signal?: AbortSignal): Promise<void> {
+    const session = request.authenticated === true ? await this.requireSession() : undefined
     await this.client.request('/auth/password/reset', z.unknown(), {
       method: 'POST',
       body: {
         countryCode: request.countryCode,
-        mobile: request.mobile,
+        // The authenticated flow lets the backend resolve the bound phone from
+        // the token; the empty field keeps the anonymous request shape stable.
+        mobile: session === undefined ? request.mobile : '',
         smsRequestId: request.smsRequestId,
         smsCode: request.smsCode,
         newPassword: request.newPassword,
       },
+      ...session === undefined ? {} : { token: session.accessToken },
       ...signal === undefined ? {} : { signal },
     })
+    // The reset revokes the current access token, so the stored session can no
+    // longer call the server, not even logout. Drop it locally and return the
+    // client to the login gate.
+    await this.ctx.credentials.deleteRecord(SESSION_KEY)
+    this.modelAccess = undefined
+    this.changed()
   }
 
   override async logout(signal?: AbortSignal): Promise<MioAccountView> {
@@ -193,8 +209,10 @@ export class MioAccountHttp extends MioAccount {
         ...signal === undefined ? {} : { signal },
       })
     } catch (error) {
-      // A rejected token was already removed by the unauthorized hook.
-      if (!(error instanceof MioAccountError && error.code === 'TOKEN_INVALID')) throw error
+      // A rejected token was already removed by the unauthorized hook; a
+      // non-JSON 401 still identifies a dead session.
+      if (!(error instanceof MioAccountError
+        && (error.code === 'TOKEN_INVALID' || error.httpStatus === 401))) throw error
     }
     await this.ctx.credentials.deleteRecord(SESSION_KEY)
     this.modelAccess = undefined

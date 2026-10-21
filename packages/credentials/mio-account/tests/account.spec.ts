@@ -298,6 +298,53 @@ describe('login and registration', () => {
     expect(requests[1]?.headers['authorization']).toBeUndefined()
   })
 
+  it('clears the stored session after a password reset revokes its token', async () => {
+    const ctx = await signedIn()
+    replies.push(ok(null))
+    await ctx.mioAccount.resetPassword({
+      countryCode: '+86',
+      mobile: '13800000000',
+      smsRequestId: 'sms-reset',
+      smsCode: '654321',
+      newPassword: 'newsecret123',
+    })
+
+    expect(await ctx.mioAccount.getState()).toEqual(SIGNED_OUT)
+    expect(await ctx.credentials.readRecord(SESSION_KEY)).toBeUndefined()
+  })
+
+  it('uses the stored token for the authenticated password-change flow', async () => {
+    const ctx = await signedIn()
+    replies.push(ok({ smsRequestId: 'sms-change', retryAfterSeconds: 60, expiresIn: 300 }))
+    expect(await ctx.mioAccount.sendSmsCode({
+      countryCode: '+86', mobile: '', scene: 'RESET_PASSWORD', authenticated: true,
+    })).toEqual({ smsRequestId: 'sms-change', retryAfterSeconds: 60, expiresIn: 300 })
+    expect(requests[0]).toMatchObject({
+      url: `${BASE}/mio/client/v1/auth/sms/code`,
+      method: 'POST',
+      headers: { authorization: 'Bearer at-1' },
+      body: { countryCode: '+86', scene: 'RESET_PASSWORD' },
+    })
+    expect(requests[0]?.body).not.toHaveProperty('mobile')
+
+    replies.push(ok(null))
+    await ctx.mioAccount.resetPassword({
+      countryCode: '+86',
+      mobile: '',
+      smsRequestId: 'sms-change',
+      smsCode: '654321',
+      newPassword: 'newsecret123',
+      authenticated: true,
+    })
+    expect(requests[1]).toMatchObject({
+      url: `${BASE}/mio/client/v1/auth/password/reset`,
+      method: 'POST',
+      headers: { authorization: 'Bearer at-1' },
+      body: { countryCode: '+86', mobile: '', smsRequestId: 'sms-change', smsCode: '654321', newPassword: 'newsecret123' },
+    })
+    expect(await ctx.mioAccount.getState()).toEqual(SIGNED_OUT)
+  })
+
   function replySmsCode(): void {
     replies.push(ok({ smsRequestId: 'sms-1', retryAfterSeconds: 60, expiresIn: 300 }))
   }
@@ -381,6 +428,14 @@ describe('logout', () => {
   it('still removes a session the backend has already rejected', async () => {
     const ctx = await signedIn()
     replies.push({ status: 401, body: { code: 401, msg: 'gone', data: null } })
+
+    expect(await ctx.mioAccount.logout()).toEqual(SIGNED_OUT)
+    expect(await ctx.credentials.readRecord(SESSION_KEY)).toBeUndefined()
+  })
+
+  it('still removes a session rejected without a JSON envelope', async () => {
+    const ctx = await signedIn()
+    replies.push({ status: 401, raw: 'token expired' })
 
     expect(await ctx.mioAccount.logout()).toEqual(SIGNED_OUT)
     expect(await ctx.credentials.readRecord(SESSION_KEY)).toBeUndefined()
@@ -788,10 +843,6 @@ describe('caller cancellation', () => {
     await ctx.mioAccount.loginWithSms({
       countryCode: '+86', mobile: '13800000000', smsRequestId: 'sms-1', smsCode: '123456',
     }, signal)
-    replies.push(ok(null))
-    await ctx.mioAccount.resetPassword({
-      countryCode: '+86', mobile: '13800000000', smsRequestId: 'sms-1', smsCode: '123456', newPassword: 'newsecret123',
-    }, signal)
     replies.push(ok(USER))
     await ctx.mioAccount.getProfile(signal)
     replies.push(ok(status))
@@ -808,6 +859,10 @@ describe('caller cancellation', () => {
     await ctx.mioAccount.getAgreements()
     replies.push(ok(null))
     await ctx.mioAccount.logout(signal)
+    replies.push(ok(null))
+    await ctx.mioAccount.resetPassword({
+      countryCode: '+86', mobile: '13800000000', smsRequestId: 'sms-1', smsCode: '123456', newPassword: 'newsecret123',
+    }, signal)
 
     expect(requests).toHaveLength(13)
   })

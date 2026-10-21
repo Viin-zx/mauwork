@@ -16,10 +16,12 @@ export type MioSmsScene = 'REGISTER' | 'LOGIN' | 'RESET_PASSWORD'
 export interface MioSmsCodeRequest {
   /** Dialing prefix such as `+86`. */
   readonly countryCode: string
-  /** Mobile number without the dialing prefix. */
+  /** Mobile number without the dialing prefix; ignored when `authenticated` is true. */
   readonly mobile: string
   /** Flow the verified code authorizes. */
   readonly scene: MioSmsScene
+  /** Send the code to the signed-in account's bound phone through its stored token. */
+  readonly authenticated?: boolean
 }
 
 /** Issued SMS verification-code handle and its timing facts. */
@@ -58,14 +60,17 @@ export interface MioSmsLoginRequest {
   readonly smsCode: string
 }
 
-/** Anonymous password reset; the code must have been issued for the `RESET_PASSWORD` scene. */
+/** Password reset; the code must have been issued for the `RESET_PASSWORD` scene. */
 export interface MioResetPasswordRequest {
   readonly countryCode: string
+  /** Mobile number without the dialing prefix; ignored when `authenticated` is true. */
   readonly mobile: string
   readonly smsRequestId: string
   readonly smsCode: string
   /** Replacement password, at least eight characters. */
   readonly newPassword: string
+  /** Reset the signed-in account's password through its stored token instead of `mobile`. */
+  readonly authenticated?: boolean
 }
 
 /** Display-safe user projection returned by login and profile reads. */

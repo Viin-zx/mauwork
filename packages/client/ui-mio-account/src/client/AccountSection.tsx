@@ -35,7 +35,7 @@ function subscriptionStatus(status: string, t: (key: MioAccountKey) => string): 
  */
 export function AccountSection({
   useAccount, getQuota, getSubscriptions, getPlans, purchasePlan, getOrder, getAgreements,
-  sendSmsCode, resetPassword, t,
+  sendSmsCode, resetPassword, t, close,
 }: AccountSectionProps) {
   const state = useAccount(value => value)
   const user = state.view?.status === 'signed-in' ? state.view.user : null
@@ -144,7 +144,8 @@ export function AccountSection({
       </>}
 
     <ResetPasswordDialog open={passwordOpen} onClose={() => { setPasswordOpen(false) }} mode="change"
-      sendSmsCode={sendSmsCode} resetPassword={resetPassword} t={t} />
+      maskedPhone={user.maskedPhone} sendSmsCode={sendSmsCode} resetPassword={resetPassword} t={t}
+      onSuccess={close} />
     <PlansDialog open={plansOpen} onClose={() => { setPlansOpen(false) }} onPurchased={async () => { await load() }}
       getPlans={getPlans} getAgreements={getAgreements} purchasePlan={purchasePlan} getOrder={getOrder} t={t} />
   </div>

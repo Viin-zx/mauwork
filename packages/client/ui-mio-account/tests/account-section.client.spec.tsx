@@ -76,6 +76,20 @@ describe('account settings section', () => {
     expect(screen.getByText('changePasswordDescription')).toBeDefined()
   })
 
+  it('closes settings after a successful password change', async () => {
+    const close = vi.fn()
+    render(<AccountSection {...props({ view: SIGNED_IN, expired: false })} close={close} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'changePassword' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'code' }), { target: { value: '654321' } })
+    fireEvent.change(screen.getByLabelText('newPassword'), { target: { value: 'newsecret123' } })
+    fireEvent.change(screen.getByLabelText('confirmPassword'), { target: { value: 'newsecret123' } })
+    fireEvent.submit(screen.getByTestId('mio-reset-form'))
+    await act(async () => {})
+
+    expect(close).toHaveBeenCalledTimes(1)
+  })
+
   it('buys a plan, shows the QR code, and refreshes after payment', async () => {
     const pending = Promise.withResolvers<MioOrderStatus>()
     const getOrder = vi.fn(() => pending.promise)

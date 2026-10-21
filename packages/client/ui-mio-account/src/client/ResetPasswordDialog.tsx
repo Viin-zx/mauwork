@@ -28,6 +28,10 @@ export interface ResetPasswordDialogProps {
   t: (key: MioAccountKey) => string
   /** `reset` recovers a forgotten password; `change` replaces a known one. */
   mode?: 'reset' | 'change'
+  /** Bound phone shown read-only in `change` mode. */
+  maskedPhone?: string
+  /** Runs after the backend accepts the new password. */
+  onSuccess?: () => void
 }
 
 /**
@@ -36,7 +40,7 @@ export interface ResetPasswordDialogProps {
  * @returns the reset dialog.
  */
 export function ResetPasswordDialog({
-  open, onClose, sendSmsCode, resetPassword, t, mode = 'reset',
+  open, onClose, sendSmsCode, resetPassword, t, mode = 'reset', maskedPhone = '', onSuccess,
 }: ResetPasswordDialogProps) {
   const changing = mode === 'change'
   const title = changing ? t('changePasswordTitle') : t('resetTitle')
@@ -79,14 +83,19 @@ export function ResetPasswordDialog({
   }, [success, onClose])
 
   const requestCode = async (): Promise<void> => {
-    if (!PHONE_PATTERN.test(phone)) {
+    if (!changing && !PHONE_PATTERN.test(phone)) {
       setError(t('invalidPhone'))
       return
     }
     setSending(true)
     setError('')
     try {
-      const issued = await sendSmsCode({ countryCode: COUNTRY_CODE, mobile: phone, scene: 'RESET_PASSWORD' })
+      const issued = await sendSmsCode({
+        countryCode: COUNTRY_CODE,
+        mobile: changing ? '' : phone,
+        scene: 'RESET_PASSWORD',
+        ...changing ? { authenticated: true } : {},
+      })
       setSmsRequestId(issued.smsRequestId)
       setCountdown(issued.retryAfterSeconds > 0 ? issued.retryAfterSeconds : DEFAULT_COUNTDOWN_SECONDS)
     } catch (failure) {
@@ -99,7 +108,7 @@ export function ResetPasswordDialog({
   const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
     if (submitting || success !== '') return
-    if (!PHONE_PATTERN.test(phone)) {
+    if (!changing && !PHONE_PATTERN.test(phone)) {
       setError(t('invalidPhone'))
       return
     }
@@ -120,12 +129,14 @@ export function ResetPasswordDialog({
     try {
       await resetPassword({
         countryCode: COUNTRY_CODE,
-        mobile: phone,
+        mobile: changing ? '' : phone,
         smsRequestId,
         smsCode: code,
         newPassword,
+        ...changing ? { authenticated: true } : {},
       })
       setSuccess(successCopy)
+      onSuccess?.()
     } catch (failure) {
       if (failure instanceof MioAccountClientError && failure.code === 'SMS_CODE_INVALID') setSmsRequestId('')
       setError(accountMessage(failure, t('errorReset')))
@@ -140,8 +151,9 @@ export function ResetPasswordDialog({
       <div className={css.field}>
         <label className={css.label} htmlFor="mio-reset-phone">{t('phone')}</label>
         <Input id="mio-reset-phone" type="tel" inputMode="numeric" autoComplete="tel" maxLength={11}
-          placeholder={t('phonePlaceholder')} value={phone}
-          onChange={(event) => { setPhone(event.target.value) }} />
+          placeholder={changing ? '' : t('phonePlaceholder')}
+          value={changing ? maskedPhone : phone} disabled={changing}
+          onChange={(event) => { if (!changing) setPhone(event.target.value) }} />
       </div>
       <div className={css.field}>
         <label className={css.label} htmlFor="mio-reset-code">{t('code')}</label>
