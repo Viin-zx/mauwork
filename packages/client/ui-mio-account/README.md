@@ -28,6 +28,8 @@ Mount the package in a browser roster beside `@deepseek-ai/dsh-mio-account` and 
 
 The gate owns Escape and Tab through the shared modal layer while visible, and there is nothing to dismiss: the client is unusable until login succeeds. It also marks every other frame column inert, so the application behind it cannot take pointer or keyboard input. A first snapshot is required before the form appears, so the application never flashes behind an unresolved session. The launcher renders only while signed in.
 
+The Account & balance settings section shows the signed-in profile, quota, and purchased subscriptions, opens the SMS-authorized password-change dialog, and runs the plan purchase flow: purchasable plans, the subscription agreement, a WeChat Native QR code, and order polling until payment completes. Reused purchase retries keep one request id, which persists per plan in browser storage.
+
 Copy lives in the package's `mioAccount` locale dictionaries. Colors, radii, and surfaces come from `--dsw-*` theme tokens, so both themes and the collapsed sidebar rail follow the application.
 
 <a id="understand-the-implementation"></a>

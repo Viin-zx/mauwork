@@ -7,8 +7,8 @@
 import { z } from 'zod'
 import { brandString } from '@deepseek-ai/dsh-brand'
 import type {
-  MioAccountStatusView, MioAgreement, MioModelCatalogView, MioModelType, MioQuotaView,
-  MioSmsCode, MioUser, MioUserId,
+  MioAccountStatusView, MioAgreement, MioModelCatalogView, MioModelType, MioOrderStatus, MioPlan,
+  MioPurchaseResult, MioQuotaView, MioSmsCode, MioSubscription, MioSubscriptionsView, MioUser, MioUserId,
 } from './types.ts'
 
 /** Universal business response envelope. */
@@ -103,6 +103,71 @@ export const quotaSchema: z.ZodType<MioQuotaView> = z.object({
   usedQuota: z.number(),
   unit: z.string(),
   fetchedAt: z.string(),
+})
+
+const nullableText = z.string().nullish().transform(value => value ?? '')
+const nullableCount = z.number().nullish().transform(value => value ?? 0)
+
+/** One purchasable plan. */
+export const planSchema: z.ZodType<MioPlan> = z.object({
+  planId: z.number(),
+  planName: z.string(),
+  planType: nullableText,
+  planContent: nullableText,
+  quota: nullableCount,
+  maxPurchasePerUser: nullableCount,
+  price: nullableCount,
+  currency: nullableText,
+  durationUnit: nullableText,
+  durationValue: nullableCount,
+  customSeconds: nullableCount,
+  quotaResetPeriod: nullableText,
+  quotaResetCustomSeconds: nullableCount,
+})
+
+/** Purchase result and order state share the same projection. */
+export const purchaseResultSchema: z.ZodType<MioPurchaseResult> = z.object({
+  orderNo: z.string().min(1),
+  paymentStatus: z.string(),
+  paymentChannel: z.string().nullish(),
+  paymentScene: z.string().nullish(),
+  codeUrl: z.string().nullish(),
+  expireTime: z.string().nullish(),
+  grantStatus: z.string(),
+  subscriptionId: z.number().nullable().default(null),
+})
+
+/** One order read from `GET /orders/{orderNo}`. */
+export const orderStatusSchema: z.ZodType<MioOrderStatus> = z.object({
+  orderNo: z.string().min(1),
+  paymentStatus: z.string(),
+  paymentChannel: z.string().nullish(),
+  paymentScene: z.string().nullish(),
+  codeUrl: z.string().nullish(),
+  expireTime: z.string().nullish(),
+  grantStatus: z.string(),
+  subscriptionId: z.number().nullish(),
+})
+
+/** One active or past subscription. */
+export const subscriptionSchema: z.ZodType<MioSubscription> = z.object({
+  subscriptionId: z.number(),
+  planId: z.number(),
+  planName: z.string(),
+  amountTotal: nullableCount,
+  amountUsed: nullableCount,
+  startTime: nullableText,
+  endTime: nullableText,
+  status: z.string(),
+  lastResetTime: z.string().nullish(),
+  nextResetTime: z.string().nullish(),
+  allowWalletOverflow: z.boolean().nullish().transform(value => value ?? false),
+})
+
+/** Subscription list and its freshness flag. */
+export const subscriptionsSchema: z.ZodType<MioSubscriptionsView> = z.object({
+  items: z.array(subscriptionSchema),
+  realtime: z.boolean().nullish().transform(value => value ?? true),
 })
 
 /** Agreement documents in the backend's fixed order. */

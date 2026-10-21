@@ -29,6 +29,15 @@ const SELF = '@deepseek-ai/dsh-client-ui-settings-account'
 const roster = ClientRoster.of([
   ...webApp.without(['@deepseek-ai/dsh-client-ui-mio-account']).rows,
   {
+    name: '@deepseek-ai/dsh-client-ui-settings-models',
+    inject: [
+      '@deepseek-ai/dsh-client-ui-settings',
+      '@deepseek-ai/dsh-client-locale',
+      '@deepseek-ai/dsh-api-remotes',
+    ],
+    immediately: false,
+  },
+  {
     name: SELF,
     inject: [
       '@deepseek-ai/dsh-api-remotes',

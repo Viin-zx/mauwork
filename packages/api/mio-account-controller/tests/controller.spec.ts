@@ -4,7 +4,8 @@ import { Context } from '@deepseek-ai/cordis'
 import type { MioAccount } from '@deepseek-ai/dsh-mio-account'
 import { MioAccountError } from '@deepseek-ai/dsh-mio-account'
 import type {
-  MioAccountStatusView, MioAccountView, MioAgreement, MioModelCatalogView, MioQuotaView, MioSmsCode, MioUser,
+  MioAccountStatusView, MioAccountView, MioAgreement, MioModelCatalogView, MioOrderStatus, MioPlan,
+  MioPurchaseResult, MioQuotaView, MioSmsCode, MioSubscriptionsView, MioUser,
 } from '@deepseek-ai/dsh-mio-account/types'
 import MioAccountController from '../src/index.ts'
 
@@ -26,6 +27,18 @@ const status: MioAccountStatusView = {
 const catalog: MioModelCatalogView = { items: [], fetchedAt: '2026-10-20T00:00:00Z', stale: false }
 const quota: MioQuotaView = { remainingQuota: 10, usedQuota: 5, unit: 'USD', fetchedAt: '2026-10-20T00:00:00Z' }
 const agreements: readonly MioAgreement[] = [{ agreementType: 'USER', content: 'text' }]
+const plans: readonly MioPlan[] = [{
+  planId: 1, planName: 'Monthly', planType: 'MONTHLY', planContent: 'Everyday use', quota: 1000,
+  maxPurchasePerUser: 1, price: 19, currency: 'CNY', durationUnit: 'MONTH', durationValue: 1,
+  customSeconds: 0, quotaResetPeriod: 'MONTHLY', quotaResetCustomSeconds: 0,
+}]
+const purchase: MioPurchaseResult = {
+  orderNo: 'ord-1', paymentStatus: 'PENDING', paymentChannel: 'WECHAT', paymentScene: 'NATIVE',
+  codeUrl: 'weixin://wxpay/bizpayurl?pr=test', expireTime: '2026-10-21 12:00:00', grantStatus: 'PENDING',
+  subscriptionId: null,
+}
+const order: MioOrderStatus = { ...purchase, subscriptionId: 7 }
+const subscriptions: MioSubscriptionsView = { items: [], realtime: true }
 
 function fixture() {
   const ctx = new Context()
@@ -47,6 +60,10 @@ function fixture() {
     invalidateModelAccess: vi.fn<MioAccount['invalidateModelAccess']>(),
     getQuota: vi.fn<MioAccount['getQuota']>().mockResolvedValue(quota),
     getAgreements: vi.fn<MioAccount['getAgreements']>().mockResolvedValue(agreements),
+    getPlans: vi.fn<MioAccount['getPlans']>().mockResolvedValue(plans),
+    purchasePlan: vi.fn<MioAccount['purchasePlan']>().mockResolvedValue(purchase),
+    getOrder: vi.fn<MioAccount['getOrder']>().mockResolvedValue(order),
+    getSubscriptions: vi.fn<MioAccount['getSubscriptions']>().mockResolvedValue(subscriptions),
   }
   ctx.provide('mioAccount', provider as never)
   return { ctx, provider, controller: new MioAccountController(ctx) }
@@ -61,6 +78,7 @@ it('delegates every account operation without altering its result', async () => 
   const resetRequest = {
     countryCode: '+86', mobile: '13800000000', smsRequestId: 'sms-reset', smsCode: '654321', newPassword: 'newsecret123',
   }
+  const purchaseRequest = { planId: 1, requestId: 'req-1', paymentChannel: 'WECHAT' }
 
   expect(await controller.getState()).toBe(state)
   expect(await controller.getProfile()).toBe(USER)
@@ -75,6 +93,10 @@ it('delegates every account operation without altering its result', async () => 
   expect(await controller.getModels()).toBe(catalog)
   expect(await controller.getQuota()).toBe(quota)
   expect(await controller.getAgreements()).toBe(agreements)
+  expect(await controller.getPlans()).toBe(plans)
+  expect(await controller.purchasePlan(purchaseRequest)).toBe(purchase)
+  expect(await controller.getOrder('ord-1')).toBe(order)
+  expect(await controller.getSubscriptions()).toBe(subscriptions)
 
   expect(provider.sendSmsCode).toHaveBeenCalledExactlyOnceWith(smsRequest)
   expect(provider.register).toHaveBeenCalledExactlyOnceWith(registerRequest)
@@ -87,6 +109,10 @@ it('delegates every account operation without altering its result', async () => 
   expect(provider.getModels).toHaveBeenCalledExactlyOnceWith()
   expect(provider.getQuota).toHaveBeenCalledExactlyOnceWith()
   expect(provider.getAgreements).toHaveBeenCalledExactlyOnceWith()
+  expect(provider.getPlans).toHaveBeenCalledExactlyOnceWith()
+  expect(provider.purchasePlan).toHaveBeenCalledExactlyOnceWith(purchaseRequest)
+  expect(provider.getOrder).toHaveBeenCalledExactlyOnceWith('ord-1')
+  expect(provider.getSubscriptions).toHaveBeenCalledExactlyOnceWith()
 })
 
 it('preserves provider failures', async () => {

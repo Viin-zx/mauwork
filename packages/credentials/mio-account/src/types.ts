@@ -155,6 +155,82 @@ export interface MioQuotaView {
   readonly fetchedAt: string
 }
 
+/** One purchasable plan from `GET /plans`. */
+export interface MioPlan {
+  readonly planId: number
+  readonly planName: string
+  /** Display grouping such as `MONTHLY`; it does not change validity. */
+  readonly planType: string
+  /** Plain or rich text describing what the plan includes. */
+  readonly planContent: string
+  /** Plan quota; 0 means unlimited. */
+  readonly quota: number
+  /** Purchases allowed per user within the validity window; 0 means unlimited. */
+  readonly maxPurchasePerUser: number
+  readonly price: number
+  readonly currency: string
+  readonly durationUnit: string
+  readonly durationValue: number
+  readonly customSeconds: number
+  readonly quotaResetPeriod: string
+  readonly quotaResetCustomSeconds: number
+}
+
+/** One purchase request for `POST /plans/{planId}/purchase`. */
+export interface MioPurchaseRequest {
+  readonly planId: number
+  /** Client-generated idempotency key persisted for one purchase intent. */
+  readonly requestId: string
+  /** Payment channel; omitted lets the server decide. */
+  readonly paymentChannel?: string
+}
+
+/** Purchase result; a WeChat Native `codeUrl` is rendered as a QR code. */
+export interface MioPurchaseResult {
+  readonly orderNo: string
+  readonly paymentStatus: string
+  readonly paymentChannel?: string | null | undefined
+  readonly paymentScene?: string | null | undefined
+  readonly codeUrl?: string | null | undefined
+  readonly expireTime?: string | null | undefined
+  readonly grantStatus: string
+  readonly subscriptionId: number | null
+}
+
+/** Order state from `GET /orders/{orderNo}`. */
+export interface MioOrderStatus {
+  readonly orderNo: string
+  readonly paymentStatus: string
+  readonly paymentChannel?: string | null | undefined
+  readonly paymentScene?: string | null | undefined
+  readonly codeUrl?: string | null | undefined
+  readonly expireTime?: string | null | undefined
+  readonly grantStatus: string
+  readonly subscriptionId?: number | null | undefined
+}
+
+/** One subscription from `GET /subscriptions`. */
+export interface MioSubscription {
+  readonly subscriptionId: number
+  readonly planId: number
+  readonly planName: string
+  readonly amountTotal: number
+  readonly amountUsed: number
+  readonly startTime: string
+  readonly endTime: string
+  readonly status: string
+  readonly lastResetTime?: string | null | undefined
+  readonly nextResetTime?: string | null | undefined
+  readonly allowWalletOverflow: boolean
+}
+
+/** Subscription list plus whether this read refreshed NewAPI. */
+export interface MioSubscriptionsView {
+  readonly items: readonly MioSubscription[]
+  /** False means the items are the backend's last successful snapshot. */
+  readonly realtime: boolean
+}
+
 /** One agreement document; `content` is trusted rich text and is never executed. */
 export interface MioAgreement {
   readonly agreementType: string

@@ -171,6 +171,10 @@ class TestAccount extends MioAccount {
   override retryAccount(): Promise<MioAccountStatusView> { throw new Error('unused') }
   override getQuota(): Promise<MioQuotaView> { throw new Error('unused') }
   override getAgreements(): Promise<readonly MioAgreement[]> { throw new Error('unused') }
+  override getPlans(): Promise<never> { throw new Error('unused') }
+  override purchasePlan(): Promise<never> { throw new Error('unused') }
+  override getOrder(): Promise<never> { throw new Error('unused') }
+  override getSubscriptions(): Promise<never> { throw new Error('unused') }
 }
 
 async function harness(

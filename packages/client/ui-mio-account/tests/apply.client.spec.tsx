@@ -22,8 +22,12 @@ it('registers the gate and launcher against the account Remote and survives a re
 
   const overlay = c.ctx.slots.entries('shell.overlay').find(entry => entry.options.id === 'mio-account.login')
   const launcher = c.ctx.slots.entries('settings.launcher')[0]
+  const section = c.ctx.slots.entries('settings.section').find(entry => entry.options.id === 'account')
   expect(overlay).toBeDefined()
   expect(launcher).toBeDefined()
+  expect(section).toBeDefined()
+  const sectionFace: object = section!.inject!()
+  expect((sectionFace as MioAccountInjected).getPlans).toBeTypeOf('function')
   const gate: object = overlay!.inject!()
   const menu: object = launcher!.inject!()
   const gateFace = gate as MioAccountInjected
@@ -37,6 +41,7 @@ it('registers the gate and launcher against the account Remote and survives a re
   await c.mock.streams.opened('mioAccount/watchExpiry', 2)
   expect(c.ctx.slots.entries('shell.overlay').some(entry => entry.options.id === 'mio-account.login')).toBe(true)
   expect(c.ctx.slots.entries('settings.launcher')).toHaveLength(1)
+  expect(c.ctx.slots.entries('settings.section').some(entry => entry.options.id === 'account')).toBe(true)
 }, 60_000)
 
 it('blocks the application with the login gate while the Host reports a signed-out session', async ({ start, mock }) => {

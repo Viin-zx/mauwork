@@ -998,6 +998,11 @@ export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   MioModelAccess: 'Host-only model endpoint and key are owned by packages/credentials/mio-account/README.md',
   MioQuotaView: 'quota snapshot is owned by packages/credentials/mio-account/README.md',
   MioAgreement: 'agreement document is owned by packages/credentials/mio-account/README.md',
+  MioPlan: 'purchasable plan is owned by packages/credentials/mio-account/README.md',
+  MioPurchaseRequest: 'purchase request is owned by packages/credentials/mio-account/README.md',
+  MioPurchaseResult: 'purchase result is owned by packages/credentials/mio-account/README.md',
+  MioOrderStatus: 'order state is owned by packages/credentials/mio-account/README.md',
+  MioSubscriptionsView: 'subscription list is owned by packages/credentials/mio-account/README.md',
 }
 
 /** Repository data policy consumed by the Cordis catalog projector. */

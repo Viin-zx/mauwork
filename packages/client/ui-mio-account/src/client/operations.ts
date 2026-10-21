@@ -2,8 +2,9 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type { HostObservable } from '@deepseek-ai/dsh-client-ui-slots'
 import type {
-  MioAccountView, MioAgreement, MioPasswordLoginRequest, MioResetPasswordRequest, MioSmsCode,
-  MioSmsCodeRequest, MioSmsLoginRequest,
+  MioAccountView, MioAgreement, MioOrderStatus, MioPasswordLoginRequest, MioPlan, MioPurchaseRequest,
+  MioPurchaseResult, MioQuotaView, MioResetPasswordRequest, MioSmsCode, MioSmsCodeRequest,
+  MioSmsLoginRequest, MioSubscriptionsView,
 } from '@deepseek-ai/dsh-mio-account/types'
 import type { RemoteFailure, RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
@@ -36,6 +37,11 @@ export interface MioAccountInjected {
   readonly loginWithPassword: (request: MioPasswordLoginRequest) => Promise<MioAccountView>
   readonly resetPassword: (request: MioResetPasswordRequest) => Promise<void>
   readonly getAgreements: () => Promise<readonly MioAgreement[]>
+  readonly getQuota: () => Promise<MioQuotaView>
+  readonly getPlans: () => Promise<readonly MioPlan[]>
+  readonly purchasePlan: (request: MioPurchaseRequest) => Promise<MioPurchaseResult>
+  readonly getOrder: (orderNo: string) => Promise<MioOrderStatus>
+  readonly getSubscriptions: () => Promise<MioSubscriptionsView>
   readonly logout: () => Promise<MioAccountView>
 }
 
@@ -76,6 +82,11 @@ export function createMioAccountOperations(ctx: Context): MioAccountOperations {
     loginWithPassword: request => call(() => ctx.remote.mioAccount.loginWithPassword(request)),
     resetPassword: request => call(() => ctx.remote.mioAccount.resetPassword(request)),
     getAgreements: () => call(() => ctx.remote.mioAccount.getAgreements()),
+    getQuota: () => call(() => ctx.remote.mioAccount.getQuota()),
+    getPlans: () => call(() => ctx.remote.mioAccount.getPlans()),
+    purchasePlan: request => call(() => ctx.remote.mioAccount.purchasePlan(request)),
+    getOrder: orderNo => call(() => ctx.remote.mioAccount.getOrder(orderNo)),
+    getSubscriptions: () => call(() => ctx.remote.mioAccount.getSubscriptions()),
     logout: () => call(() => ctx.remote.mioAccount.logout()),
   }
 }

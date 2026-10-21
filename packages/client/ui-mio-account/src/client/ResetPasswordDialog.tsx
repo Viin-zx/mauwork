@@ -26,6 +26,8 @@ export interface ResetPasswordDialogProps {
   readonly resetPassword: (request: MioResetPasswordRequest) => Promise<void>
   /** Localized copy. */
   t: (key: MioAccountKey) => string
+  /** `reset` recovers a forgotten password; `change` replaces a known one. */
+  mode?: 'reset' | 'change'
 }
 
 /**
@@ -33,7 +35,14 @@ export interface ResetPasswordDialogProps {
  * @param props - visibility, account actions, and localized copy.
  * @returns the reset dialog.
  */
-export function ResetPasswordDialog({ open, onClose, sendSmsCode, resetPassword, t }: ResetPasswordDialogProps) {
+export function ResetPasswordDialog({
+  open, onClose, sendSmsCode, resetPassword, t, mode = 'reset',
+}: ResetPasswordDialogProps) {
+  const changing = mode === 'change'
+  const title = changing ? t('changePasswordTitle') : t('resetTitle')
+  const description = changing ? t('changePasswordDescription') : t('resetDescription')
+  const successCopy = changing ? t('changePasswordSuccess') : t('resetSuccess')
+  const submitCopy = changing ? t('changePasswordSubmit') : t('resetSubmit')
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -116,7 +125,7 @@ export function ResetPasswordDialog({ open, onClose, sendSmsCode, resetPassword,
         smsCode: code,
         newPassword,
       })
-      setSuccess(t('resetSuccess'))
+      setSuccess(successCopy)
     } catch (failure) {
       if (failure instanceof MioAccountClientError && failure.code === 'SMS_CODE_INVALID') setSmsRequestId('')
       setError(accountMessage(failure, t('errorReset')))
@@ -125,7 +134,7 @@ export function ResetPasswordDialog({ open, onClose, sendSmsCode, resetPassword,
     }
   }
 
-  return <Modal open={open} title={t('resetTitle')} description={t('resetDescription')}
+  return <Modal open={open} title={title} description={description}
     closeLabel={t('close')} onClose={onClose}>
     <form className={css.form} data-testid="mio-reset-form" onSubmit={(event) => { void submit(event) }} noValidate>
       <div className={css.field}>
@@ -165,7 +174,7 @@ export function ResetPasswordDialog({ open, onClose, sendSmsCode, resetPassword,
       <div className={css.actions}>
         <Button variant="outline" disabled={submitting} onClick={onClose}>{t('cancel')}</Button>
         <Button type="submit" variant="primary" disabled={submitting || success !== ''}>
-          {submitting ? t('resetSubmitting') : t('resetSubmit')}
+          {submitting ? t('resetSubmitting') : submitCopy}
         </Button>
       </div>
     </form>

@@ -37,16 +37,13 @@ const CHILD_SPECS = {
 const CHILD_NAMES = Object.keys(CHILD_SPECS) as Array<keyof typeof CHILD_SPECS>
 
 /**
- * Section ids the web-app roster registers, in nav order: this package, then
- * ui-settings-models, ui-settings-plugins, and ui-agent-preset. A plugin
- * adding a section changes this list.
+ * Section ids the web-app roster registers, in nav order: the mioagent account
+ * section, this package, ui-settings-plugins, and ui-agent-preset. The Models
+ * page is disabled for shipped profiles because mioagent owns model routing.
  */
-const PRODUCT_SECTIONS: readonly string[] = ['general', 'models', 'plugins', 'agent-presets']
-/** Onboarding steps the web-app roster registers, in coordinator order; both come from ui-settings-models. */
-const PRODUCT_ONBOARDING: readonly { id: string; order: number }[] = [
-  { id: 'welcome-notice', order: -100 },
-  { id: 'deepseek-official', order: 0 },
-]
+const PRODUCT_SECTIONS: readonly string[] = ['account', 'general', 'plugins', 'agent-presets']
+/** Shipped profiles register no first-run onboarding steps; the coordinator order is covered below. */
+const PRODUCT_ONBOARDING: readonly { id: string; order: number }[] = []
 
 describe('ui-settings-general shell', () => {
   it('shares one carrier subscription between both update locations and releases it on unload', async ({ start }) => {

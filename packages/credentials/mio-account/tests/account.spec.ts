@@ -608,6 +608,48 @@ describe('model catalog and access', () => {
     expect(requests[0]?.headers['authorization']).toBe('Bearer at-1')
   })
 
+  it('reads plans, purchases one, polls its order, and lists subscriptions', async () => {
+    const ctx = await signedIn()
+    const plan = {
+      planId: 1, planName: 'Monthly', planType: 'MONTHLY', planContent: 'Everyday use', quota: 1000,
+      maxPurchasePerUser: 1, price: 19, currency: 'CNY', durationUnit: 'MONTH', durationValue: 1,
+      customSeconds: 0, quotaResetPeriod: 'MONTHLY', quotaResetCustomSeconds: 0,
+    }
+    const purchase = {
+      orderNo: 'ord-1', paymentStatus: 'PENDING', paymentChannel: 'WECHAT', paymentScene: 'NATIVE',
+      codeUrl: 'weixin://wxpay/bizpayurl?pr=test', expireTime: '2026-10-21 12:00:00',
+      grantStatus: 'PENDING', subscriptionId: null,
+    }
+    const order = { ...purchase, subscriptionId: 7 }
+    const subscription = {
+      subscriptionId: 7, planId: 1, planName: 'Monthly', amountTotal: 1000, amountUsed: 120,
+      startTime: '2026-10-21 12:00:00', endTime: '2026-11-21 12:00:00', status: 'active',
+      lastResetTime: null, nextResetTime: '2026-11-21 12:00:00', allowWalletOverflow: false,
+    }
+
+    replies.push(ok([plan]))
+    expect(await ctx.mioAccount.getPlans()).toEqual([plan])
+    expect(requests[0]).toMatchObject({ url: `${BASE}/mio/client/v1/plans`, method: 'GET' })
+    expect(requests[0]?.headers['authorization']).toBe('Bearer at-1')
+
+    replies.push(ok(purchase))
+    expect(await ctx.mioAccount.purchasePlan({ planId: 1, requestId: 'req-1' })).toEqual(purchase)
+    expect(requests[1]).toMatchObject({
+      url: `${BASE}/mio/client/v1/plans/1/purchase`,
+      method: 'POST',
+      body: { requestId: 'req-1' },
+    })
+
+    replies.push(ok(order))
+    expect(await ctx.mioAccount.getOrder('ord-1')).toEqual(order)
+    expect(requests[2]).toMatchObject({ url: `${BASE}/mio/client/v1/orders/ord-1`, method: 'GET' })
+
+    replies.push(ok({ items: [subscription], realtime: false }))
+    expect(await ctx.mioAccount.getSubscriptions()).toEqual({ items: [subscription], realtime: false })
+    expect(requests[3]).toMatchObject({ url: `${BASE}/mio/client/v1/subscriptions`, method: 'GET' })
+    expect(requests[3]?.headers['authorization']).toBe('Bearer at-1')
+  })
+
   it('normalizes model metadata the directory omits', async () => {
     const ctx = await signedIn()
     replies.push(ok({

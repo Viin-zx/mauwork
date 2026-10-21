@@ -4,9 +4,10 @@ import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typer
 import { mioAccountErrorOf } from '@deepseek-ai/dsh-mio-account'
 import type {} from '@deepseek-ai/dsh-mio-account'
 import type {
-  MioAccountStatusView, MioAccountView, MioAgreement, MioModelCatalogView, MioPasswordLoginRequest,
-  MioQuotaView, MioRegisterRequest, MioResetPasswordRequest, MioSmsCode, MioSmsCodeRequest,
-  MioSmsLoginRequest, MioUser,
+  MioAccountStatusView, MioAccountView, MioAgreement, MioModelCatalogView, MioOrderStatus,
+  MioPasswordLoginRequest, MioPlan, MioPurchaseRequest, MioPurchaseResult, MioQuotaView,
+  MioRegisterRequest, MioResetPasswordRequest, MioSmsCode, MioSmsCodeRequest, MioSmsLoginRequest,
+  MioSubscriptionsView, MioUser,
 } from '@deepseek-ai/dsh-mio-account/types'
 
 declare module '@deepseek-ai/dsh-typert-protocol' {
@@ -112,6 +113,42 @@ export class MioAccountController extends TypertRemoteService {
    */
   @Remote
   getQuota(): Promise<MioQuotaView> { return this.forward(() => this.ctx.mioAccount.getQuota()) }
+
+  /**
+   * Read the plans the current user may purchase.
+   * @returns purchasable plans.
+   */
+  @Remote
+  getPlans(): Promise<readonly MioPlan[]> { return this.forward(() => this.ctx.mioAccount.getPlans()) }
+
+  /**
+   * Start one purchase; a retry reuses the same `requestId`.
+   * @param request - plan, idempotency key, and optional payment channel.
+   * @returns the created order and, for WeChat Native, its QR payload.
+   */
+  @Remote
+  purchasePlan(request: MioPurchaseRequest): Promise<MioPurchaseResult> {
+    return this.forward(() => this.ctx.mioAccount.purchasePlan(request))
+  }
+
+  /**
+   * Read one order's payment and provisioning state.
+   * @param orderNo - order returned by the purchase call.
+   * @returns the current order state.
+   */
+  @Remote
+  getOrder(orderNo: string): Promise<MioOrderStatus> {
+    return this.forward(() => this.ctx.mioAccount.getOrder(orderNo))
+  }
+
+  /**
+   * Read the current user's subscriptions.
+   * @returns subscription items and whether the read refreshed NewAPI.
+   */
+  @Remote
+  getSubscriptions(): Promise<MioSubscriptionsView> {
+    return this.forward(() => this.ctx.mioAccount.getSubscriptions())
+  }
   /**
    * Read user, privacy, and subscription agreements.
    * @returns agreement documents in the backend's fixed order.

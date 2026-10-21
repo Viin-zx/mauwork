@@ -14,12 +14,14 @@ import { MioAccountError } from './error.ts'
 import { MioAccount } from './service.ts'
 import type {
   MioAccountStatusView, MioAccountView, MioAgreement, MioModelAccess, MioModelCatalogView,
-  MioPasswordLoginRequest, MioQuotaView, MioRegisterRequest, MioResetPasswordRequest, MioSmsCode,
-  MioSmsCodeRequest, MioSmsLoginRequest, MioUser,
+  MioOrderStatus, MioPasswordLoginRequest, MioPlan, MioPurchaseRequest, MioPurchaseResult, MioQuotaView,
+  MioRegisterRequest, MioResetPasswordRequest, MioSmsCode, MioSmsCodeRequest, MioSmsLoginRequest,
+  MioSubscriptionsView, MioUser,
 } from './types.ts'
 import {
   accountStatusSchema, agreementsSchema, loginSchema, modelAccessSchema, modelCatalogSchema,
-  quotaSchema, smsCodeSchema, storedSessionSchema, userSchema,
+  orderStatusSchema, planSchema, purchaseResultSchema, quotaSchema, smsCodeSchema, storedSessionSchema,
+  subscriptionsSchema, userSchema,
 } from './wire.ts'
 import type { LoginPayload, StoredSession } from './wire.ts'
 
@@ -279,6 +281,43 @@ export class MioAccountHttp extends MioAccount {
   override async getQuota(signal?: AbortSignal): Promise<MioQuotaView> {
     const session = await this.requireSession()
     return this.client.request('/quota', quotaSchema, {
+      token: session.accessToken,
+      ...signal === undefined ? {} : { signal },
+    })
+  }
+
+  override async getPlans(signal?: AbortSignal): Promise<readonly MioPlan[]> {
+    const session = await this.requireSession()
+    return this.client.request('/plans', z.array(planSchema), {
+      token: session.accessToken,
+      ...signal === undefined ? {} : { signal },
+    })
+  }
+
+  override async purchasePlan(request: MioPurchaseRequest, signal?: AbortSignal): Promise<MioPurchaseResult> {
+    const session = await this.requireSession()
+    return this.client.request(`/plans/${String(request.planId)}/purchase`, purchaseResultSchema, {
+      method: 'POST',
+      token: session.accessToken,
+      body: {
+        requestId: request.requestId,
+        ...request.paymentChannel === undefined ? {} : { paymentChannel: request.paymentChannel },
+      },
+      ...signal === undefined ? {} : { signal },
+    })
+  }
+
+  override async getOrder(orderNo: string, signal?: AbortSignal): Promise<MioOrderStatus> {
+    const session = await this.requireSession()
+    return this.client.request(`/orders/${encodeURIComponent(orderNo)}`, orderStatusSchema, {
+      token: session.accessToken,
+      ...signal === undefined ? {} : { signal },
+    })
+  }
+
+  override async getSubscriptions(signal?: AbortSignal): Promise<MioSubscriptionsView> {
+    const session = await this.requireSession()
+    return this.client.request('/subscriptions', subscriptionsSchema, {
       token: session.accessToken,
       ...signal === undefined ? {} : { signal },
     })
