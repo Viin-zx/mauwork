@@ -20,7 +20,7 @@ Mount the row beside `mio-account`:
   name: '@deepseek-ai/dsh-mio-plugin-preset'
 ```
 
-The plugin injects `mioAccount`, `settings`, and `pluginManager`. It runs once shortly after startup, after `plugin-manager/changed` with `install` or `bundle`, and after a settings document update. Each sweep ignores signed-out accounts, catalog entries whose package is not installed, entries without a preset, and imagegen entries that already carry user channels, channel secrets, or a default channel. A package that appears as newly installed is force-applied with `settings.replace`; the pending marker is written before that write so a restart-required installation is still forced on the next start.
+The plugin injects `mioAccount`, `settings`, and `pluginManager`. It runs once shortly after startup, after `plugin-manager/changed` with `install` or `bundle`, and after a settings document update. Each sweep ignores signed-out accounts, catalog entries whose package is not installed, entries without a preset, and imagegen entries that already carry user channels, channel secrets, or a default channel. A package that appears as newly installed is force-applied with `settings.replace`; the pending marker is written before that write so a restart-required installation is still forced on the next start. A pending install retries once per second for up to 20 seconds while its settings entry activates, and a non-secret failure is recorded in `last-error.json` beside the marker.
 
 A catalog `config` is a preset when it carries this envelope:
 

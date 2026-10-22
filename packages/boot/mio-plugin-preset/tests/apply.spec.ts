@@ -118,4 +118,21 @@ describe('catalog preset application', () => {
     }, 4)
     expect(settings.update).not.toHaveBeenCalled()
   })
+
+  it('retries a pending install until the settings entry appears', async () => {
+    const { ctx, settings, manager } = fixture({ installed: false })
+    const descriptor = { ns: 'imagegen', revision: 4, user: { channels: [{ id: 'mine' }] }, value: {} }
+    settings.describe.mockReturnValue([])
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+
+    manager.listBundles.mockResolvedValue([{ name: PACKAGE, installed: true, enabled: true }] as never)
+    ctx.emit('plugin-manager/changed', { reason: 'install' })
+    await vi.advanceTimersByTimeAsync(600)
+    expect(settings.replace).not.toHaveBeenCalled()
+
+    settings.describe.mockReturnValue([descriptor])
+    await vi.advanceTimersByTimeAsync(1_100)
+    expect(settings.replace).toHaveBeenCalledTimes(1)
+  })
 })

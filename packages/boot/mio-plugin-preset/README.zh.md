@@ -20,7 +20,7 @@ kind: "package-reference"
   name: '@deepseek-ai/dsh-mio-plugin-preset'
 ```
 
-插件注入 `mioAccount`、`settings` 和 `pluginManager`。它在启动后不久、`plugin-manager/changed` 的 `install` 或 `bundle` 事件后，以及设置文档更新后各扫描一次。每次扫描都会跳过未登录账号、包未安装的目录条目、没有预设的条目，以及已经带有用户渠道、渠道密钥或默认渠道的 imagegen 设置项。新出现的包会用 `settings.replace` 强制覆盖；待应用标记在写入前保存，因此需要重启的安装也会在下次启动时强制覆盖。
+插件注入 `mioAccount`、`settings` 和 `pluginManager`。它在启动后不久、`plugin-manager/changed` 的 `install` 或 `bundle` 事件后，以及设置文档更新后各扫描一次。每次扫描都会跳过未登录账号、包未安装的目录条目、没有预设的条目，以及已经带有用户渠道、渠道密钥或默认渠道的 imagegen 设置项。新出现的包会用 `settings.replace` 强制覆盖；待应用标记在写入前保存，因此需要重启的安装也会在下次启动时强制覆盖。待应用安装会每秒重试一次，最多 20 秒，等待其设置项激活；非敏感失败记录在标记旁的 `last-error.json`。
 
 目录的 `config` 使用以下 envelope 时才会被当作预设：
 

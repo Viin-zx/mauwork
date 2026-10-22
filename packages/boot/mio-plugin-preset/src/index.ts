@@ -26,6 +26,11 @@ const EVENT_DELAY_MS = 500
 /** Profile-local file naming packages whose installation must overwrite their preset target. */
 const PENDING_DIRECTORY = 'mio-plugin-preset'
 const PENDING_FILE = 'pending.json'
+/** Last non-secret application failure, kept beside the pending marker for diagnosis. */
+const DIAGNOSTIC_FILE = 'last-error.json'
+/** Retries after an install while the plugin's settings entry is still activating. */
+const PENDING_RETRY_LIMIT = 20
+const PENDING_RETRY_MS = 1_000
 
 /** The subset of the profile context this plugin needs. */
 interface ProfileLike {
@@ -51,10 +56,12 @@ type ApplyOutcome = 'applied' | 'skipped' | 'retry'
 export function apply(ctx: Context): void {
   let timer: ReturnType<typeof setTimeout> | undefined
   let running = false
+  let disposed = false
+  let retryAttempts = 0
   const state: SweepState = { known: undefined, pending: new Set() }
 
   const schedule = (delayMs = EVENT_DELAY_MS): void => {
-    if (timer !== undefined) return
+    if (disposed || timer !== undefined) return
     timer = setTimeout(() => {
       timer = undefined
       void sweep()
@@ -74,6 +81,20 @@ export function apply(ctx: Context): void {
     } finally {
       running = false
     }
+    if (disposed) return
+    if (state.pending.size === 0) {
+      retryAttempts = 0
+      return
+    }
+    // The settings entry can publish a moment after the install event; retry
+    // for a bounded window instead of waiting for an unrelated UI action.
+    if (retryAttempts < PENDING_RETRY_LIMIT) {
+      retryAttempts += 1
+      schedule(PENDING_RETRY_MS)
+    } else if (retryAttempts === PENDING_RETRY_LIMIT) {
+      retryAttempts += 1
+      ctx.logger.warn('mio-plugin-preset: pending installs remain after %s retries', PENDING_RETRY_LIMIT)
+    }
   }
 
   ctx.effect(() => {
@@ -88,6 +109,7 @@ export function apply(ctx: Context): void {
     const offAccount = ctx.on('mio-account/changed', () => { schedule() })
     schedule(STARTUP_DELAY_MS)
     return () => {
+      disposed = true
       offChange()
       offSettings()
       offAccount()
@@ -146,7 +168,9 @@ async function sweepCatalog(ctx: Context, state: SweepState): Promise<void> {
         pendingChanged = true
       }
     } catch (error) {
-      ctx.logger.warn('mio-plugin-preset: %s: %s', item.packageName, messageOf(error))
+      const message = messageOf(error)
+      ctx.logger.warn('mio-plugin-preset: %s: %s', item.packageName, message)
+      await writeDiagnostic(ctx, item.packageName, message)
     }
   }
   for (const name of [...state.pending]) {
@@ -215,6 +239,23 @@ async function writePending(ctx: Context, pending: ReadonlySet<string>): Promise
     await rename(temporary, path)
   } catch (error) {
     ctx.logger.warn('mio-plugin-preset: could not persist pending installs: %s', messageOf(error))
+  }
+}
+
+/** Record a non-secret failure beside the pending marker for local diagnosis. */
+async function writeDiagnostic(ctx: Context, packageName: string, message: string): Promise<void> {
+  const profile = profileOf(ctx)
+  if (profile === undefined) return
+  try {
+    const directory = join(profile.home, 'storages', PENDING_DIRECTORY)
+    await mkdir(directory, { recursive: true })
+    await writeFile(join(directory, DIAGNOSTIC_FILE), JSON.stringify({
+      packageName,
+      message,
+      at: new Date().toISOString(),
+    }), 'utf8')
+  } catch (error) {
+    ctx.logger.warn('mio-plugin-preset: could not write diagnostics: %s', messageOf(error))
   }
 }
 
