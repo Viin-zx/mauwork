@@ -1,8 +1,9 @@
 /** The Plugins page tab listing the mioagent plugin catalog. */
-import { useEffect } from 'react'
-import { Button, PluginArtworkDefault, Tag } from '@deepseek-ai/dsh-client-ui-primitives'
+import { useEffect, useState } from 'react'
+import { Button, Modal, PluginArtworkDefault, Tag } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type { MioMarketFace } from './market-store.ts'
+import type { MioPluginListing } from '@deepseek-ai/dsh-mio-account/types'
+import { updateAvailable, type MioMarketFace } from './market-store.ts'
 import css from './MioMarketTab.module.css'
 
 /** Props assembled by the Plugins page tab renderer. */
@@ -17,10 +18,14 @@ export type MioMarketTabProps =
  * @param props - tab actions, catalog state, and localized copy.
  * @returns the market tab.
  */
-export function MioMarketTab({ install, openPackage, useMarket, ensure, reload, t }: MioMarketTabProps) {
+export function MioMarketTab({ install, openPackage, useMarket, ensure, reload, update, t }: MioMarketTabProps) {
   const state = useMarket(value => value)
+  const [pendingUpdate, setPendingUpdate] = useState<MioPluginListing | null>(null)
   useEffect(() => { ensure() }, [ensure])
   const busy = state.status === 'loading'
+  const updateError = state.updateError === 'restart-required'
+    ? t('restartToUpdate')
+    : state.updateError === 'update-failed' ? t('updateFailed') : state.updateError
 
   return <section className={css.root} data-testid="mio-plugin-market">
     <header className={css.header}>
@@ -43,11 +48,17 @@ export function MioMarketTab({ install, openPackage, useMarket, ensure, reload, 
     {state.status === 'ready' && state.items.length === 0
       ? <p className={css.status}>{t('empty')}</p>
       : null}
+    {updateError !== ''
+      ? <div className={css.failure} role="alert"><span>{updateError}</span></div>
+      : null}
 
     {state.items.length > 0
       ? <div className={css.grid}>
         {state.items.map((item) => {
           const installed = state.installed.includes(item.packageName)
+          const installedVersion = state.installedVersions[item.packageName]
+          const latest = state.latestVersions[item.packageName]
+          const canUpdate = installed && updateAvailable(installedVersion, latest)
           return <article className={css.card} key={item.packageName} data-testid={`mio-plugin-${item.packageName}`}>
             <header className={css.cardHead}>
               <span className={css.artwork} aria-hidden="true">
@@ -66,17 +77,38 @@ export function MioMarketTab({ install, openPackage, useMarket, ensure, reload, 
             <div className={css.actions}>
               {installed
                 ? <Button variant="outline" size="sm" onClick={() => { openPackage(item.packageName) }}>
-                  {t('installed')}
+                  {installedVersion === undefined ? t('installed') : t('installedVersion', { version: installedVersion })}
                 </Button>
                 : <Button variant="primary" size="sm" onClick={() => {
                   install({ spec: item.packageName, title: item.pluginName, version: 'latest' })
                 }}>
                   {t('install')}
                 </Button>}
+              {canUpdate
+                ? <Button variant="primary" size="sm" disabled={state.updating !== null}
+                  onClick={() => { setPendingUpdate(item) }}>
+                  {state.updating === item.packageName ? t('updating') : t('update')}
+                </Button>
+                : null}
             </div>
           </article>
         })}
       </div>
       : null}
+
+    <Modal open={pendingUpdate !== null}
+      title={t('updateTitle', { name: pendingUpdate?.pluginName ?? '' })}
+      description={t('updateDescription')} closeLabel={t('cancel')}
+      onClose={() => { setPendingUpdate(null) }}>
+      <div className={css.updateActions}>
+        <Button variant="outline" onClick={() => { setPendingUpdate(null) }}>{t('cancel')}</Button>
+        <Button variant="primary" disabled={state.updating !== null} onClick={() => {
+          const item = pendingUpdate
+          if (item === null) return
+          setPendingUpdate(null)
+          update(item, install)
+        }}>{t('update')}</Button>
+      </div>
+    </Modal>
   </section>
 }

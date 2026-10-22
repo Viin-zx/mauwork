@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The browser half contributes a **Plugin market** tab to the Plugins page. It reads the enabled catalog through `remote.mioAccount.listPlugins`, marks packages the profile already declares installed through `remote.pluginManager.listBundles`, and installs a missing package by passing its package name to the page's own `install` action. Installation therefore keeps the page's existing check, progress, cancellation, registry, and restart surfaces. The Host's [`mio-plugin-preset`](../../boot/mio-plugin-preset/README.md) row applies a catalog preset after the bundle is installed; the tab itself never receives raw preset values.
+The browser half contributes a **Plugin market** tab to the Plugins page. It reads the account catalog through `remote.mioAccount.listPlugins`, marks installed packages through `remote.pluginManager.listBundles`, and installs through the page's own install dialog. It checks registry versions with `pluginManager.inspect` and offers **Update** when newer, removing the package before reopening the dialog. The Host's [`mio-plugin-preset`](../../boot/mio-plugin-preset/README.md) row applies catalog presets after installation; the tab never receives raw preset values.
 
 ## Use this package
 
@@ -40,7 +40,7 @@ No model request prefix changes.
 
 ## Known Limitations and Deferred Work
 
-- The catalog API has no version, icon, or install spec. Installation uses `packageName` and the page displays `latest`; a pinned version needs a catalog field or a client-side allowlist.
+- The catalog API has no version, icon, or install spec. Installation uses `packageName` and the page displays `latest`; update detection therefore asks `pluginManager.inspect` for each installed package, which needs registry access and may still install an older version when pnpm's `minimumReleaseAge` blocks the newest one. A catalog version field would remove that network check.
 - There is no search or pagination because the client endpoint returns every enabled plugin once.
 - Preset application is Host-side and automatic; the tab does not display the apply outcome beyond the plugin's subsequent configuration state.
 - The direct account-key preset is a development path. Production image providers need the loopback proxy described in the preset package limitations.

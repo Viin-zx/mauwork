@@ -1,19 +1,29 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MioMarketTab, type MioMarketTabProps } from '../src/client/MioMarketTab.tsx'
 import type { MioMarketState } from '../src/client/market-store.ts'
 import type { MioPluginMarketKey } from '../src/client/locales.ts'
 
 const PACKAGE = '@q253595422/dsh-imagegen-video'
+const ITEM = {
+  pluginId: '1', pluginName: 'AI 生图', packageName: PACKAGE, category: 'image',
+  description: 'Generate', hasPreset: true,
+}
 
 afterEach(cleanup)
 
-function props(state: MioMarketState, overrides: Partial<MioMarketTabProps> = {}): MioMarketTabProps {
+function props(state: Partial<MioMarketState>, overrides: Partial<MioMarketTabProps> = {}): MioMarketTabProps {
+  const full: MioMarketState = {
+    status: 'ready', items: [], installed: [], installedVersions: {}, latestVersions: {},
+    updating: null, updateError: '', error: '',
+    ...state,
+  }
   return {
     install: vi.fn(),
     openPackage: vi.fn(),
-    useMarket: (selector: (value: MioMarketState) => unknown) => selector(state),
+    update: vi.fn(),
+    useMarket: (selector: (value: MioMarketState) => unknown) => selector(full),
     ensure: vi.fn(),
     reload: vi.fn(),
     t: (key: MioPluginMarketKey) => key,
@@ -72,5 +82,41 @@ describe('mio plugin market tab', () => {
     const ensure = vi.fn()
     render(<MioMarketTab {...props({ status: 'idle', items: [], installed: [], error: '' }, { ensure })} />)
     expect(ensure).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers an update only when the registry version is newer', () => {
+    const { container } = render(<MioMarketTab {...props({
+      items: [ITEM], installed: [PACKAGE],
+      installedVersions: { [PACKAGE]: '1.0.0' }, latestVersions: { [PACKAGE]: '1.0.0' },
+    })} />)
+    expect(container.querySelector('[data-testid="mio-plugin-market"]')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: 'update' })).toBeNull()
+
+    cleanup()
+    render(<MioMarketTab {...props({
+      items: [ITEM], installed: [PACKAGE],
+      installedVersions: { [PACKAGE]: '1.0.0' }, latestVersions: { [PACKAGE]: '2.0.0' },
+    })} />)
+    expect(screen.getByRole('button', { name: 'update' })).toBeDefined()
+  })
+
+  it('confirms the update before handing the latest version to the page', () => {
+    const update = vi.fn()
+    const install = vi.fn()
+    render(<MioMarketTab {...props({
+      items: [ITEM], installed: [PACKAGE],
+      installedVersions: { [PACKAGE]: '1.0.0' }, latestVersions: { [PACKAGE]: '2.0.0' },
+    }, { update, install })} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'update' }))
+    const dialog = screen.getByRole('dialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'update' }))
+
+    expect(update).toHaveBeenCalledExactlyOnceWith(ITEM, install)
+  })
+
+  it('localizes a restart-bound update failure', () => {
+    render(<MioMarketTab {...props({ updateError: 'restart-required' })} />)
+    expect(screen.getByRole('alert').textContent).toBe('restartToUpdate')
   })
 })

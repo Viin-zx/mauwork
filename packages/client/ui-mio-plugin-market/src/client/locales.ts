@@ -10,6 +10,14 @@ export const en = {
   readFailed: 'Could not load the plugin market.',
   install: 'Install',
   installed: 'Installed',
+  installedVersion: 'Installed v{version}',
+  update: 'Update',
+  updating: 'Updating…',
+  updateTitle: 'Update {name}',
+  updateDescription: 'The current version is removed and reinstalled at the latest version. Plugin settings are kept.',
+  restartToUpdate: 'Restart the client before updating this plugin.',
+  updateFailed: 'Could not update the plugin.',
+  cancel: 'Cancel',
   autoConfigured: 'Auto-configured',
 } as const
 
@@ -26,5 +34,13 @@ export const zh: Record<MioPluginMarketKey, string> = {
   readFailed: '插件市场加载失败。',
   install: '安装',
   installed: '已安装',
+  installedVersion: '已安装 v{version}',
+  update: '更新',
+  updating: '正在更新…',
+  updateTitle: '更新 {name}',
+  updateDescription: '会先卸载当前版本，再安装最新版；插件设置会保留。',
+  restartToUpdate: '需要重启客户端后再更新该插件。',
+  updateFailed: '插件更新失败。',
+  cancel: '取消',
   autoConfigured: '自动配置',
 }

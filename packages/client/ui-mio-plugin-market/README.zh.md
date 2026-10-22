@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-浏览器半边在插件页增加一个 **插件市场** 标签页。它通过 `remote.mioAccount.listPlugins` 读取已启用目录，通过 `remote.pluginManager.listBundles` 标记 profile 已声明安装的包，并把缺失包名交给页面自己的 `install` 动作完成安装。因此安装继续复用页面现有的检查、进度、取消、注册表和重启提示。安装完成后由 Host 侧的 [`mio-plugin-preset`](../../boot/mio-plugin-preset/README.zh.md) 行应用目录预设；标签页本身不接触原始预设值。
+浏览器半边在插件页增加一个 **插件市场** 标签页。它通过 `remote.mioAccount.listPlugins` 读取已启用目录，通过 `remote.pluginManager.listBundles` 标记 profile 已声明安装的包，并把缺失包名交给页面自己的 `install` 动作完成安装。对已安装的包，它通过 `pluginManager.inspect` 查询注册表版本，发现更高版本时显示 **更新**；更新会先移除当前包，再按发现的版本重新打开页面的安装对话框。因此安装继续复用页面现有的检查、进度、取消、注册表和重启提示。安装完成后由 Host 侧的 [`mio-plugin-preset`](../../boot/mio-plugin-preset/README.zh.md) 行应用目录预设；标签页本身不接触原始预设值。
 
 ## 使用此包
 
@@ -40,7 +40,7 @@ kind: "package-reference"
 
 ## 已知限制与后续工作
 
-- 目录接口没有版本、图标或安装源字段。安装使用 `packageName`，页面显示 `latest`；需要锁定版本时，应由目录补字段或客户端维护白名单。
+- 目录接口没有版本、图标或安装源字段。安装使用 `packageName`，页面显示 `latest`；因此更新检测会对每个已安装包调用 `pluginManager.inspect`，需要注册表访问，而且 pnpm 的 `minimumReleaseAge` 拦截最新版时仍可能装入较旧版本。目录补一个版本字段即可省去这次网络检查。
 - 客户端接口一次返回全部启用插件，因此没有搜索和分页。
 - 预设由 Host 自动应用；标签页除插件后续配置状态外，不展示应用结果。
 - 直连账号密钥预设只是开发路径。正式环境的图像提供者需要预设包限制中描述的本机回环代理。
