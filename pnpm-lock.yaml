@@ -2052,6 +2052,21 @@ importers:
         specifier: ^0.28.2
         version: 0.28.2
 
+  packages/boot/mio-plugin-preset:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-mio-account':
+        specifier: workspace:*
+        version: link:../../credentials/mio-account
+      '@deepseek-ai/dsh-plugin-manager':
+        specifier: workspace:*
+        version: link:../plugin-manager
+      '@deepseek-ai/dsh-settings':
+        specifier: workspace:*
+        version: link:../../settings/settings
+
   packages/boot/plugin-manager:
     dependencies:
       '@deepseek-ai/dsh-app-boot':
@@ -2327,6 +2342,9 @@ importers:
       '@deepseek-ai/dsh-mio-account':
         specifier: workspace:*
         version: link:../../credentials/mio-account
+      '@deepseek-ai/dsh-mio-plugin-preset':
+        specifier: workspace:*
+        version: link:../../boot/mio-plugin-preset
       '@deepseek-ai/dsh-otel':
         specifier: workspace:*
         version: link:../../telemetry/otel
@@ -2823,6 +2841,9 @@ importers:
       '@deepseek-ai/dsh-client-ui-mio-account':
         specifier: workspace:*
         version: link:../../client/ui-mio-account
+      '@deepseek-ai/dsh-client-ui-mio-plugin-market':
+        specifier: workspace:*
+        version: link:../../client/ui-mio-plugin-market
       '@deepseek-ai/dsh-client-ui-model-selection':
         specifier: workspace:*
         version: link:../../client/ui-model-selection
@@ -4402,6 +4423,9 @@ importers:
       '@deepseek-ai/dsh-client-ui-primitives':
         specifier: workspace:*
         version: link:../ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
       '@deepseek-ai/dsh-client-ui-settings':
         specifier: workspace:*
         version: link:../ui-settings
@@ -4426,6 +4450,54 @@ importers:
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+
+  packages/client/ui-mio-plugin-market:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@deepseek-ai/dsh-client-store':
+        specifier: workspace:*
+        version: link:../store
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-plugin-manager':
+        specifier: workspace:*
+        version: link:../ui-plugin-manager
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@deepseek-ai/dsh-mio-account':
+        specifier: workspace:*
+        version: link:../../credentials/mio-account
+      '@deepseek-ai/dsh-plugin-manager':
+        specifier: workspace:*
+        version: link:../../boot/plugin-manager
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.2.0
         version: 18.3.1

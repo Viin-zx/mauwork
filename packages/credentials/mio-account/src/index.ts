@@ -12,6 +12,7 @@ import { z } from 'zod'
 import { MioClient, normalizeMioBaseUrl } from './client.ts'
 import { MioAccountError } from './error.ts'
 import { MioAccount } from './service.ts'
+import type { MioPluginCatalogItem } from './service.ts'
 import type {
   MioAccountStatusView, MioAccountView, MioAgreement, MioModelAccess, MioModelCatalogView,
   MioOrderStatus, MioPasswordLoginRequest, MioPlan, MioPurchaseRequest, MioPurchaseResult, MioQuotaView,
@@ -20,12 +21,13 @@ import type {
 } from './types.ts'
 import {
   accountStatusSchema, agreementsSchema, loginSchema, modelAccessSchema, modelCatalogSchema,
-  orderStatusSchema, planSchema, purchaseResultSchema, quotaSchema, smsCodeSchema, storedSessionSchema,
-  subscriptionsSchema, userSchema,
+  orderStatusSchema, planSchema, pluginCatalogSchema, purchaseResultSchema, quotaSchema, smsCodeSchema,
+  storedSessionSchema, subscriptionsSchema, userSchema,
 } from './wire.ts'
 import type { LoginPayload, StoredSession } from './wire.ts'
 
 export { MioAccount } from './service.ts'
+export type { MioPluginCatalogItem } from './service.ts'
 export { MioAccountError, mioAccountErrorOf } from './error.ts'
 export { normalizeMioBaseUrl } from './client.ts'
 export type { MioInternalErrorCode, MioAccountErrorOptions } from './error.ts'
@@ -343,6 +345,14 @@ export class MioAccountHttp extends MioAccount {
 
   override async getAgreements(signal?: AbortSignal): Promise<readonly MioAgreement[]> {
     return this.client.request('/agreements', agreementsSchema, {
+      ...signal === undefined ? {} : { signal },
+    })
+  }
+
+  override async getPlugins(signal?: AbortSignal): Promise<readonly MioPluginCatalogItem[]> {
+    const session = await this.requireSession()
+    return this.client.request('/plugins', pluginCatalogSchema, {
+      token: session.accessToken,
       ...signal === undefined ? {} : { signal },
     })
   }

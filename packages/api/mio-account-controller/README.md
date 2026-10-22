@@ -20,7 +20,7 @@ Account screens use authenticated Remote commands and a snapshot stream for the 
 <a id="use-this-package"></a>
 ## Use this package
 
-The `mioAccount` namespace exposes getState, getProfile, sendSmsCode, register, loginWithPassword, loginWithSms, resetPassword, logout, getAccountStatus, retryAccount, getModels, getQuota, getAgreements, watch, and watchExpiry. `watch` emits an initial complete state and subsequent complete states; disconnecting stops observation. `watchExpiry` delivers live credential-expiry notices without an initial item or replay, and a UI uses it to return to the sign-in screen after the Host removes a rejected session.
+The `mioAccount` namespace exposes getState, getProfile, sendSmsCode, register, loginWithPassword, loginWithSms, resetPassword, logout, getAccountStatus, retryAccount, getModels, getQuota, getAgreements, listPlugins, watch, and watchExpiry. `watch` emits an initial complete state and subsequent complete states; disconnecting stops observation. `watchExpiry` delivers live credential-expiry notices without an initial item or replay, and a UI uses it to return to the sign-in screen after the Host removes a rejected session.
 
 Every command except getState and the two streams reaches the business backend. Model access, including the resolved endpoint and key, stays Host-only: `llm-mio` reads it from the account service, and no Remote method returns it.
 

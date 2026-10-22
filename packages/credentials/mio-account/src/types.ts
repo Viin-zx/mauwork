@@ -73,6 +73,22 @@ export interface MioResetPasswordRequest {
   readonly authenticated?: boolean
 }
 
+/** Display-safe plugin catalog entry; the preset config stays inside the Host. */
+export interface MioPluginListing {
+  /** Backend plugin id rendered as a string so large integers keep their digits. */
+  readonly pluginId: string
+  /** Display name; duplicate names are allowed. */
+  readonly pluginName: string
+  /** Install spec used by the plugin manager; unique in the catalog. */
+  readonly packageName: string
+  /** Display grouping supplied by the backend. */
+  readonly category: string
+  /** Display description supplied by the backend. */
+  readonly description: string
+  /** Whether the catalog entry carries a default plugin configuration. */
+  readonly hasPreset: boolean
+}
+
 /** Display-safe user projection returned by login and profile reads. */
 export interface MioUser {
   readonly userId: MioUserId

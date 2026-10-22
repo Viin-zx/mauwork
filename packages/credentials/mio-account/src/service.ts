@@ -25,6 +25,22 @@ declare module '@deepseek-ai/cordis' {
  * own session persistence and the model-access cache; consumers never see the
  * access token or model key.
  */
+/** One enabled plugin in the mioagent catalog; its preset config never crosses the Remote wire. */
+export interface MioPluginCatalogItem {
+  /** Backend plugin id rendered as a string so large integers keep their digits. */
+  readonly pluginId: string
+  /** Display name; duplicate names are allowed. */
+  readonly pluginName: string
+  /** Install spec used by the plugin manager; unique in the catalog. */
+  readonly packageName: string
+  /** Display grouping supplied by the backend. */
+  readonly category: string
+  /** Display description supplied by the backend. */
+  readonly description: string
+  /** Default plugin configuration stored by the backend; null when unconfigured. */
+  readonly config: Record<string, unknown> | null
+}
+
 export abstract class MioAccount extends Service {
   /** @param ctx - context owning this account implementation. */
   constructor(ctx: Context) { super(ctx, 'mioAccount') }
@@ -140,6 +156,13 @@ export abstract class MioAccount extends Service {
    * @returns agreement documents in the backend's fixed order.
    */
   abstract getAgreements(signal?: AbortSignal): Promise<readonly MioAgreement[]>
+
+  /**
+   * Read the enabled plugin catalog. Preset configs stay inside the Host.
+   * @param signal - caller cancellation.
+   * @returns enabled plugins in backend order.
+   */
+  abstract getPlugins(signal?: AbortSignal): Promise<readonly MioPluginCatalogItem[]>
 
   /**
    * Read the plans the current user may purchase.

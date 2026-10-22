@@ -20,7 +20,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用此包
 
-`mioAccount` 命名空间提供 getState、getProfile、sendSmsCode、register、loginWithPassword、loginWithSms、resetPassword、logout、getAccountStatus、retryAccount、getModels、getQuota、getAgreements、watch 和 watchExpiry。`watch` 先发送完整初始状态，之后发送每次变化的完整状态；断开连接即停止观察。`watchExpiry` 提供实时的凭证过期通知，没有初始项也不重放；界面借此在 Host 删除被拒绝的会话后回到登录页。
+`mioAccount` 命名空间提供 getState、getProfile、sendSmsCode、register、loginWithPassword、loginWithSms、resetPassword、logout、getAccountStatus、retryAccount、getModels、getQuota、getAgreements、listPlugins、watch 和 watchExpiry。`watch` 先发送完整初始状态，之后发送每次变化的完整状态；断开连接即停止观察。`watchExpiry` 提供实时的凭证过期通知，没有初始项也不重放；界面借此在 Host 删除被拒绝的会话后回到登录页。
 
 除 getState 和两个流之外，每个命令都会访问业务后端。模型访问信息（包括解析出的端点和密钥）仅限 Host：`llm-mio` 从账号服务读取，任何 Remote 方法都不返回它。
 

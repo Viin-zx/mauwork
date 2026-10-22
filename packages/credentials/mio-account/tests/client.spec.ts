@@ -1,5 +1,4 @@
 /** Envelope, deadline, and failure behavior of the raw mioagent HTTP client. */
-/* oxlint-disable typescript/no-unsafe-assignment -- Vitest asymmetric matchers are typed as any. */
 import { afterEach, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { MioClient } from '../src/client.ts'
@@ -27,7 +26,6 @@ function respond(reply: { status?: number; body?: string }): void {
 function waitForAbort(): typeof fetch {
   return vi.fn((_input: string | URL | Request, init: RequestInit = {}) => new Promise<Response>((_resolve, reject) => {
     init.signal?.addEventListener('abort', () => {
-      // oxlint-disable-next-line typescript/prefer-promise-reject-errors -- propagate the caller's exact cancellation reason.
       reject(init.signal?.reason ?? new DOMException('aborted', 'AbortError'))
     }, { once: true })
   }))
@@ -94,6 +92,14 @@ it('treats an envelope code 401 as a rejected token and notifies its owner', asy
   respond({ body: JSON.stringify({ code: 401, msg: 'expired', data: null }) })
   await expect(client({ onUnauthorized: unauthorized }).request('/thing', DATA, { token: 'at-1' }))
     .rejects.toMatchObject({ code: 'TOKEN_INVALID' })
+  expect(unauthorized).toHaveBeenCalledTimes(1)
+})
+
+it('treats a data-less 401 envelope as a rejected token', async () => {
+  const unauthorized = vi.fn(async () => {})
+  respond({ body: JSON.stringify({ code: 401, msg: '认证失败，无法访问系统资源' }) })
+  await expect(client({ onUnauthorized: unauthorized }).request('/thing', DATA, { token: 'at-1' }))
+    .rejects.toMatchObject({ code: 'TOKEN_INVALID', message: '认证失败，无法访问系统资源' })
   expect(unauthorized).toHaveBeenCalledTimes(1)
 })
 

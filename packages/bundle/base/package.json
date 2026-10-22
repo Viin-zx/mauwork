@@ -63,6 +63,7 @@
     "@deepseek-ai/dsh-llm-deepseek-api-key": "workspace:*",
     "@deepseek-ai/dsh-llm-mio": "workspace:*",
     "@deepseek-ai/dsh-mio-account": "workspace:*",
+    "@deepseek-ai/dsh-mio-plugin-preset": "workspace:*",
     "@deepseek-ai/dsh-llm-pi-ai": "workspace:*",
     "@deepseek-ai/dsh-llm-retry": "workspace:*",
     "@deepseek-ai/dsh-mcp-resources": "workspace:*",

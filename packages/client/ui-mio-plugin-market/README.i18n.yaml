@@ -1,0 +1,34 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/client/ui-mio-plugin-market/README.md
+/:
+  en: bdc57eaa12fe88d4
+  zh: 1b11b00f886fd811
+/deepseek-ai-dsh-client-ui-mio-plugin-market:
+  en: cb33c75609a800a7
+  zh: 96fe45959917cded
+/deepseek-ai-dsh-client-ui-mio-plugin-market/summary:
+  en: 582144b39800e303
+  zh: 3a431f18f4bb792c
+/deepseek-ai-dsh-client-ui-mio-plugin-market/use-this-package:
+  en: 2469766601df2dff
+  zh: 10fcf3353df58e59
+/deepseek-ai-dsh-client-ui-mio-plugin-market/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-client-ui-mio-plugin-market/model-experience/plugin-market-tab:
+  en: f71a30debdb8f30e
+  zh: e507240552b7175a
+/deepseek-ai-dsh-client-ui-mio-plugin-market/model-experience/plugin-market-tab/what-the-model-sees:
+  en: b5cc44c8f4805960
+  zh: b1252318cb3e390c
+/deepseek-ai-dsh-client-ui-mio-plugin-market/model-experience/plugin-market-tab/token-effect:
+  en: e37a96f74b3f08dd
+  zh: 44dcb1c56a6ebc9b
+/deepseek-ai-dsh-client-ui-mio-plugin-market/model-experience/plugin-market-tab/kv-cache-effect:
+  en: ca3015e252db0114
+  zh: fe6eeae83f30f17d
+/deepseek-ai-dsh-client-ui-mio-plugin-market/known-limitations-and-deferred-work:
+  en: 063f110aca76f18f
+  zh: bf2d003fcbbf14e2

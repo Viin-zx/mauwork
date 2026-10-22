@@ -5,7 +5,7 @@ import { mioAccountErrorOf } from '@deepseek-ai/dsh-mio-account'
 import type {} from '@deepseek-ai/dsh-mio-account'
 import type {
   MioAccountStatusView, MioAccountView, MioAgreement, MioModelCatalogView, MioOrderStatus,
-  MioPasswordLoginRequest, MioPlan, MioPurchaseRequest, MioPurchaseResult, MioQuotaView,
+  MioPasswordLoginRequest, MioPlan, MioPluginListing, MioPurchaseRequest, MioPurchaseResult, MioQuotaView,
   MioRegisterRequest, MioResetPasswordRequest, MioSmsCode, MioSmsCodeRequest, MioSmsLoginRequest,
   MioSubscriptionsView, MioUser,
 } from '@deepseek-ai/dsh-mio-account/types'
@@ -157,6 +157,26 @@ export class MioAccountController extends TypertRemoteService {
   getAgreements(): Promise<readonly MioAgreement[]> {
     return this.forward(() => this.ctx.mioAccount.getAgreements())
   }
+
+  /**
+   * Read the display-safe plugin catalog.
+   * @returns enabled plugins without their preset configurations.
+   */
+  @Remote
+  listPlugins(): Promise<readonly MioPluginListing[]> {
+    return this.forward(async () => {
+      const items = await this.ctx.mioAccount.getPlugins()
+      return items.map(item => ({
+        pluginId: item.pluginId,
+        pluginName: item.pluginName,
+        packageName: item.packageName,
+        category: item.category,
+        description: item.description,
+        hasPreset: item.config !== null,
+      }))
+    })
+  }
+
   /**
    * Subscribe to credential expiry without replaying prior notifications.
    * @param signal - stream lifetime.

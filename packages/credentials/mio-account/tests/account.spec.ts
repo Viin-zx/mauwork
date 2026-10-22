@@ -313,6 +313,33 @@ describe('login and registration', () => {
     expect(await ctx.credentials.readRecord(SESSION_KEY)).toBeUndefined()
   })
 
+  it('reads the enabled plugin catalog with the stored token', async () => {
+    const ctx = await signedIn()
+    replies.push(ok([{
+      pluginId: 42,
+      pluginName: 'AI 生图',
+      packageName: '@q253595422/dsh-imagegen-video',
+      category: 'image',
+      description: 'Generate images',
+      status: '0',
+      config: { target: 'imagegen', values: { channels: [] } },
+    }]))
+
+    expect(await ctx.mioAccount.getPlugins()).toEqual([{
+      pluginId: '42',
+      pluginName: 'AI 生图',
+      packageName: '@q253595422/dsh-imagegen-video',
+      category: 'image',
+      description: 'Generate images',
+      config: { target: 'imagegen', values: { channels: [] } },
+    }])
+    expect(requests[0]).toMatchObject({
+      url: `${BASE}/mio/client/v1/plugins`,
+      method: 'GET',
+      headers: { authorization: 'Bearer at-1' },
+    })
+  })
+
   it('uses the stored token for the authenticated password-change flow', async () => {
     const ctx = await signedIn()
     replies.push(ok({ smsRequestId: 'sms-change', retryAfterSeconds: 60, expiresIn: 300 }))

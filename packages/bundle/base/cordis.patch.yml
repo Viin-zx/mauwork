@@ -128,6 +128,10 @@
       config:
         businessBaseUrl: !!js process.env.MIO_BUSINESS_BASE_URL || 'https://mioagent.zrshuiwu.com/prod-api'
 
+    - id: mio-plugin-preset
+      name: '@deepseek-ai/dsh-mio-plugin-preset'
+      disabled: !!js "!ctx.get('profileContext')"
+
     - id: credentials
       name: '@deepseek-ai/dsh-credentials-local'
 

@@ -1,11 +1,11 @@
 /** Remote delegation and the reconnect-safe expiry stream of the mioagent account controller. */
 import { afterEach, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import type { MioAccount } from '@deepseek-ai/dsh-mio-account'
+import type { MioAccount, MioPluginCatalogItem } from '@deepseek-ai/dsh-mio-account'
 import { MioAccountError } from '@deepseek-ai/dsh-mio-account'
 import type {
   MioAccountStatusView, MioAccountView, MioAgreement, MioModelCatalogView, MioOrderStatus, MioPlan,
-  MioPurchaseResult, MioQuotaView, MioSmsCode, MioSubscriptionsView, MioUser,
+  MioPluginListing, MioPurchaseResult, MioQuotaView, MioSmsCode, MioSubscriptionsView, MioUser,
 } from '@deepseek-ai/dsh-mio-account/types'
 import MioAccountController from '../src/index.ts'
 
@@ -39,6 +39,22 @@ const purchase: MioPurchaseResult = {
 }
 const order: MioOrderStatus = { ...purchase, subscriptionId: 7 }
 const subscriptions: MioSubscriptionsView = { items: [], realtime: true }
+const plugins: readonly MioPluginCatalogItem[] = [{
+  pluginId: '42',
+  pluginName: 'AI 生图',
+  packageName: '@q253595422/dsh-imagegen-video',
+  category: 'image',
+  description: 'Generate images',
+  config: { target: 'imagegen', values: {} },
+}]
+const pluginListings: readonly MioPluginListing[] = [{
+  pluginId: '42',
+  pluginName: 'AI 生图',
+  packageName: '@q253595422/dsh-imagegen-video',
+  category: 'image',
+  description: 'Generate images',
+  hasPreset: true,
+}]
 
 function fixture() {
   const ctx = new Context()
@@ -60,6 +76,7 @@ function fixture() {
     invalidateModelAccess: vi.fn<MioAccount['invalidateModelAccess']>(),
     getQuota: vi.fn<MioAccount['getQuota']>().mockResolvedValue(quota),
     getAgreements: vi.fn<MioAccount['getAgreements']>().mockResolvedValue(agreements),
+    getPlugins: vi.fn<MioAccount['getPlugins']>().mockResolvedValue(plugins),
     getPlans: vi.fn<MioAccount['getPlans']>().mockResolvedValue(plans),
     purchasePlan: vi.fn<MioAccount['purchasePlan']>().mockResolvedValue(purchase),
     getOrder: vi.fn<MioAccount['getOrder']>().mockResolvedValue(order),
@@ -93,6 +110,7 @@ it('delegates every account operation without altering its result', async () => 
   expect(await controller.getModels()).toBe(catalog)
   expect(await controller.getQuota()).toBe(quota)
   expect(await controller.getAgreements()).toBe(agreements)
+  expect(await controller.listPlugins()).toEqual(pluginListings)
   expect(await controller.getPlans()).toBe(plans)
   expect(await controller.purchasePlan(purchaseRequest)).toBe(purchase)
   expect(await controller.getOrder('ord-1')).toBe(order)
@@ -109,6 +127,7 @@ it('delegates every account operation without altering its result', async () => 
   expect(provider.getModels).toHaveBeenCalledExactlyOnceWith()
   expect(provider.getQuota).toHaveBeenCalledExactlyOnceWith()
   expect(provider.getAgreements).toHaveBeenCalledExactlyOnceWith()
+  expect(provider.getPlugins).toHaveBeenCalledExactlyOnceWith()
   expect(provider.getPlans).toHaveBeenCalledExactlyOnceWith()
   expect(provider.purchasePlan).toHaveBeenCalledExactlyOnceWith(purchaseRequest)
   expect(provider.getOrder).toHaveBeenCalledExactlyOnceWith('ord-1')

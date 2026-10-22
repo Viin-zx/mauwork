@@ -10,12 +10,13 @@ import type {
   MioAccountStatusView, MioAgreement, MioModelCatalogView, MioModelType, MioOrderStatus, MioPlan,
   MioPurchaseResult, MioQuotaView, MioSmsCode, MioSubscription, MioSubscriptionsView, MioUser, MioUserId,
 } from './types.ts'
+import type { MioPluginCatalogItem } from './service.ts'
 
 /** Universal business response envelope. */
 export const envelopeSchema = z.object({
   code: z.number(),
-  msg: z.string(),
-  data: z.unknown(),
+  msg: z.string().nullish().transform(value => value ?? ''),
+  data: z.unknown().optional(),
   errorCode: z.string().optional(),
   traceId: z.string().optional(),
 })
@@ -171,6 +172,16 @@ export const subscriptionsSchema: z.ZodType<MioSubscriptionsView> = z.object({
 })
 
 /** Agreement documents in the backend's fixed order. */
+/** Enabled plugin catalog; `config` is a raw JSON object retained only by the Host. */
+export const pluginCatalogSchema: z.ZodType<readonly MioPluginCatalogItem[]> = z.array(z.object({
+  pluginId: z.union([z.string(), z.number()]).transform(value => String(value)),
+  pluginName: z.string(),
+  packageName: z.string(),
+  category: z.string().nullish().transform(value => value ?? ''),
+  description: z.string().nullish().transform(value => value ?? ''),
+  config: z.record(z.string(), z.unknown()).nullish().transform(value => value ?? null),
+}))
+
 export const agreementsSchema: z.ZodType<readonly MioAgreement[]> = z.array(z.object({
   agreementType: z.string().min(1),
   title: z.string().optional(),
