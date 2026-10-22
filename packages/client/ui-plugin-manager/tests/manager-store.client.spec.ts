@@ -101,7 +101,8 @@ function bench(overrides: Partial<Record<string, ReturnType<typeof vi.fn>>> = {}
     configForms: { describe: () => ({ getSnapshot: () => ({ view: { namespaces: [] } }), subscribe: () => () => {} }), get: vi.fn((id: string) => `form:${id}`) },
     remote: { pluginManager: plugins, pluginInventory: inventory, pluginRegistryProbe: probe },
   } as never
-  const controller = new PluginManagerController(ctx)
+  const reload = vi.fn()
+  const controller = new PluginManagerController(ctx, reload)
   onTestFinished(() => { controller.dispose() })
   const face = controller.inject(NO_CONFIG, NO_TABS, text => typeof text === 'string' ? text : text.en)
   const state = () => controller.getSnapshot()
@@ -110,7 +111,7 @@ function bench(overrides: Partial<Record<string, ReturnType<typeof vi.fn>>> = {}
     await vi.waitFor(() => { expect(state().install.phase).toBe('starting') })
     return state().install.requestId as PluginInstallRequestId
   }
-  return { plugins, inventory, probe, controller, face, state, started, track }
+  return { plugins, inventory, probe, controller, face, state, started, track, reload }
 }
 
 it('hands a custom page the shared configuration form of its entry', () => {
@@ -544,7 +545,7 @@ describe('PluginManagerController', () => {
   })
 
   it('always asks before uninstalling, and cancelling runs nothing', async () => {
-    const { plugins, face, state, controller, track } = bench()
+    const { plugins, face, state, controller, track, reload } = bench()
     await controller.load()
     face.uninstall(BUNDLE.name)
     expect(state().confirm).toEqual({ action: 'uninstall', packageName: BUNDLE.name })
@@ -558,12 +559,25 @@ describe('PluginManagerController', () => {
     expect(state().confirm).toBeNull()
     await vi.waitFor(() => { expect(plugins.removeBundle).toHaveBeenCalledExactlyOnceWith(BUNDLE.name) })
     expect(track).toHaveBeenCalledExactlyOnceWith('confirm_uninstall_plugin', { plugin_name: BUNDLE.name })
+    expect(reload).toHaveBeenCalledTimes(1)
     await vi.waitFor(() => { expect(state().busy).toEqual([]) })
     // A refused removal names the action it was.
     plugins.removeBundle.mockResolvedValueOnce(ok({ ...failed(), stage: 'remove', error: { code: 'not-removable' } }) as never)
     face.uninstall(BUNDLE.name)
     face.confirm()
     await vi.waitFor(() => { expect(state().notice).toEqual({ kind: 'failed', action: 'uninstall', code: 'not-removable', reason: '', packageName: BUNDLE.name, seq: 1 }) })
+    expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not reload the renderer when uninstall waits for a restart', async () => {
+    const { face, state, controller, reload } = bench({
+      removeBundle: vi.fn().mockResolvedValue(ok({ ...APPLIED, application: 'restart-required', restartReason: 'no-hmr' })),
+    })
+    await controller.load()
+    face.uninstall(BUNDLE.name)
+    face.confirm()
+    await vi.waitFor(() => { expect(state().busy).toEqual([]) })
+    expect(reload).not.toHaveBeenCalled()
   })
 
   it('switches rows under their own busy keys and reports what the Host said', async () => {

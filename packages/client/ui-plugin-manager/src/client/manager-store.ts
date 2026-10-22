@@ -574,6 +574,7 @@ export class PluginManagerController {
    */
   constructor(
     private readonly ctx: ClientContext,
+    private readonly reloadPage: () => void = () => { globalThis.location.reload() },
   ) {
     this.store = createSnapshotStore<PluginManagerState>({
       status: 'idle', refreshStatus: 'idle', packages: [], busy: [], notice: null,
@@ -709,7 +710,11 @@ export class PluginManagerController {
       uninstall: (packageName) => {
         this.pendingConfirm = () => this.run(packageName, { packageName, action: 'uninstall' }, async () => {
           this.ctx.get('productAnalytics')?.track('confirm_uninstall_plugin', { plugin_name: packageName })
-          this.applied(await this.ctx.remote.pluginManager.removeBundle(packageName), packageName)
+          const result = await this.ctx.remote.pluginManager.removeBundle(packageName)
+          this.applied(result, packageName)
+          // HMR can unload the package without unmounting the plugin's browser
+          // contributions; a renderer reload drops the stale tab and page.
+          if (result.ok && result.value.application === 'applied') this.reloadPage()
         })
         this.patch({ confirm: { action: 'uninstall', packageName } })
       },
