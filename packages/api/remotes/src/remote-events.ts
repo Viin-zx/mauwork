@@ -9,6 +9,7 @@
 import type {} from '@deepseek-ai/dsh-api-session-controller/remote-events'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type {} from '@deepseek-ai/dsh-deepseek-account/types'
+import type {} from '@deepseek-ai/dsh-mio-plugin-preset/types'
 import type {} from '@deepseek-ai/dsh-permission-presets/types'
 import type {} from '@deepseek-ai/dsh-plugin-manager/types'
 import type {} from '@deepseek-ai/dsh-plugin-market/types'
@@ -49,6 +50,7 @@ export const API_REMOTE_FORWARDED_EVENTS = [
   { event: 'plugin-manager/install-log', mode: 'emit' },
   { event: 'plugin-manager/install-state', mode: 'emit' },
   { event: 'plugin-market/changed', mode: 'emit' },
+  { event: 'mio-plugin-preset/applied', mode: 'emit' },
   { event: 'settings/document-updated', mode: 'emit' },
   { event: 'schedule/changed', mode: 'emit' },
   { event: 'user-questions/request', mode: 'waterfall' },

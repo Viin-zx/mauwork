@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-浏览器半边在插件页增加一个 **插件市场** 标签页。它通过 `remote.mioAccount.listPlugins` 读取已启用目录，通过 `remote.pluginManager.listBundles` 标记 profile 已声明安装的包，并把缺失包名交给页面自己的 `install` 动作完成安装。对已安装的包，它通过 `pluginManager.inspect` 查询注册表版本，发现更高版本时显示 **更新**；更新会先移除当前包，再按发现的版本重新打开页面的安装对话框。因此安装继续复用页面现有的检查、进度、取消、注册表和重启提示。安装完成后由 Host 侧的 [`mio-plugin-preset`](../../boot/mio-plugin-preset/README.zh.md) 行应用目录预设；标签页本身不接触原始预设值。
+浏览器半边在插件页增加一个 **插件市场** 标签页。它通过 `remote.mioAccount.listPlugins` 读取已启用目录，通过 `remote.pluginManager.listBundles` 标记 profile 已声明安装的包，并把缺失包名交给页面自己的 `install` 动作完成安装。对已安装的包，它通过 `pluginManager.inspect` 查询注册表版本，发现更高版本时显示 **更新**；更新会先移除当前包，再按发现的版本重新打开页面的安装对话框。因此安装继续复用页面现有的检查、进度、取消、注册表和重启提示。安装完成后由 Host 侧的 [`mio-plugin-preset`](../../boot/mio-plugin-preset/README.zh.md) 行应用目录预设；标签页本身不接触原始预设值。强制安装写入预设后，标签页会重载一次渲染进程，使插件设置页读取新配置。
 
 ## 使用此包
 

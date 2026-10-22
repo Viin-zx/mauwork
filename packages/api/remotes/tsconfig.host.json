@@ -84,6 +84,9 @@
       "path": "../../boot/plugin-market"
     },
     {
+      "path": "../../boot/mio-plugin-preset"
+    },
+    {
       "path": "../../host/plugin-inventory"
     },
     {

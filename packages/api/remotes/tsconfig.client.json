@@ -106,6 +106,9 @@
       "path": "../../boot/plugin-market"
     },
     {
+      "path": "../../boot/mio-plugin-preset"
+    },
+    {
       "path": "../../document/office-to-pdf"
     },
     {

@@ -9,6 +9,8 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { MioModelAccess, MioPluginCatalogItem } from '@deepseek-ai/dsh-mio-account'
+import type {} from './types.ts'
+export type * from './types.ts'
 import type {} from '@deepseek-ai/dsh-plugin-manager'
 import type {} from '@deepseek-ai/dsh-settings'
 import { isEmptyTargetUser, PRESET_TARGET_PACKAGES, readPreset, resolvePresetValues } from './preset.ts'
@@ -44,10 +46,19 @@ interface SweepState {
   known: Set<string> | undefined
   /** Packages whose next successful application must overwrite user channels. */
   pending: Set<string>
+  /** Pending packages installed in this process, whose applied write reloads the renderer. */
+  reloadPending: Set<string>
 }
 
 /** What one catalog entry did, for deciding whether a pending marker can go. */
 type ApplyOutcome = 'applied' | 'skipped' | 'retry'
+
+/** One application attempt and the target it wrote. */
+interface ApplyResult {
+  readonly outcome: ApplyOutcome
+  readonly applied: boolean
+  readonly target?: string
+}
 
 /**
  * Sweep catalog presets on startup and after installation or settings changes.
@@ -58,7 +69,7 @@ export function apply(ctx: Context): void {
   let running = false
   let disposed = false
   let retryAttempts = 0
-  const state: SweepState = { known: undefined, pending: new Set() }
+  const state: SweepState = { known: undefined, pending: new Set(), reloadPending: new Set() }
 
   const schedule = (delayMs = EVENT_DELAY_MS): void => {
     if (disposed || timer !== undefined) return
@@ -133,6 +144,9 @@ async function sweepCatalog(ctx: Context, state: SweepState): Promise<void> {
   if (state.known === undefined) {
     state.known = new Set(installed)
     state.pending = await readPending(ctx)
+    // A marker loaded from disk belongs to the previous process; its write
+    // happens before any settings page can be open, so it needs no reload.
+    state.reloadPending = new Set()
     for (const name of [...state.pending]) {
       if (!installed.has(name)) {
         state.pending.delete(name)
@@ -143,12 +157,14 @@ async function sweepCatalog(ctx: Context, state: SweepState): Promise<void> {
     for (const name of installed) {
       if (!state.known.has(name) && !state.pending.has(name)) {
         state.pending.add(name)
+        state.reloadPending.add(name)
         pendingChanged = true
       }
     }
     for (const name of [...state.pending]) {
       if (!installed.has(name)) {
         state.pending.delete(name)
+        state.reloadPending.delete(name)
         pendingChanged = true
       }
     }
@@ -162,10 +178,22 @@ async function sweepCatalog(ctx: Context, state: SweepState): Promise<void> {
   for (const item of catalog) {
     if (!installed.has(item.packageName)) continue
     try {
-      const outcome = await applyOne(ctx, item, state.pending.has(item.packageName))
-      if (state.pending.has(item.packageName) && outcome !== 'retry') {
+      const result = await applyOne(ctx, item, state.pending.has(item.packageName))
+      if (state.pending.has(item.packageName) && result.outcome !== 'retry') {
+        const reload = state.reloadPending.delete(item.packageName)
         state.pending.delete(item.packageName)
         pendingChanged = true
+        if (reload && result.applied && result.target !== undefined) {
+          // Clear the marker before notifying the renderer; a reload while it
+          // remains would repeat the forced write and reload on every start.
+          await writePending(ctx, state.pending)
+          pendingChanged = false
+          ctx.emit('mio-plugin-preset/applied', {
+            packageName: item.packageName,
+            target: result.target,
+            reload: true,
+          })
+        }
       }
     } catch (error) {
       const message = messageOf(error)
@@ -176,6 +204,7 @@ async function sweepCatalog(ctx: Context, state: SweepState): Promise<void> {
   for (const name of [...state.pending]) {
     if (!catalogPackages.has(name)) {
       state.pending.delete(name)
+      state.reloadPending.delete(name)
       pendingChanged = true
     }
   }
@@ -183,16 +212,16 @@ async function sweepCatalog(ctx: Context, state: SweepState): Promise<void> {
 }
 
 /** Apply one catalog entry; installation force ignores existing user channels. */
-async function applyOne(ctx: Context, item: MioPluginCatalogItem, force: boolean): Promise<ApplyOutcome> {
+async function applyOne(ctx: Context, item: MioPluginCatalogItem, force: boolean): Promise<ApplyResult> {
   const preset = readPreset(item.config)
-  if (preset === null) return 'skipped'
+  if (preset === null) return { outcome: 'skipped', applied: false }
   if (PRESET_TARGET_PACKAGES[preset.target] !== item.packageName) {
     throw new Error(`preset target "${preset.target}" belongs to another package`)
   }
   const descriptor = ctx.settings.describe({ redactSecrets: true })
     .find(row => String(row.ns) === preset.target)
-  if (descriptor === undefined) return 'retry'
-  if (!force && !isEmptyTargetUser(preset.target, descriptor.user)) return 'skipped'
+  if (descriptor === undefined) return { outcome: 'retry', applied: false }
+  if (!force && !isEmptyTargetUser(preset.target, descriptor.user)) return { outcome: 'skipped', applied: false }
 
   let access: Promise<MioModelAccess> | undefined
   const resolve = async (placeholder: 'MIO_MODEL_BASE_URL' | 'MIO_API_KEY'): Promise<string> => {
@@ -204,7 +233,7 @@ async function applyOne(ctx: Context, item: MioPluginCatalogItem, force: boolean
   if (force) await ctx.settings.replace(preset.target, values, descriptor.revision)
   else await ctx.settings.update(preset.target, values, descriptor.revision)
   ctx.logger.info('mio-plugin-preset: applied %s to %s%s', item.packageName, preset.target, force ? ' (install)' : '')
-  return 'applied'
+  return { outcome: 'applied', applied: true, target: preset.target }
 }
 
 /** Resolve the active profile without requiring its service type in this package. */

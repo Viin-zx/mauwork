@@ -40,6 +40,11 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => {
     const disposers = [
       ctx.remote.$on('plugin-manager/changed', () => { controller.refreshInstalled() }),
+      ctx.remote.$on('mio-plugin-preset/applied', (change) => {
+        // The plugin's settings page reads once on mount; reload after a forced
+        // install so it opens against the newly written catalog preset.
+        if (change.reload) globalThis.location.reload()
+      }),
       ctx.on('connection/reset', () => { controller.reset() }),
     ]
     return () => { for (const dispose of disposers) dispose() }

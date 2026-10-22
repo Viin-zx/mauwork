@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The browser half contributes a **Plugin market** tab to the Plugins page. It reads the account catalog through `remote.mioAccount.listPlugins`, marks installed packages through `remote.pluginManager.listBundles`, and installs through the page's own install dialog. It checks registry versions with `pluginManager.inspect` and offers **Update** when newer, removing the package before reopening the dialog. The Host's [`mio-plugin-preset`](../../boot/mio-plugin-preset/README.md) row applies catalog presets after installation; the tab never receives raw preset values.
+The browser half contributes a **Plugin market** tab to the Plugins page. It reads the account catalog through `remote.mioAccount.listPlugins`, marks installed packages through `remote.pluginManager.listBundles`, and installs through the page's own install dialog. It checks registry versions with `pluginManager.inspect` and offers **Update** when newer, removing the package before reopening the dialog. The Host's [`mio-plugin-preset`](../../boot/mio-plugin-preset/README.md) row applies catalog presets after installation; the tab never receives raw preset values. After a forced install writes its preset, the tab reloads the renderer once so the plugin's settings page reads the new configuration.
 
 ## Use this package
 

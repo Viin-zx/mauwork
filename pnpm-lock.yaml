@@ -1457,6 +1457,9 @@ importers:
       '@deepseek-ai/dsh-message-feedback':
         specifier: workspace:*
         version: link:../../feedback/message-feedback
+      '@deepseek-ai/dsh-mio-plugin-preset':
+        specifier: workspace:*
+        version: link:../../boot/mio-plugin-preset
       '@deepseek-ai/dsh-office-to-pdf':
         specifier: workspace:*
         version: link:../../document/office-to-pdf

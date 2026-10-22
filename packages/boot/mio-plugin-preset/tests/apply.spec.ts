@@ -54,6 +54,8 @@ function fixture(options: { user?: Record<string, unknown>; installed?: boolean 
 describe('catalog preset application', () => {
   it('writes a configured preset into an empty settings entry', async () => {
     const { ctx, settings, account } = fixture()
+    const applied = vi.fn()
+    ctx.on('mio-plugin-preset/applied', applied)
     await ctx.plugin(presetPlugin)
     await vi.advanceTimersByTimeAsync(1_600)
 
@@ -63,6 +65,7 @@ describe('catalog preset application', () => {
       channelSecrets: { mio: 'sk-test' },
       apiUrl: 'https://models.test/v1',
     }, 4)
+    expect(applied).not.toHaveBeenCalled()
   })
 
   it('does not overwrite user-owned channels on startup', async () => {
@@ -117,6 +120,22 @@ describe('catalog preset application', () => {
       apiUrl: 'https://models.test/v1',
     }, 4)
     expect(settings.update).not.toHaveBeenCalled()
+  })
+
+  it('announces a forced install so the renderer can reload', async () => {
+    const { ctx, settings, manager } = fixture({ installed: false })
+    const applied = vi.fn()
+    ctx.on('mio-plugin-preset/applied', applied)
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+
+    manager.listBundles.mockResolvedValue([{ name: PACKAGE, installed: true, enabled: true }] as never)
+    ctx.emit('plugin-manager/changed', { reason: 'install' })
+    await vi.advanceTimersByTimeAsync(600)
+    expect(settings.replace).toHaveBeenCalledTimes(1)
+    expect(applied).toHaveBeenCalledExactlyOnceWith({
+      packageName: PACKAGE, target: 'imagegen', reload: true,
+    })
   })
 
   it('retries a pending install until the settings entry appears', async () => {
