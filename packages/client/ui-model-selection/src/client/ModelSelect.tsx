@@ -27,7 +27,7 @@
  */
 import { MenuGroup, MenuSurface, observeStickyMenuGroups } from '@deepseek-ai/dsh-client-ui-primitives'
 import {
-  useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
+  Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
   type CSSProperties, type KeyboardEvent, type FocusEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
@@ -578,46 +578,46 @@ export function ModelSelect(
                 hidden={filteredGroups.length === 0}
               >
                 {filteredGroups.map((group) => {
-                  return (
-                    <MenuGroup key={group.id} label={group.provider.name}>
-                      {group.models.map((model) => {
-                        const index = modelIndex++
-                        const selected = state.current?.provider === group.id && state.current.model === model.id
-                        return (
-                          <button
-                            ref={itemRef()}
-                            type="button"
-                            role="menuitemradio"
-                            aria-checked={selected}
-                            id={`${id}-model-${index}`}
-                            tabIndex={showSearch ? -1 : 0}
-                            onFocus={() => { setHighlightedIndex(index) }}
-                            data-highlighted={index === activeModelIndex ? '' : undefined}
-                            className={clsx(
-                              css.option, css.modelOption, selected && css.selected, index === activeModelIndex && css.optionActive,
-                            )}
-                            onMouseMove={busy || index === activeModelIndex ? undefined : () => {
-                              if (showSearch) setHighlightedIndex(index)
-                              else itemRefs.current[index]?.focus()
-                            }}
-                            key={model.id}
-                            title={model.name}
-                            disabled={busy}
-                            onClick={() => { choose({ provider: group.id, model: model.id }) }}
-                          >
-                            <span className={css.optionCopy}>
-                              <span className={css.modelName}>{renderModelLabel(group.provider, model, 'option', selected)}</span>
-                            </span>
-                            <span className={css.check}>
-                              {pending?.provider === group.id && pending.model === model.id
-                                ? <StateDot state="ongoing" />
-                                : selected ? <IconCheckOutlineRegular /> : null}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </MenuGroup>
-                  )
+                  const rows = group.models.map((model) => {
+                    const index = modelIndex++
+                    const selected = state.current?.provider === group.id && state.current.model === model.id
+                    return (
+                      <button
+                        ref={itemRef()}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={selected}
+                        id={`${id}-model-${index}`}
+                        tabIndex={showSearch ? -1 : 0}
+                        onFocus={() => { setHighlightedIndex(index) }}
+                        data-highlighted={index === activeModelIndex ? '' : undefined}
+                        className={clsx(
+                          css.option, css.modelOption, selected && css.selected, index === activeModelIndex && css.optionActive,
+                        )}
+                        onMouseMove={busy || index === activeModelIndex ? undefined : () => {
+                          if (showSearch) setHighlightedIndex(index)
+                          else itemRefs.current[index]?.focus()
+                        }}
+                        key={model.id}
+                        title={model.name}
+                        disabled={busy}
+                        onClick={() => { choose({ provider: group.id, model: model.id }) }}
+                      >
+                        <span className={css.optionCopy}>
+                          <span className={css.modelName}>{renderModelLabel(group.provider, model, 'option', selected)}</span>
+                        </span>
+                        <span className={css.check}>
+                          {pending?.provider === group.id && pending.model === model.id
+                            ? <StateDot state="ongoing" />
+                            : selected ? <IconCheckOutlineRegular /> : null}
+                        </span>
+                      </button>
+                    )
+                  })
+                  // With one provider the heading only repeats the product name.
+                  return filteredGroups.length > 1
+                    ? <MenuGroup key={group.id} label={group.provider.name}>{rows}</MenuGroup>
+                    : <Fragment key={group.id}>{rows}</Fragment>
                 })}
               </div>
               {state.status === 'ready' && filteredGroups.length === 0 && (
