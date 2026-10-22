@@ -1,9 +1,12 @@
 /**
- * Apply mioagent catalog presets to installed plugins whose settings entry
- * carries no user overrides. A preset write is best-effort and never blocks
- * installation; the next install, settings publication, or startup retries it.
+ * Apply mioagent catalog presets to installed plugins. A newly installed
+ * package always receives the catalog preset; startup and later settings
+ * events only fill a target that has no user channels. A small profile-local
+ * marker keeps the force intent across a restart-required installation.
  */
 
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { MioModelAccess, MioPluginCatalogItem } from '@deepseek-ai/dsh-mio-account'
 import type {} from '@deepseek-ai/dsh-plugin-manager'
@@ -20,6 +23,26 @@ export const inject = ['mioAccount', 'settings', 'pluginManager']
 const STARTUP_DELAY_MS = 1_500
 /** Debounce for installation, settings, and composition events. */
 const EVENT_DELAY_MS = 500
+/** Profile-local file naming packages whose installation must overwrite their preset target. */
+const PENDING_DIRECTORY = 'mio-plugin-preset'
+const PENDING_FILE = 'pending.json'
+
+/** The subset of the profile context this plugin needs. */
+interface ProfileLike {
+  readonly name: string
+  readonly home: string
+}
+
+/** One sweep's installation memory. */
+interface SweepState {
+  /** Packages installed when the previous sweep ran; undefined before the first. */
+  known: Set<string> | undefined
+  /** Packages whose next successful application must overwrite user channels. */
+  pending: Set<string>
+}
+
+/** What one catalog entry did, for deciding whether a pending marker can go. */
+type ApplyOutcome = 'applied' | 'skipped' | 'retry'
 
 /**
  * Sweep catalog presets on startup and after installation or settings changes.
@@ -28,6 +51,7 @@ const EVENT_DELAY_MS = 500
 export function apply(ctx: Context): void {
   let timer: ReturnType<typeof setTimeout> | undefined
   let running = false
+  const state: SweepState = { known: undefined, pending: new Set() }
 
   const schedule = (delayMs = EVENT_DELAY_MS): void => {
     if (timer !== undefined) return
@@ -44,7 +68,7 @@ export function apply(ctx: Context): void {
     }
     running = true
     try {
-      await sweepCatalog(ctx)
+      await sweepCatalog(ctx, state)
     } catch (error) {
       ctx.logger.warn('mio-plugin-preset: catalog sweep failed: %s', messageOf(error))
     } finally {
@@ -59,46 +83,92 @@ export function apply(ctx: Context): void {
     // A delayed entry publication is the only signal for an install that
     // needed a restart; applying cannot reach an inactive settings entry.
     const offSettings = ctx.on('settings/document-updated', () => { schedule() })
+    // A sweep that ran before login has no catalog; retry once the account
+    // publishes a stored or refreshed session.
+    const offAccount = ctx.on('mio-account/changed', () => { schedule() })
     schedule(STARTUP_DELAY_MS)
     return () => {
       offChange()
       offSettings()
+      offAccount()
       if (timer !== undefined) clearTimeout(timer)
       timer = undefined
     }
   }, 'mio-plugin-preset: catalog sweep')
 }
 
-/** Apply every configured preset whose package is installed. */
-async function sweepCatalog(ctx: Context): Promise<void> {
-  const state = await ctx.mioAccount.getState()
-  if (state.status !== 'signed-in') return
+/** Apply presets and remember installations that must overwrite their target. */
+async function sweepCatalog(ctx: Context, state: SweepState): Promise<void> {
+  const session = await ctx.mioAccount.getState()
+  if (session.status !== 'signed-in') return
   const [catalog, bundles] = await Promise.all([
     ctx.mioAccount.getPlugins(),
     ctx.pluginManager.listBundles(),
   ])
   const installed = new Set(bundles.filter(bundle => bundle.installed).map(bundle => bundle.name))
+  let pendingChanged = false
+
+  if (state.known === undefined) {
+    state.known = new Set(installed)
+    state.pending = await readPending(ctx)
+    for (const name of [...state.pending]) {
+      if (!installed.has(name)) {
+        state.pending.delete(name)
+        pendingChanged = true
+      }
+    }
+  } else {
+    for (const name of installed) {
+      if (!state.known.has(name) && !state.pending.has(name)) {
+        state.pending.add(name)
+        pendingChanged = true
+      }
+    }
+    for (const name of [...state.pending]) {
+      if (!installed.has(name)) {
+        state.pending.delete(name)
+        pendingChanged = true
+      }
+    }
+    state.known = new Set(installed)
+  }
+  // Persist the force intent before applying so a restart-required install
+  // still overwrites its target on the next process start.
+  if (pendingChanged) await writePending(ctx, state.pending)
+
+  const catalogPackages = new Set(catalog.map(item => item.packageName))
   for (const item of catalog) {
     if (!installed.has(item.packageName)) continue
     try {
-      await applyOne(ctx, item)
+      const outcome = await applyOne(ctx, item, state.pending.has(item.packageName))
+      if (state.pending.has(item.packageName) && outcome !== 'retry') {
+        state.pending.delete(item.packageName)
+        pendingChanged = true
+      }
     } catch (error) {
       ctx.logger.warn('mio-plugin-preset: %s: %s', item.packageName, messageOf(error))
     }
   }
+  for (const name of [...state.pending]) {
+    if (!catalogPackages.has(name)) {
+      state.pending.delete(name)
+      pendingChanged = true
+    }
+  }
+  if (pendingChanged) await writePending(ctx, state.pending)
 }
 
-/** Apply one catalog entry when its target entry has no user-owned values. */
-async function applyOne(ctx: Context, item: MioPluginCatalogItem): Promise<void> {
+/** Apply one catalog entry; installation force ignores existing user channels. */
+async function applyOne(ctx: Context, item: MioPluginCatalogItem, force: boolean): Promise<ApplyOutcome> {
   const preset = readPreset(item.config)
-  if (preset === null) return
+  if (preset === null) return 'skipped'
   if (PRESET_TARGET_PACKAGES[preset.target] !== item.packageName) {
     throw new Error(`preset target "${preset.target}" belongs to another package`)
   }
   const descriptor = ctx.settings.describe({ redactSecrets: true })
     .find(row => String(row.ns) === preset.target)
-  if (descriptor === undefined) return
-  if (!isEmptyTargetUser(preset.target, descriptor.user)) return
+  if (descriptor === undefined) return 'retry'
+  if (!force && !isEmptyTargetUser(preset.target, descriptor.user)) return 'skipped'
 
   let access: Promise<MioModelAccess> | undefined
   const resolve = async (placeholder: 'MIO_MODEL_BASE_URL' | 'MIO_API_KEY'): Promise<string> => {
@@ -107,8 +177,50 @@ async function applyOne(ctx: Context, item: MioPluginCatalogItem): Promise<void>
     return placeholder === 'MIO_MODEL_BASE_URL' ? value.baseUrl : value.apiKey
   }
   const values = await resolvePresetValues(preset.values, resolve)
-  await ctx.settings.update(preset.target, values, descriptor.revision)
-  ctx.logger.info('mio-plugin-preset: applied %s to %s', item.packageName, preset.target)
+  if (force) await ctx.settings.replace(preset.target, values, descriptor.revision)
+  else await ctx.settings.update(preset.target, values, descriptor.revision)
+  ctx.logger.info('mio-plugin-preset: applied %s to %s%s', item.packageName, preset.target, force ? ' (install)' : '')
+  return 'applied'
+}
+
+/** Resolve the active profile without requiring its service type in this package. */
+function profileOf(ctx: Context): ProfileLike | undefined {
+  const profile = ctx.get('profileContext') as ProfileLike | undefined
+  return profile !== undefined && typeof profile.home === 'string' && typeof profile.name === 'string'
+    ? profile
+    : undefined
+}
+
+/** @returns package names whose installation must overwrite the target. */
+async function readPending(ctx: Context): Promise<Set<string>> {
+  const profile = profileOf(ctx)
+  if (profile === undefined) return new Set()
+  try {
+    const raw: unknown = JSON.parse(await readFile(pendingPath(profile), 'utf8'))
+    return new Set(Array.isArray(raw) ? raw.filter((value): value is string => typeof value === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+/** Persist the force intent; failures never block installation. */
+async function writePending(ctx: Context, pending: ReadonlySet<string>): Promise<void> {
+  const profile = profileOf(ctx)
+  if (profile === undefined) return
+  try {
+    const path = pendingPath(profile)
+    await mkdir(join(profile.home, 'storages', PENDING_DIRECTORY), { recursive: true })
+    const temporary = `${path}.tmp`
+    await writeFile(temporary, JSON.stringify([...pending]), 'utf8')
+    await rename(temporary, path)
+  } catch (error) {
+    ctx.logger.warn('mio-plugin-preset: could not persist pending installs: %s', messageOf(error))
+  }
+}
+
+/** @returns the profile-local pending marker path. */
+function pendingPath(profile: ProfileLike): string {
+  return join(profile.home, 'storages', PENDING_DIRECTORY, `${profile.name}.${PENDING_FILE}`)
 }
 
 /** @param error - caught value. @returns a log-safe message without preset values. */

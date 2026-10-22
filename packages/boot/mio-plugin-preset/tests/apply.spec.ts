@@ -23,6 +23,7 @@ function fixture(options: { user?: Record<string, unknown>; installed?: boolean 
       value: {},
     }]),
     update: vi.fn(async () => undefined),
+    replace: vi.fn(async () => undefined),
   }
   const account = {
     getState: vi.fn(async () => ({ status: 'signed-in', user: null, expiresAt: null })),
@@ -64,12 +65,13 @@ describe('catalog preset application', () => {
     }, 4)
   })
 
-  it('does not overwrite user-owned channels', async () => {
+  it('does not overwrite user-owned channels on startup', async () => {
     const { ctx, settings } = fixture({ user: { channels: [{ id: 'mine' }] } })
     await ctx.plugin(presetPlugin)
     await vi.advanceTimersByTimeAsync(1_600)
 
     expect(settings.update).not.toHaveBeenCalled()
+    expect(settings.replace).not.toHaveBeenCalled()
   })
 
   it('fills channels when only unrelated settings were changed', async () => {
@@ -97,6 +99,23 @@ describe('catalog preset application', () => {
     manager.listBundles.mockResolvedValue([{ name: PACKAGE, installed: true, enabled: true }] as never)
     ctx.emit('plugin-manager/changed', { reason: 'install' })
     await vi.advanceTimersByTimeAsync(600)
-    expect(settings.update).toHaveBeenCalledTimes(1)
+    expect(settings.replace).toHaveBeenCalledTimes(1)
+  })
+
+  it('overwrites user channels when a package is installed after startup', async () => {
+    const { ctx, settings, manager } = fixture({ installed: false, user: { channels: [{ id: 'mine' }] } })
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+    expect(settings.update).not.toHaveBeenCalled()
+    expect(settings.replace).not.toHaveBeenCalled()
+
+    manager.listBundles.mockResolvedValue([{ name: PACKAGE, installed: true, enabled: true }] as never)
+    ctx.emit('plugin-manager/changed', { reason: 'install' })
+    await vi.advanceTimersByTimeAsync(600)
+    expect(settings.replace).toHaveBeenCalledExactlyOnceWith('imagegen', {
+      channelSecrets: { mio: 'sk-test' },
+      apiUrl: 'https://models.test/v1',
+    }, 4)
+    expect(settings.update).not.toHaveBeenCalled()
   })
 })

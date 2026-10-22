@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`mio-plugin-preset` watches installation and settings changes, reads the enabled plugin catalog through `mioAccount`, and writes a catalog entry's preset into its target settings entry when that entry has no user-configured channels. The catalog's `config` object uses a product envelope with a target and values; the Host resolves account placeholders before writing, so the renderer never receives the raw preset. A successful write is idempotent: the next sweep sees the user-configured channels and skips. A missing entry, an inactive plugin, or an unresolved placeholder leaves the preset for a later sweep and never fails the installation.
+`mio-plugin-preset` watches installation and settings changes, reads the plugin catalog through `mioAccount`, and writes the catalog preset into its target settings entry. A newly installed package always overwrites existing user channels; startup and later events only fill targets without user channels. The Host resolves account placeholders before writing, and a profile-local marker keeps the force intent across a restart. Missing entries, inactive plugins, and unresolved placeholders leave the preset for a later sweep without failing installation.
 
 ## Use this package
 
@@ -20,7 +20,7 @@ Mount the row beside `mio-account`:
   name: '@deepseek-ai/dsh-mio-plugin-preset'
 ```
 
-The plugin injects `mioAccount`, `settings`, and `pluginManager`. It runs once shortly after startup, after `plugin-manager/changed` with `install` or `bundle`, and after a settings document update. Each sweep ignores signed-out accounts, catalog entries whose package is not installed, entries without a preset, and imagegen entries that already carry user channels, channel secrets, or a default channel.
+The plugin injects `mioAccount`, `settings`, and `pluginManager`. It runs once shortly after startup, after `plugin-manager/changed` with `install` or `bundle`, and after a settings document update. Each sweep ignores signed-out accounts, catalog entries whose package is not installed, entries without a preset, and imagegen entries that already carry user channels, channel secrets, or a default channel. A package that appears as newly installed is force-applied with `settings.replace`; the pending marker is written before that write so a restart-required installation is still forced on the next start.
 
 A catalog `config` is a preset when it carries this envelope:
 
@@ -57,5 +57,6 @@ No model request prefix changes.
 
 - Only the `imagegen` target is registered. A new plugin needs an explicit target-to-package entry and a settings schema review.
 - The direct `{{MIO_API_KEY}}` mode stores the account key in the plugin's profile configuration, which the imagegen plugin itself documents as plaintext. Prefer a loopback image proxy before production use.
-- There is no preset version or migration. An existing user's settings are never overwritten, and a changed preset reaches only users whose target entry is still empty.
+- There is no preset version or migration. A new installation or reinstall replaces the target's user channels with the catalog preset; later startups do not overwrite edits made after that.
+- The pending marker is best-effort local state. If the profile home is read-only, a restart-required installation may not be forced after the restart.
 - A plugin that requires a restart is retried after the entry becomes active; there is no persistent pending queue across a failed settings service.

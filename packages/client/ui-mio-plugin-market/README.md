@@ -42,5 +42,5 @@ No model request prefix changes.
 
 - The catalog API has no version, icon, or install spec. Installation uses `packageName` and the page displays `latest`; update detection therefore asks `pluginManager.inspect` for each installed package, which needs registry access and may still install an older version when pnpm's `minimumReleaseAge` blocks the newest one. A catalog version field would remove that network check.
 - There is no search or pagination because the client endpoint returns every enabled plugin once.
-- Preset application is Host-side and automatic; the tab does not display the apply outcome beyond the plugin's subsequent configuration state.
+- Preset application is Host-side and automatic; the tab does not display the apply outcome beyond the plugin's subsequent configuration state. Because an update removes and reinstalls the package, it also re-applies the catalog preset and replaces the plugin's existing channels.
 - The direct account-key preset is a development path. Production image providers need the loopback proxy described in the preset package limitations.
