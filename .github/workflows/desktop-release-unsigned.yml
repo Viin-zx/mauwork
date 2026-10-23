@@ -13,9 +13,11 @@
 #
 # A Windows build embeds the generic update feed and, on a release, publishes the feed and
 # installer to Aliyun OSS (dsh-desk/<release-id>/feeds/win-x64); unsigned macOS builds have no
-# updater because Squirrel.Mac verifies the bundle signature. Configure OSS_ACCESS_KEY_ID,
-# OSS_ACCESS_KEY_SECRET, and optionally OSS_BUCKET, OSS_REGION, OSS_ENDPOINT and
-# MAUWORK_DOWNLOAD_ORIGIN; the bucket must be publicly readable at that origin.
+# updater because Squirrel.Mac verifies the bundle signature. The same job keeps every
+# installer under updates/ (versioned artifact names) and rewrites updates/latest.json, which
+# the website reads before building its download links.
+# Configure OSS_ACCESS_KEY_ID, OSS_ACCESS_KEY_SECRET, and optionally OSS_BUCKET, OSS_REGION,
+# OSS_ENDPOINT and MAUWORK_DOWNLOAD_ORIGIN; the bucket must be publicly readable at that origin.
 name: Release Desktop · unsigned
 
 on:
@@ -208,18 +210,28 @@ jobs:
           retention-days: 14
 
   publish-oss:
-    needs: windows
+    needs: [version, windows, macos-arm64, macos-x64]
     if: >-
       always() && !cancelled()
       && (github.event_name == 'push' || inputs.release_tag != '')
       && needs.windows.result == 'success'
+      && needs.macos-arm64.result == 'success'
+      && needs.macos-x64.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v8.0.1
         with:
           name: mauwork-windows-x64-unsigned
-          path: dist
-      - name: Publish the Windows update feed to Aliyun OSS
+          path: dist/win
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          name: mauwork-macos-arm64-unsigned
+          path: dist/mac-arm64
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          name: mauwork-macos-x64-unsigned
+          path: dist/mac-x64
+      - name: Publish installers and update feed to Aliyun OSS
         env:
           OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
@@ -227,19 +239,19 @@ jobs:
           OSS_REGION: ${{ vars.OSS_REGION || 'cn-hangzhou' }}
           OSS_ENDPOINT: ${{ vars.OSS_ENDPOINT }}
           FEED_PREFIX: dsh-desk/${{ env.FEED_RELEASE_ID }}/feeds/win-x64
+          WEBSITE_PREFIX: updates
+          BUILD_VERSION: ${{ needs.version.outputs.build }}
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
         run: |
           if [ -z "$OSS_ACCESS_KEY_ID" ] || [ -z "$OSS_ACCESS_KEY_SECRET" ]; then
             echo 'OSS_ACCESS_KEY_ID and OSS_ACCESS_KEY_SECRET are not configured.' >&2
             exit 1
           fi
-          shopt -s nullglob
-          payload=(dist/*.exe dist/*.blockmap)
-          if [ ${#payload[@]} -eq 0 ]; then echo 'No installer artifact was downloaded.' >&2; exit 1; fi
-          if [ ! -f dist/nightly.yml ] && [ ! -f dist/latest.yml ]; then echo 'No update metadata was produced.' >&2; exit 1; fi
           python3 -m pip install --user boto3 >/dev/null 2>&1
           python3 - <<'PY'
+          import json
           import os
-          import sys
+          from datetime import datetime, timezone
           from pathlib import Path
 
           import boto3
@@ -250,7 +262,10 @@ jobs:
           endpoint = os.environ.get('OSS_ENDPOINT', '').strip() or 'https://oss-cn-hangzhou.aliyuncs.com'
           bucket = os.environ.get('OSS_BUCKET', '').strip() or 'mauwork-releases'
           region = os.environ.get('OSS_REGION', '').strip() or 'cn-hangzhou'
-          prefix = os.environ['FEED_PREFIX'].strip()
+          feed_prefix = os.environ['FEED_PREFIX'].strip()
+          website_prefix = os.environ['WEBSITE_PREFIX'].strip()
+          version = os.environ['BUILD_VERSION'].strip()
+          tag = os.environ['RELEASE_TAG'].strip()
 
           s3 = boto3.client(
               's3',
@@ -278,24 +293,52 @@ jobs:
                       return False
                   raise
 
-          def upload(path, force=False):
-              key = f'{prefix}/{path.name}'
+          def upload(path, key, force=False):
               size = path.stat().st_size
               if not force and exists(key, size):
                   print(f'skipped {path.name} (already on OSS)', flush=True)
                   return
               s3.upload_file(str(path), bucket, key, Config=transfer)
-              print(f'uploaded {path.name} ({size / 1024 / 1024:.1f} MiB)', flush=True)
+              print(f'uploaded {key} ({size / 1024 / 1024:.1f} MiB)', flush=True)
 
-          metadata = {'nightly.yml', 'latest.yml'}
-          # Installers and blockmaps first; metadata last so no client reads a feed whose payload is missing.
-          for path in sorted(Path('dist').iterdir()):
-              if path.is_file() and path.name not in metadata and path.suffix != '.yml':
-                  upload(path)
-          for path in sorted(Path('dist').iterdir()):
-              if path.is_file() and path.name in metadata:
-                  upload(path, force=True)
-          print(f'published {prefix}/ to {bucket}')
+          def upload_bytes(body, key, content_type):
+              s3.put_object(Bucket=bucket, Key=key, Body=body, ContentType=content_type, CacheControl='no-cache')
+              print(f'uploaded {key} ({len(body)} bytes)', flush=True)
+
+          def only(directory, suffix):
+              files = sorted(path for path in directory.iterdir() if path.suffix == suffix and path.is_file())
+              if len(files) != 1:
+                  raise SystemExit(f'expected one {suffix} in {directory}, found {len(files)}')
+              return files[0]
+
+          windows = Path('dist/win')
+          macos_arm64 = Path('dist/mac-arm64')
+          macos_x64 = Path('dist/mac-x64')
+          installer = only(windows, '.exe')
+          dmg_arm64 = only(macos_arm64, '.dmg')
+          dmg_x64 = only(macos_x64, '.dmg')
+          metadata = next((windows / name for name in ('nightly.yml', 'latest.yml') if (windows / name).is_file()), None)
+          if metadata is None:
+              raise SystemExit('no update metadata was produced for the Windows build')
+
+          # Windows updater feed: payload first, metadata last.
+          for path in [installer, *sorted(windows.glob('*.blockmap'))]:
+              upload(path, f'{feed_prefix}/{path.name}')
+          upload(metadata, f'{feed_prefix}/{metadata.name}', force=True)
+
+          # Historical installers keep their versioned artifact names under one directory;
+          # latest.json names the current version so the website can build its links.
+          for path in (installer, dmg_arm64, dmg_x64):
+              upload(path, f'{website_prefix}/{path.name}')
+
+          manifest = {
+              'version': version,
+              'tag': tag,
+              'publishedAt': datetime.now(timezone.utc).isoformat(timespec='seconds').replace('+00:00', 'Z'),
+          }
+          upload_bytes((json.dumps(manifest, ensure_ascii=False, indent=2) + '\n').encode(),
+                       f'{website_prefix}/latest.json', 'application/json')
+          print(f'published {version} ({tag}) to {website_prefix}', flush=True)
           PY
 
   release:
