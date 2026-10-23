@@ -165,8 +165,9 @@ function pnpmStep(id: LibraryStepId, label: string, args: readonly string[], nee
 }
 
 /**
- * List the package-library build steps in Host, Desktop, then Client dependency order.
- * Host bundling runs Typert, whose Remote declarations Client compilation imports.
+ * List the package-library build steps in Host, Client, then Desktop dependency order.
+ * Host bundling runs Typert, whose Remote declarations Client compilation imports; the
+ * Desktop bundle inlines client packages from their built output, so it follows the Client pass.
  * @param root - Repository root containing the compiler and bundle configurations.
  * @param faces - `host` lists Host compilation and bundling, which produce the Typert outputs; `all` adds Desktop and Client.
  * @param mode - Check package types by default; benchmark emission defers diagnostics to required full builds.
@@ -181,9 +182,9 @@ export function libraryBuildSteps(root: string, faces: 'host' | 'all', mode: Com
   if (faces === 'host') return host
   return [
     ...host,
-    pnpmStep('desktop-bundle', 'Desktop bundle', ['--filter', '@deepseek-ai/dsh-desktop', 'run', 'bundle'], ['host-bundle']),
-    compilerStep(root, 'client', mode, ['desktop-bundle']),
+    compilerStep(root, 'client', mode, ['host-bundle']),
     pnpmStep('client-bundle', 'Client bundle', ['exec', 'tsdown', '--config-loader', 'native', '--env.DSH_BUILD_FACE', 'client'], ['client-src']),
+    pnpmStep('desktop-bundle', 'Desktop bundle', ['--filter', '@deepseek-ai/dsh-desktop', 'run', 'bundle'], ['client-bundle']),
   ]
 }
 
