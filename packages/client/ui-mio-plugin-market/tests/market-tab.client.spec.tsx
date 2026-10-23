@@ -14,7 +14,11 @@ const ITEM = {
 
 afterEach(cleanup)
 
-function props(state: Partial<MioMarketState>, overrides: Partial<MioMarketTabProps> = {}): MioMarketTabProps {
+function props(
+  state: Partial<MioMarketState>,
+  overrides: Partial<MioMarketTabProps> = {},
+  translate: (key: MioPluginMarketKey, params?: Record<string, unknown>) => string = key => key,
+): MioMarketTabProps {
   const full: MioMarketState = {
     status: 'ready', items: [], installed: [], installedVersions: {}, latestVersions: {},
     updating: null, updateError: '', error: '',
@@ -27,7 +31,7 @@ function props(state: Partial<MioMarketState>, overrides: Partial<MioMarketTabPr
     useMarket: (selector: (value: MioMarketState) => unknown) => selector(full),
     ensure: vi.fn(),
     reload: vi.fn(),
-    t: (key: MioPluginMarketKey) => key,
+    t: translate,
     ...overrides,
   } as unknown as MioMarketTabProps
 }
@@ -112,7 +116,7 @@ describe('mio plugin market tab', () => {
     render(<MioMarketTab {...props({
       items: [ITEM], installed: [PACKAGE],
       installedVersions: { [PACKAGE]: '1.0.0' }, latestVersions: { [PACKAGE]: '2.0.0' },
-    }, { update, install, t: translate })} />)
+    }, { update, install }, translate)} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Update' }))
     const dialog = screen.getByRole('dialog')
