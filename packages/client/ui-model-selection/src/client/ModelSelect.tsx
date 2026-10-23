@@ -27,7 +27,7 @@
  */
 import { MenuGroup, MenuSurface, observeStickyMenuGroups } from '@deepseek-ai/dsh-client-ui-primitives'
 import {
-  Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
+  useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
   type CSSProperties, type KeyboardEvent, type FocusEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
@@ -614,10 +614,7 @@ export function ModelSelect(
                       </button>
                     )
                   })
-                  // With one provider the heading only repeats the product name.
-                  return filteredGroups.length > 1
-                    ? <MenuGroup key={group.id} label={group.provider.name}>{rows}</MenuGroup>
-                    : <Fragment key={group.id}>{rows}</Fragment>
+                  return <MenuGroup key={group.id} label={group.provider.name}>{rows}</MenuGroup>
                 })}
               </div>
               {state.status === 'ready' && filteredGroups.length === 0 && (

@@ -190,7 +190,7 @@ async function harness(
     context: ctx,
     account,
     provider: 'mio',
-    displayName: 'mioagent',
+    displayName: 'mauagent',
     catalogTtlMs,
     provisioningRetryMs: options.provisioningRetryMs ?? 5_000,
     ...options.onModelsPublished === undefined ? {} : { onModelsPublished: options.onModelsPublished },
@@ -215,7 +215,7 @@ describe('route publication', () => {
     account.state = READY
     await adapter.refreshNow()
 
-    expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mioagent' }])
+    expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mauagent' }])
     expect(await adapter.listModels('mio')).toMatchObject([
       { provider: 'mio', id: 'model-a', name: 'Model A', inputModalities: ['text', 'image'] },
       { provider: 'mio', id: 'model-b', name: 'Model B', inputModalities: ['text'] },
@@ -281,7 +281,7 @@ describe('route publication', () => {
       await vi.advanceTimersByTimeAsync(0)
       expect(account.statusReads).toBe(1)
       await vi.advanceTimersByTimeAsync(0)
-      expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mioagent' }])
+      expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mauagent' }])
     } finally { vi.useRealTimers() }
   })
 
@@ -549,14 +549,14 @@ describe('plugin composition', () => {
     account.state = READY
     await ctx.plugin(LlmMio)
 
-    await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mioagent' }]) })
+    await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mauagent' }]) })
     await vi.waitFor(() => { expect(defaults.saves).toEqual([{ provider: 'mio', model: 'model-a' }]) })
     account.state = SIGNED_OUT
     ctx.emit('mio-account/changed')
     await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([]) })
     account.state = READY
     ctx.emit('mio-account/session-expired')
-    await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mioagent' }]) })
+    await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mauagent' }]) })
     expect(defaults.saves).toHaveLength(1)
   })
 
@@ -570,7 +570,7 @@ describe('plugin composition', () => {
     account.state = READY
     await ctx.plugin(LlmMio)
 
-    await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mioagent' }]) })
+    await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([{ id: 'mio', name: 'mauagent' }]) })
     expect(defaults.saves).toEqual([])
     expect(defaults.selection).toEqual({ provider: 'mio', model: 'model-b' })
   })
@@ -598,7 +598,7 @@ describe('plugin composition', () => {
     roots.push(ctx)
     await ctx.plugin(LlmRuntime)
     new TestAccount(ctx)
-    expect(() => { LlmMio.apply(ctx, { provider: '', displayName: 'mioagent' }) }).toThrow(/provider/)
+    expect(() => { LlmMio.apply(ctx, { provider: '', displayName: 'mauagent' }) }).toThrow(/provider/)
     expect(() => { LlmMio.apply(ctx, { provider: 'mio', displayName: '' }) }).toThrow(/displayName/)
   })
 })

@@ -963,14 +963,13 @@ it('places account and official models before third-party models', async () => {
   await expect(`${names.join('\n')}\n`).toMatchFileSnapshot('./expected/account-first.txt')
 })
 
-it('omits the provider heading when the catalog has one provider', () => {
+it('keeps the provider heading when the catalog has one provider', () => {
   render(<ModelSelect renderSlot={renderLabel} locked={false} available
     directory={createSnapshotStore(state())} load={vi.fn()} select={vi.fn()} t={t} />)
   fireEvent.click(screen.getByRole('button', { name: /选择模型/ }))
   fireEvent.click(screen.getByRole('menuitem', { name: /模型/ }))
 
-  expect(screen.queryByRole('group', { name: 'DeepSeek' })).toBeNull()
-  expect(screen.queryByText('DeepSeek')).toBeNull()
+  expect(screen.getByRole('group', { name: 'DeepSeek' })).toBeTruthy()
 })
 
 it.each([en, zh])('localizes the account group while preserving external names', (copy) => {

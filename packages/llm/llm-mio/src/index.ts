@@ -8,7 +8,7 @@
  *   name: '@deepseek-ai/dsh-llm-mio'
  *   config:
  *     provider: mio
- *     displayName: mioagent
+ *     displayName: mauagent
  * ```
  *
  * @module @deepseek-ai/dsh-llm-mio
@@ -23,7 +23,7 @@ import { MioAdapter } from './adapter.ts'
 export interface Config {
   /** Route key registered with the LLM registry; defaults to `mio`. */
   provider?: string
-  /** Display name shown by model selectors; defaults to `mioagent`. */
+  /** Display name shown by model selectors; defaults to `mauagent`. */
   displayName?: string
   /** Maximum age of the fetched model directory before it is read again. */
   catalogTtlMs?: number
@@ -36,7 +36,7 @@ export interface Config {
 /** Validated deployment choices. */
 export const Config = Schema.object({
   provider: Schema.string().default('mio'),
-  displayName: Schema.string().default('mioagent'),
+  displayName: Schema.string().default('mauagent'),
   catalogTtlMs: Schema.number().step(1).min(1).max(3_600_000).default(60_000),
   provisioningRetryMs: Schema.number().step(1).min(250).max(600_000).default(5_000),
   autoSelectDefaultModel: Schema.boolean().default(true),
