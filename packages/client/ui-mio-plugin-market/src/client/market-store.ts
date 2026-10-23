@@ -164,7 +164,7 @@ export class MioMarketController {
     const check = ++this.checkGeneration
     const results = await Promise.all(targets.map(async (item) => {
       try {
-        return { name: item.packageName, result: await this.ctx.remote.pluginManager.inspect(item.packageName) }
+        return { name: item.packageName, result: await this.ctx.remote.pluginManager.inspect(item.packageName, { allowInstalled: true }) }
       } catch {
         return { name: item.packageName, result: undefined }
       }
@@ -199,7 +199,9 @@ export class MioMarketController {
         this.patch({ updateError: 'restart-required' })
         return
       }
-      install({ spec: item.packageName, title: item.pluginName, version: latest })
+      // Pin the discovered version: a bare name would match the page's still-listed installed row and reopen the
+      // dialog at a refusal instead of starting the reinstall.
+      install({ spec: `${item.packageName}@${latest}`, title: item.pluginName, version: latest })
       this.refreshInstalled()
     } catch (error) {
       if (!this.disposed) {

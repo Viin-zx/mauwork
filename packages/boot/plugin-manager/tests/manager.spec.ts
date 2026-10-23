@@ -1058,6 +1058,11 @@ it('reads what a spec names before installing it', async () => {
   expect(await manager.inspect('silent')).toEqual({ status: 'refused', problem: 'unknown', reason: 'pnpm view answered no package', registries: [null] })
   // What is installed, or supplied by the installation, is refused before the registry is asked.
   expect(await manager.inspect('extra')).toEqual({ status: 'refused', problem: 'already-installed', reason: 'extra is already installed' })
+  // An update check may ask the registry about the installed package itself.
+  answers(JSON.stringify({ name: 'extra', version: '2.0.0', dsh: { bundle: {} } }))
+  expect(await manager.inspect('extra', { allowInstalled: true })).toEqual({
+    status: 'accepted', kind: 'registry', name: 'extra', version: '2.0.0', bundle: true, registry: null,
+  })
   expect(await manager.inspect('./relative')).toEqual({ status: 'refused', problem: 'invalid-spec', reason: 'a local path must be absolute' })
   expect(await manager.inspect('github:acme/dsh-remote')).toEqual({ status: 'accepted', kind: 'git', bundle: null, registry: null, host: 'github.com' })
   const tarball = join(profile.home, 'pack.tgz')
@@ -1082,7 +1087,7 @@ it('reads what a spec names before installing it', async () => {
   writeFileSync(join(dir, 'package.json'), '{}')
   writeFileSync(profile.installAnchor, '{}')
   expect(await manager.inspect(local)).toEqual({ status: 'accepted', kind: 'path', name: 'core', bundle: true, registry: null })
-  expect(view).toHaveBeenCalledTimes(13)
+  expect(view).toHaveBeenCalledTimes(14)
 })
 
 it('announces each manager operation as a change, and a patch generation applied outside it not at all', async () => {

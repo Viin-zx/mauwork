@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { MioMarketTab, type MioMarketTabProps } from '../src/client/MioMarketTab.tsx'
 import type { MioMarketState } from '../src/client/market-store.ts'
 import type { MioPluginMarketKey } from '../src/client/locales.ts'
+import { en } from '../src/client/locales.ts'
 
 const PACKAGE = '@q253595422/dsh-imagegen-video'
 const ITEM = {
@@ -103,14 +104,24 @@ describe('mio plugin market tab', () => {
   it('confirms the update before handing the latest version to the page', () => {
     const update = vi.fn()
     const install = vi.fn()
+    const translate = (key: MioPluginMarketKey, params?: Record<string, unknown>): string => {
+      let text: string = en[key]
+      for (const [name, value] of Object.entries(params ?? {})) text = text.replaceAll(`{${name}}`, String(value))
+      return text
+    }
     render(<MioMarketTab {...props({
       items: [ITEM], installed: [PACKAGE],
       installedVersions: { [PACKAGE]: '1.0.0' }, latestVersions: { [PACKAGE]: '2.0.0' },
-    }, { update, install })} />)
+    }, { update, install, t: translate })} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'update' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Update' }))
     const dialog = screen.getByRole('dialog')
-    fireEvent.click(within(dialog).getByRole('button', { name: 'update' }))
+    // The confirmation names both versions and the remove-then-reinstall step.
+    expect(dialog.textContent).toContain('1.0.0')
+    expect(dialog.textContent).toContain('2.0.0')
+    expect(dialog.textContent).toContain('uninstalled')
+    expect(dialog.textContent).toContain('reinstalled')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Update' }))
 
     expect(update).toHaveBeenCalledExactlyOnceWith(ITEM, install)
   })

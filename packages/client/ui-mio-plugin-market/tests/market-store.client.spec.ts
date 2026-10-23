@@ -13,9 +13,11 @@ function fixture(plugins: unknown, bundles: unknown, latest = '2.0.0') {
       mioAccount: { listPlugins: vi.fn(async () => plugins) },
       pluginManager: {
         listBundles: vi.fn(async () => bundles),
-        inspect: vi.fn(async () => ({
+        inspect: vi.fn(async (_name: string, options?: { allowInstalled?: boolean }) => ({
           ok: true,
-          value: { status: 'accepted', kind: 'registry', name: PACKAGE, version: latest, bundle: true, registry: null },
+          value: options?.allowInstalled === true
+            ? { status: 'accepted', kind: 'registry', name: PACKAGE, version: latest, bundle: true, registry: null }
+            : { status: 'refused', problem: 'already-installed', reason: `${PACKAGE} is already installed` },
         })),
         removeBundle: vi.fn(async () => ({ ok: true, value: { changed: true, application: 'applied' } })),
       },
@@ -49,7 +51,7 @@ describe('mio plugin market store', () => {
     controller.face().update(LISTING, install)
     await vi.waitFor(() => { expect(install).toHaveBeenCalledTimes(1) })
     expect(ctx.remote.pluginManager.removeBundle).toHaveBeenCalledExactlyOnceWith(PACKAGE)
-    expect(install).toHaveBeenCalledExactlyOnceWith({ spec: PACKAGE, title: 'AI 生图', version: '2.0.0' })
+    expect(install).toHaveBeenCalledExactlyOnceWith({ spec: `${PACKAGE}@2.0.0`, title: 'AI 生图', version: '2.0.0' })
   })
 
   it('does not install after a refused or restart-bound removal', async () => {

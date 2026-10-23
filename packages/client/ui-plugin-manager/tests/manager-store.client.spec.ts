@@ -621,6 +621,20 @@ describe('PluginManagerController', () => {
     expect(installBundle).toHaveBeenCalledTimes(2)
   })
 
+  it('starts a confirmed tab install for a package the stale list still shows', async () => {
+    const gate = deferred<ReturnType<typeof ok<ChangeResult>>>()
+    const { plugins, face, state, controller, started } = bench({ installBundle: vi.fn().mockReturnValueOnce(gate.promise) })
+    await controller.load()
+    expect(state().packages.map(pkg => pkg.name)).toContain(BUNDLE.name)
+    face.installFrom({ spec: BUNDLE.name, title: 'Better', version: '0.17.0' })
+    const requestId = await started()
+    expect(state().install).toMatchObject({ phase: 'starting', inputError: null })
+    expect(plugins.inspect).toHaveBeenCalledWith(BUNDLE.name, { registry: null }, expect.any(AbortSignal))
+    expect(plugins.installBundle).toHaveBeenCalledWith(BUNDLE.name, expect.objectContaining({ requestId }))
+    gate.resolve(ok({ ...APPLIED, bundle: BUNDLE.name }))
+    await vi.waitFor(() => { expect(state().install.phase).toBe('done') })
+  })
+
   it('checks the spec, hands the run to the Host, and folds the chunks that carry its request id', async () => {
     const gate = deferred<ReturnType<typeof ok<ChangeResult>>>()
     const { plugins, face, state, controller, started } = bench({ installBundle: vi.fn().mockReturnValueOnce(gate.promise) })

@@ -98,7 +98,10 @@ export function MioMarketTab({ install, openPackage, useMarket, ensure, reload, 
 
     <Modal open={pendingUpdate !== null}
       title={t('updateTitle', { name: pendingUpdate?.pluginName ?? '' })}
-      description={t('updateDescription')} closeLabel={t('cancel')}
+      description={t('updateDescription', {
+        installed: pendingUpdate === null ? '' : state.installedVersions[pendingUpdate.packageName] ?? '',
+        latest: pendingUpdate === null ? '' : state.latestVersions[pendingUpdate.packageName] ?? '',
+      })} closeLabel={t('cancel')}
       onClose={() => { setPendingUpdate(null) }}>
       <div className={css.updateActions}>
         <Button variant="outline" onClick={() => { setPendingUpdate(null) }}>{t('cancel')}</Button>

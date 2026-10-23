@@ -178,6 +178,8 @@ export interface InstallBundleOptions {
 export interface InspectOptions {
   /** The registry asked first; absent, the configured one. */
   readonly registry?: Registry
+  /** Read the registry version of a package the profile already installs, for update checks. */
+  readonly allowInstalled?: boolean
 }
 
 /** The form one install spec takes, in pnpm's vocabulary. */

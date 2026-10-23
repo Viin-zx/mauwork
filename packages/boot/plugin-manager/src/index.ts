@@ -400,7 +400,7 @@ export class PluginManager extends TypertRemoteService {
 
   /** Read what a spec names before installing it.
    * @param spec One package spec: a registry name, an absolute path, a git address, or a tarball.
-   * @param options The registry asked first.
+   * @param options The registry asked first, and whether an installed package may be read for its registry version.
    * @param signal Ends a registry lookup early.
    * @returns The package the spec names, or why it is refused.
    */
@@ -441,7 +441,10 @@ export class PluginManager extends TypertRemoteService {
         return inspection
       }
       case 'registry': {
-        if (known.has(parsed.name)) return refused('already-installed', `${parsed.name} is already installed`)
+        // Update checks read the published version of an installed package; installation keeps its own refusal.
+        if (options?.allowInstalled !== true && known.has(parsed.name)) {
+          return refused('already-installed', `${parsed.name} is already installed`)
+        }
         const registries: Registry[] = []
         const refusedBy = (problem: PluginInspectProblem, reason: string): PluginSpecInspection =>
           ({ status: 'refused', problem, reason, registries })

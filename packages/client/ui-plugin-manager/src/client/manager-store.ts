@@ -966,10 +966,11 @@ export class PluginManagerController {
       this.analyticsAttempt = { input: sanitizeInstallInput(spec), started: Date.now() }
       this.ctx.get('productAnalytics')?.track('plugin_install_click', { input_value: sanitizeInstallInput(spec) })
     }
-    // A name the list already shows is refused at once, before the Host is asked.
+    // A name the list already shows is refused at once, before the Host is asked. A confirmed tab target is
+    // exempt: an update removes the package first, and this list may still show the row it just removed.
     const listed = state.packages.find(pkg => pkg.name === spec)
     const catalogSubject = install.subject?.selection === undefined || install.subject.spec !== spec ? undefined : install.subject
-    if (listed !== undefined && listed.availability !== 'missing' && catalogSubject === undefined) {
+    if (install.confirmed === undefined && listed !== undefined && listed.availability !== 'missing' && catalogSubject === undefined) {
       this.finishAnalytics('failed', 'already-installed')
       this.patchInstall({ phase: 'idle', inputError: { problem: listed.availability === 'installation' ? 'shipped' : 'already-installed', reason: spec } })
       return
