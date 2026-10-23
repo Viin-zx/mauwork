@@ -17,9 +17,9 @@ export const USER: MioUser = {
 }
 
 /** Stored signed-in view. */
-export const SIGNED_IN: MioAccountView = { status: 'signed-in', user: USER, expiresAt: 1_800_000_000_000 }
+export const SIGNED_IN: MioAccountView = { status: 'signed-in', user: USER }
 /** Stored signed-out view. */
-export const SIGNED_OUT: MioAccountView = { status: 'signed-out', user: null, expiresAt: null }
+export const SIGNED_OUT: MioAccountView = { status: 'signed-out', user: null }
 
 /** Issued SMS code. */
 export const SMS: MioSmsCode = { smsRequestId: 'sms-1', retryAfterSeconds: 60, expiresIn: 300 }

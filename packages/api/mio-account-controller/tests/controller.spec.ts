@@ -19,7 +19,7 @@ const USER: MioUser = {
   accountStatus: 'READY',
   credentialStatus: 'READY',
 }
-const state: MioAccountView = { status: 'signed-in', user: USER, expiresAt: 1_800_000_000_000 }
+const state: MioAccountView = { status: 'signed-in', user: USER }
 const sms: MioSmsCode = { smsRequestId: 'sms-1', retryAfterSeconds: 60, expiresIn: 300 }
 const status: MioAccountStatusView = {
   status: 'READY', stage: 'done', credentialStatus: 'READY', retryable: false, retryAfterSeconds: 0,
@@ -67,7 +67,7 @@ function fixture() {
     loginWithPassword: vi.fn<MioAccount['loginWithPassword']>().mockResolvedValue(state),
     loginWithSms: vi.fn<MioAccount['loginWithSms']>().mockResolvedValue(state),
     resetPassword: vi.fn<MioAccount['resetPassword']>().mockResolvedValue(undefined),
-    logout: vi.fn<MioAccount['logout']>().mockResolvedValue({ status: 'signed-out', user: null, expiresAt: null }),
+    logout: vi.fn<MioAccount['logout']>().mockResolvedValue({ status: 'signed-out', user: null }),
     getProfile: vi.fn<MioAccount['getProfile']>().mockResolvedValue(USER),
     getAccountStatus: vi.fn<MioAccount['getAccountStatus']>().mockResolvedValue(status),
     retryAccount: vi.fn<MioAccount['retryAccount']>().mockResolvedValue(status),
@@ -104,7 +104,7 @@ it('delegates every account operation without altering its result', async () => 
   expect(await controller.loginWithPassword(passwordRequest)).toBe(state)
   expect(await controller.loginWithSms(smsLoginRequest)).toBe(state)
   await expect(controller.resetPassword(resetRequest)).resolves.toBeUndefined()
-  expect(await controller.logout()).toEqual({ status: 'signed-out', user: null, expiresAt: null })
+  expect(await controller.logout()).toEqual({ status: 'signed-out', user: null })
   expect(await controller.getAccountStatus()).toBe(status)
   expect(await controller.retryAccount()).toBe(status)
   expect(await controller.getModels()).toBe(catalog)

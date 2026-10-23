@@ -41,6 +41,7 @@ export interface MioPluginCatalogItem {
   readonly config: Record<string, unknown> | null
 }
 
+/** Service Definition of the mioagent account seam shared by the HTTP provider, Remote controller, and llm-mio. */
 export abstract class MioAccount extends Service {
   /** @param ctx - context owning this account implementation. */
   constructor(ctx: Context) { super(ctx, 'mioAccount') }

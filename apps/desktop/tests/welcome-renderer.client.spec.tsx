@@ -10,14 +10,13 @@ import type { MioAccountView, MioAgreement, MioSmsCode, MioUserId } from '@deeps
 const html = readFileSync(join(import.meta.dirname, '../renderer/welcome.html'), 'utf8')
 afterEach(cleanup)
 
-const signedOut: MioAccountView = { status: 'signed-out', user: null, expiresAt: null }
+const signedOut: MioAccountView = { status: 'signed-out', user: null }
 const signedIn: MioAccountView = {
   status: 'signed-in',
   user: {
     userId: 'user-1' as MioUserId, maskedPhone: '138****0000', nickname: 'tester',
     accountStatus: 'READY', credentialStatus: 'READY',
   },
-  expiresAt: Date.now() + 60_000,
 }
 const agreements: readonly MioAgreement[] = [
   { agreementType: 'USER', content: '<p>user agreement body</p>' },

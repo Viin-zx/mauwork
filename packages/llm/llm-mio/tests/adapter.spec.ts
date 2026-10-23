@@ -19,8 +19,8 @@ const USER: MioUser = {
   accountStatus: 'READY',
   credentialStatus: 'READY',
 }
-const READY: MioAccountView = { status: 'signed-in', user: USER, expiresAt: 1_800_000_000_000 }
-const SIGNED_OUT: MioAccountView = { status: 'signed-out', user: null, expiresAt: null }
+const READY: MioAccountView = { status: 'signed-in', user: USER }
+const SIGNED_OUT: MioAccountView = { status: 'signed-out', user: null }
 const ACCESS: MioModelAccess = {
   baseUrl: 'http://model.test/v1',
   apiKey: 'sk-model',

@@ -104,8 +104,6 @@ export interface MioUser {
 export interface MioAccountView {
   readonly status: 'signed-out' | 'signed-in'
   readonly user: MioUser | null
-  /** Access-token expiry as Unix epoch milliseconds; null while signed out or when the login response carried no expiry. */
-  readonly expiresAt: number | null
 }
 
 /** Account provisioning progress returned by `/account/status` and `/account/retry`. */

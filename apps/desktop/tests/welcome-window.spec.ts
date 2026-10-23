@@ -43,10 +43,10 @@ beforeEach(() => { electron.create.mockReset(); electron.handlers.clear() })
 
 const operations: WelcomeOperations = {
   analyticsEnabled: async () => true,
-  getState: async (): Promise<MioAccountView> => ({ status: 'signed-out', user: null, expiresAt: null }),
+  getState: async (): Promise<MioAccountView> => ({ status: 'signed-out', user: null }),
   sendSmsCode: async (): Promise<MioSmsCode> => ({ smsRequestId: 'sms-1', retryAfterSeconds: 60, expiresIn: 300 }),
-  loginWithSms: async (): Promise<MioAccountView> => ({ status: 'signed-in', user: null, expiresAt: null }),
-  loginWithPassword: async (): Promise<MioAccountView> => ({ status: 'signed-in', user: null, expiresAt: null }),
+  loginWithSms: async (): Promise<MioAccountView> => ({ status: 'signed-in', user: null }),
+  loginWithPassword: async (): Promise<MioAccountView> => ({ status: 'signed-in', user: null }),
   resetPassword: async () => {},
   getAgreements: async (): Promise<readonly MioAgreement[]> => [],
   skip: () => Promise.resolve(),
@@ -131,7 +131,7 @@ describe('desktop welcome window', () => {
     const state = electron.handlers.get(WELCOME_IPC.getState)!
     await expect(state({ ...own, senderFrame: {} })).rejects.toThrow('unowned frame')
     expect(getState).not.toHaveBeenCalled()
-    expect(await state(own)).toEqual({ status: 'signed-out', user: null, expiresAt: null })
+    expect(await state(own)).toEqual({ status: 'signed-out', user: null })
     expect(getState).toHaveBeenCalledOnce()
     const code = electron.handlers.get(WELCOME_IPC.sendSmsCode)!
     await expect(code({ ...own, senderFrame: {} }, {})).rejects.toThrow('unowned frame')

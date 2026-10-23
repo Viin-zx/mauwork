@@ -26,7 +26,7 @@ function fixture(options: { user?: Record<string, unknown>; installed?: boolean 
     replace: vi.fn(async () => undefined),
   }
   const account = {
-    getState: vi.fn(async () => ({ status: 'signed-in', user: null, expiresAt: null })),
+    getState: vi.fn(async () => ({ status: 'signed-in', user: null })),
     getPlugins: vi.fn(async () => [{
       pluginId: '1',
       pluginName: 'AI 生图',

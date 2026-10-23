@@ -27,7 +27,7 @@ function props(state: MioAccountState, overrides: Partial<MioAccountOperations> 
 }
 
 const SIGNED_IN_EMPTY_NAME: MioAccountState = {
-  view: { status: 'signed-in', user: { ...USER, nickname: '' }, expiresAt: null },
+  view: { status: 'signed-in', user: { ...USER, nickname: '' } },
   expired: false,
 }
 

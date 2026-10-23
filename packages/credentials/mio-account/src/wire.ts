@@ -30,12 +30,10 @@ export const userSchema = z.object({
   credentialStatus: z.string().nullish().transform(value => value ?? ''),
 })
 
-/** Successful registration, password login, or SMS login; the user and expiry are optional. */
+/** Successful registration, password login, or SMS login; the user is optional. */
 export const loginSchema = z.object({
   accessToken: z.string().min(1),
   tokenType: z.string().optional(),
-  expiresIn: z.union([z.number().positive(), z.string().regex(/^\d+$/u).transform(Number)])
-    .nullish().transform(value => value ?? undefined),
   user: userSchema.nullish().transform(value => value ?? null),
   accountStatus: z.string().nullish(),
 })
@@ -194,8 +192,6 @@ export const agreementsSchema: z.ZodType<readonly MioAgreement[]> = z.array(z.ob
 export const storedSessionSchema = z.object({
   version: z.literal(1),
   accessToken: z.string().min(1),
-  /** Unix epoch milliseconds; null when the login response carried no expiry. */
-  expiresAt: z.number().int().positive().nullable(),
   user: userSchema.nullable(),
 })
 

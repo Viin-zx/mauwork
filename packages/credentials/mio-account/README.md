@@ -7,7 +7,7 @@ kind: "package-reference"
 
 English | [中文](README.zh.md)
 
-`MioAccount` is the Service Definition consumed by the Remote controller and by `llm-mio`. `MioAccountHttp` is the provider that talks to the business backend at `/mio/client/v1`, validates every response envelope and payload with zod, and stores the access token in the credentials seam under `mio-account/session`. The stored grant carries only the token, its expiry, and the display-safe user projection; the model key is never persisted.
+`MioAccount` is the Service Definition consumed by the Remote controller and by `llm-mio`. `MioAccountHttp` is the provider that talks to the business backend at `/mio/client/v1`, validates every response envelope and payload with zod, and stores the access token in the credentials seam under `mio-account/session`. The stored grant carries only the token and the display-safe user projection; the model key is never persisted.
 
 The access token authenticates business calls only. Model requests use a separate key from `POST /models/config`, which `getModelAccess` caches for `modelAccessTtlMs` and caps at the server-declared expiry. The cache is discarded on logout, on a rejected token, on a credential-record change, and after a model service rejects the key through `invalidateModelAccess`. Neither credential enters a log, Session event, or Remote result.
 
@@ -30,7 +30,7 @@ Configure `businessBaseUrl` (default `http://localhost:8080`), `requestTimeoutMs
 
 `getState()` and `watch(signal)` report login presence without network access. `sendSmsCode`, `register`, `loginWithPassword`, `loginWithSms`, and `resetPassword` perform the documented authentication and recovery flows; `sendSmsCode` and `resetPassword` take `authenticated: true` to use the stored token and its bound phone for a password change. A successful login or registration stores the grant before returning the signed-in view, while a successful password reset removes the stored session because the backend revokes its token. `getProfile` refreshes the stored user projection only when the token it read is still current. `getAccountStatus` and `retryAccount` mirror provisioning status into the stored user. `getModels` reads the model directory, `getQuota` reads remaining quota, `getAgreements` reads the agreement documents, and `getPlugins` reads the enabled plugin catalog with its preset config kept inside the Host. `getPlans`, `purchasePlan`, `getOrder`, and `getSubscriptions` carry the purchase and subscription flows; a purchase retry reuses the caller's `requestId` so the backend returns the same order.
 
-Login responses use `expiresIn` seconds; a response without it stores a session with no local expiry. Optional user projections normalize missing fields to empty strings, and an absent user stays null. An expired stored session is removed at the next read, and `mio-account/session-expired` is emitted once. `logout` calls the revocation endpoint before deleting the local record, and a rejection of the token still removes it locally.
+Access-token expiry is the backend's check; the client stores no local expiry. Optional user projections normalize missing fields to empty strings, and an absent user stays null. A session the backend rejects is removed, and `mio-account/session-expired` is emitted once. `logout` calls the revocation endpoint before deleting the local record, and a rejection of the token still removes it locally.
 
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
@@ -57,10 +57,10 @@ No model request prefix changes.
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- Plans, subscriptions, orders, and account deletion are not implemented. The access token has no refresh flow: an expired or rejected token returns the user to the signed-out state only after the stored record is cleared.
+- Plans, subscriptions, orders, and account deletion are not implemented. The access token has no refresh flow: a token the backend rejects returns the user to the signed-out state only after the stored record is cleared.
 - A model key accepted at resolution is used until the model service rejects it or `modelAccessTtlMs` elapses. Requests already streaming when the key is invalidated finish with the credentials they started with.
 
 <a id="dev-note"></a>
 ### Dev Note
 
-Access tokens and model keys are deliberately separate credentials: the token authenticates `/mio/client/v1` business calls, the key authenticates only the OpenAI-compatible model endpoint, and neither is written to logs or returned over Remote. The stored grant keeps the token, expiry, and safe user projection under `mio-account/session`; the model key lives in memory only.
+Access tokens and model keys are deliberately separate credentials: the token authenticates `/mio/client/v1` business calls, the key authenticates only the OpenAI-compatible model endpoint, and neither is written to logs or returned over Remote. The stored grant keeps the token and safe user projection under `mio-account/session`; the model key lives in memory only.

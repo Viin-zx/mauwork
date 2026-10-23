@@ -371,7 +371,7 @@ Source: [`packages/credentials/deepseek-account/src/index.ts`](../../packages/cr
 
 ### `ctx.mioAccount` — `MioAccount` (abstract seam)
 
-Account operations against the mioagent business backend. Implementations own session persistence and the model-access cache; consumers never see the access token or model key.
+Service Definition of the mioagent account seam shared by the HTTP provider, Remote controller, and llm-mio.
 
 ```ts cordis-catalog
 /**
@@ -485,6 +485,43 @@ abstract getQuota(signal?: AbortSignal): Promise<MioQuotaView>
  * @returns agreement documents in the backend's fixed order.
  */
 abstract getAgreements(signal?: AbortSignal): Promise<readonly MioAgreement[]>
+
+/**
+ * Read the enabled plugin catalog. Preset configs stay inside the Host.
+ * @param signal - caller cancellation.
+ * @returns enabled plugins in backend order.
+ */
+abstract getPlugins(signal?: AbortSignal): Promise<readonly MioPluginCatalogItem[]>
+
+/**
+ * Read the plans the current user may purchase.
+ * @param signal - caller cancellation.
+ * @returns purchasable plans.
+ */
+abstract getPlans(signal?: AbortSignal): Promise<readonly MioPlan[]>
+
+/**
+ * Start one purchase. Reusing the same `requestId` returns the same order.
+ * @param request - plan, idempotency key, and optional payment channel.
+ * @param signal - caller cancellation.
+ * @returns the created order and, for WeChat Native, its QR payload.
+ */
+abstract purchasePlan(request: MioPurchaseRequest, signal?: AbortSignal): Promise<MioPurchaseResult>
+
+/**
+ * Read one order's payment and provisioning state.
+ * @param orderNo - order returned by the purchase call.
+ * @param signal - caller cancellation.
+ * @returns the current order state.
+ */
+abstract getOrder(orderNo: string, signal?: AbortSignal): Promise<MioOrderStatus>
+
+/**
+ * Read the current user's subscriptions.
+ * @param signal - caller cancellation.
+ * @returns subscription items and whether the read refreshed NewAPI.
+ */
+abstract getSubscriptions(signal?: AbortSignal): Promise<MioSubscriptionsView>
 ```
 
 Source: [`packages/credentials/mio-account/src/service.ts`](../../packages/credentials/mio-account/src/service.ts)

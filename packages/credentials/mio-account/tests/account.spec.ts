@@ -20,7 +20,7 @@ const USER = {
   credentialStatus: 'PENDING',
 }
 
-const SIGNED_OUT: MioAccountView = { status: 'signed-out', user: null, expiresAt: null }
+const SIGNED_OUT: MioAccountView = { status: 'signed-out', user: null }
 
 interface Request {
   url: string
@@ -74,11 +74,10 @@ function ok(data: unknown): Reply {
   return { body: { code: 200, msg: '', data } }
 }
 
-function loginReply(overrides: { token?: string; expiresIn?: number } = {}): Reply {
+function loginReply(overrides: { token?: string } = {}): Reply {
   return ok({
     accessToken: overrides.token ?? 'at-1',
     tokenType: 'Bearer',
-    expiresIn: overrides.expiresIn ?? 3600,
     user: USER,
   })
 }
@@ -160,7 +159,6 @@ describe('login and registration', () => {
     })
 
     expect(view).toMatchObject({ status: 'signed-in', user: USER })
-    expect(view.expiresAt ?? 0).toBeGreaterThan(Date.now())
     expect(requests).toHaveLength(1)
     expect(requests[0]).toMatchObject({
       url: `${BASE}/mio/client/v1/auth/login/password`,
@@ -174,7 +172,7 @@ describe('login and registration', () => {
     expect(await ctx.mioAccount.getState()).toEqual(view)
   })
 
-  it('stores a login without expiry or user projection', async () => {
+  it('stores a login without a user projection', async () => {
     const ctx = await boot()
     replies.push(ok({ accessToken: 'at-1' }))
     const view = await ctx.mioAccount.loginWithPassword({
@@ -182,17 +180,17 @@ describe('login and registration', () => {
       mobile: '13800000000',
       password: 'secret123',
     })
-    expect(view).toEqual({ status: 'signed-in', user: null, expiresAt: null })
+    expect(view).toEqual({ status: 'signed-in', user: null })
     const record = await ctx.credentials.readRecord(SESSION_KEY)
     expect(record?.kind === 'grant' ? record.payload : undefined)
-      .toMatchObject({ version: 1, accessToken: 'at-1', expiresAt: null, user: null })
+      .toMatchObject({ version: 1, accessToken: 'at-1', user: null })
     expect(await ctx.mioAccount.getState()).toEqual(view)
   })
 
-  it('normalizes nullable user fields and a numeric string expiry', async () => {
+  it('normalizes nullable user fields', async () => {
     const ctx = await boot()
     replies.push(ok({
-      accessToken: 'at-1', expiresIn: '60',
+      accessToken: 'at-1',
       user: {
         userId: 7, maskedPhone: null, nickname: null, accountStatus: null, credentialStatus: 'READY',
       },
@@ -205,12 +203,11 @@ describe('login and registration', () => {
     expect(view.user).toEqual({
       userId: '7', maskedPhone: '', nickname: '', accountStatus: '', credentialStatus: 'READY',
     })
-    expect(view.expiresAt ?? 0).toBeGreaterThan(Date.now())
   })
 
   it('omits absent SMS fields from registration and forwards a caller signal', async () => {
     const ctx = await boot()
-    replies.push(ok({ accessToken: 'at-register', expiresIn: 60, user: USER }))
+    replies.push(ok({ accessToken: 'at-register', user: USER }))
     const lifetime = new AbortController()
     const view = await ctx.mioAccount.register({
       countryCode: '+86',
@@ -229,7 +226,7 @@ describe('login and registration', () => {
 
   it('forwards SMS fields in registration and both SMS login shapes', async () => {
     const ctx = await boot()
-    replies.push(ok({ accessToken: 'at-register', expiresIn: 60, user: USER }))
+    replies.push(ok({ accessToken: 'at-register', user: USER }))
     await ctx.mioAccount.register({
       countryCode: '+86',
       mobile: '13800000000',
@@ -499,7 +496,7 @@ describe('stored session hygiene', () => {
     expect(await ctx.credentials.readRecord(SESSION_KEY)).toBeUndefined()
   })
 
-  it('announces one expiry and removes an expired grant at startup', async () => {
+  it('keeps a stored grant whose legacy expiry has passed', async () => {
     const ctx = await bootCredentials()
     await ctx.credentials.modifyRecord(SESSION_KEY, async () => ({
       kind: 'grant',
@@ -509,24 +506,12 @@ describe('stored session hygiene', () => {
     ctx.on('mio-account/session-expired', expired)
     await ctx.plugin(MioAccountHttp, { businessBaseUrl: BASE })
 
-    expect(await ctx.mioAccount.getState()).toEqual(SIGNED_OUT)
-    expect(expired).toHaveBeenCalledTimes(1)
-    expect(await ctx.credentials.readRecord(SESSION_KEY)).toBeUndefined()
+    // Expiry belongs to the backend: a stored record's legacy field is ignored.
+    expect(await ctx.mioAccount.getState()).toEqual({ status: 'signed-in', user: USER })
+    expect(expired).not.toHaveBeenCalled()
+    expect(await ctx.credentials.readRecord(SESSION_KEY)).toBeDefined()
   })
 
-  it('removes a session that expires between calls', async () => {
-    const ctx = await signedIn()
-    const expired = vi.fn()
-    ctx.on('mio-account/session-expired', expired)
-    await ctx.credentials.modifyRecord(SESSION_KEY, async (current) => {
-      if (current?.kind !== 'grant') return undefined
-      return { kind: 'grant', payload: { ...(current.payload as object), expiresAt: Date.now() - 1 } }
-    })
-
-    expect(await ctx.mioAccount.getState()).toEqual(SIGNED_OUT)
-    expect(expired).toHaveBeenCalledTimes(1)
-    expect(await ctx.credentials.readRecord(SESSION_KEY)).toBeUndefined()
-  })
 })
 
 describe('account state stream', () => {
@@ -917,8 +902,8 @@ describe('provider reload', () => {
 
     replies.push(loginReply({ token: 'at-2' }))
     await account.loginWithPassword({ countryCode: '+86', mobile: '13800000000', password: 'secret123' })
-    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 10_000_000)
-    expect(await account.getState()).toEqual(SIGNED_OUT)
+    // Expiry belongs to the backend; the retired instance publishes neither state nor expiry notifications.
+    expect(await account.getState()).toEqual({ status: 'signed-in', user: USER })
     expect(expired).toBe(0)
   })
 })

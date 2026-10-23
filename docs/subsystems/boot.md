@@ -177,7 +177,7 @@ Manage profile files and apply their declared reload lifecycle.
 
 /** Read what a spec names before installing it.
  * @param spec One package spec: a registry name, an absolute path, a git address, or a tarball.
- * @param options The registry asked first.
+ * @param options The registry asked first, and whether an installed package may be read for its registry version.
  * @param signal Ends a registry lookup early.
  * @returns The package the spec names, or why it is refused.
  */
@@ -366,6 +366,27 @@ Module replacements have finished loading.
 ```
 
 Source: [`packages/boot/hmr/src/index.ts`](../../packages/boot/hmr/src/index.ts)
+
+<a id="mio-plugin-preset-events"></a>
+
+### `mio-plugin-preset/*` events
+
+<a id="mio-plugin-presetapplied--emit"></a>
+
+#### `mio-plugin-preset/applied` — emit
+
+A mioagent catalog preset was written to an installed plugin's settings entry.
+
+```ts cordis-catalog
+/**
+ * A mioagent catalog preset was written to an installed plugin's settings entry.
+ * @mode emit
+ * @param change - package, target entry, and whether this Host process detected the installation.
+ */
+'mio-plugin-preset/applied'(change: MioPluginPresetApplied): void
+```
+
+Source: [`packages/boot/mio-plugin-preset/src/types.ts`](../../packages/boot/mio-plugin-preset/src/types.ts)
 
 <a id="plugin-manager-events"></a>
 

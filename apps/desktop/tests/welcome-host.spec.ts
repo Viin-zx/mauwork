@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import type { MioAccountView } from '@deepseek-ai/dsh-mio-account/types'
 import { connectDesktopWelcome } from '../src/welcome-backend.ts'
 
-const signedOut: MioAccountView = { status: 'signed-out', user: null, expiresAt: null }
-const signedIn: MioAccountView = { status: 'signed-in', user: null, expiresAt: 1_700_000_000_000 }
+const signedOut: MioAccountView = { status: 'signed-out', user: null }
+const signedIn: MioAccountView = { status: 'signed-in', user: null }
 
 function transport(options: { locale?: string; state?: MioAccountView; failState?: boolean } = {}) {
   const calls: { method: string; args: Record<string, unknown> }[] = []

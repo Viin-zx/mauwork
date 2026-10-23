@@ -17,7 +17,7 @@ const state = vi.hoisted(() => ({
   beforeRead: vi.fn(async () => {}),
   beforeWelcome: vi.fn(async () => {}),
   accountState: vi.fn<() => Promise<MioAccountView>>().mockResolvedValue({
-    status: 'signed-out', user: null, expiresAt: null,
+    status: 'signed-out', user: null,
   }),
   sendSmsCode: vi.fn(async (_request: MioSmsCodeRequest): Promise<MioSmsCode> => ({ smsRequestId: 'sms-1', retryAfterSeconds: 60, expiresIn: 300 })),
   loginWithSms: vi.fn(async (_request: MioSmsLoginRequest): Promise<MioAccountView> => state.accountState()),
@@ -192,7 +192,7 @@ it.each([false, true])('starts welcome onboarding without carrying update focus 
   state.preference = 'zh'
   state.operations = undefined
   state.welcomeReady = false
-  state.accountState.mockResolvedValue({ status: 'signed-out', user: null, expiresAt: null })
+  state.accountState.mockResolvedValue({ status: 'signed-out', user: null })
   if (updated) vi.stubGlobal('process', { ...process, platform: 'win32', argv: ['desktop', '--updated'] })
   stubBootEnvironment()
   const reading = Promise.withResolvers<undefined>()
@@ -224,7 +224,7 @@ it.each([false, true])('starts welcome onboarding without carrying update focus 
   state.loadWorkspace.mockClear()
   expect(state.welcomeLocale).toMatchObject({ id: 'zh-CN' })
   expect(state.dialogLocale!().id).toBe('zh-CN')
-  await expect(state.operations!.getState()).resolves.toEqual({ status: 'signed-out', user: null, expiresAt: null })
+  await expect(state.operations!.getState()).resolves.toEqual({ status: 'signed-out', user: null })
   await expect(state.operations!.sendSmsCode({ countryCode: '+86', mobile: '13800138000', scene: 'LOGIN' }))
     .resolves.toEqual({ smsRequestId: 'sms-1', retryAfterSeconds: 60, expiresIn: 300 })
   expect(state.sendSmsCode).toHaveBeenCalledExactlyOnceWith({ countryCode: '+86', mobile: '13800138000', scene: 'LOGIN' })

@@ -103,7 +103,7 @@ export class MioAccountHttp extends MioAccount {
   override async getState(): Promise<MioAccountView> {
     const session = await this.readSession()
     return session === null
-      ? { status: 'signed-out', user: null, expiresAt: null }
+      ? { status: 'signed-out', user: null }
       : this.viewOf(session)
   }
 
@@ -357,7 +357,7 @@ export class MioAccountHttp extends MioAccount {
     })
   }
 
-  /** Read and validate the stored session, discarding invalid or expired records. */
+  /** Read and validate the stored session, discarding invalid records. */
   private async readSession(): Promise<StoredSession | null> {
     const record = await this.ctx.credentials.readRecord(SESSION_KEY)
     if (record === undefined) return null
@@ -365,13 +365,6 @@ export class MioAccountHttp extends MioAccount {
     if (session === null) {
       this.warn('stored mioagent session is not a valid grant; removing it')
       await this.ctx.credentials.deleteRecord(SESSION_KEY)
-      return null
-    }
-    if (session.expiresAt !== null && session.expiresAt <= Date.now()) {
-      await this.ctx.credentials.deleteRecord(SESSION_KEY)
-      this.modelAccess = undefined
-      if (!this.closed) this.ctx.emit('mio-account/session-expired')
-      this.changed()
       return null
     }
     return session
@@ -389,7 +382,6 @@ export class MioAccountHttp extends MioAccount {
     const session: StoredSession = {
       version: 1,
       accessToken: payload.accessToken,
-      expiresAt: payload.expiresIn === undefined ? null : Date.now() + payload.expiresIn * 1000,
       user: payload.user,
     }
     await this.ctx.credentials.modifyRecord(SESSION_KEY, () => Promise.resolve({ kind: 'grant', payload: session }))
@@ -445,7 +437,7 @@ export class MioAccountHttp extends MioAccount {
 
   /** Project a stored session into the client-safe view. */
   private viewOf(session: StoredSession): MioAccountView {
-    return { status: 'signed-in', user: session.user, expiresAt: session.expiresAt }
+    return { status: 'signed-in', user: session.user }
   }
 
   /** Publish stored-state changes to snapshot listeners and Host consumers. */

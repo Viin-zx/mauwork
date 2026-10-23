@@ -1586,8 +1586,8 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
   },
   {
     key: 'mioAccount',
-    summary: 'Account operations against the mioagent business backend.',
-    description: 'Account operations against the mioagent business backend. Implementations own session persistence and the model-access cache; consumers never see the access token or model key.',
+    summary: 'Service Definition of the mioagent account seam shared by the HTTP provider, Remote controller, and llm-mio.',
+    description: 'Service Definition of the mioagent account seam shared by the HTTP provider, Remote controller, and llm-mio.',
     methods: [
       {
         signature: 'abstract getState(): Promise<MioAccountView>',
@@ -1682,6 +1682,36 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Read user, privacy, and subscription agreements.',
         parameters: [{ name: 'signal', description: 'caller cancellation.' }],
         returns: 'agreement documents in the backend\'s fixed order.',
+      },
+      {
+        signature: 'abstract getPlugins(signal?: AbortSignal): Promise<readonly MioPluginCatalogItem[]>',
+        description: 'Read the enabled plugin catalog. Preset configs stay inside the Host.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'enabled plugins in backend order.',
+      },
+      {
+        signature: 'abstract getPlans(signal?: AbortSignal): Promise<readonly MioPlan[]>',
+        description: 'Read the plans the current user may purchase.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'purchasable plans.',
+      },
+      {
+        signature: 'abstract purchasePlan(request: MioPurchaseRequest, signal?: AbortSignal): Promise<MioPurchaseResult>',
+        description: 'Start one purchase. Reusing the same `requestId` returns the same order.',
+        parameters: [{ name: 'request', description: 'plan, idempotency key, and optional payment channel.' }, { name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the created order and, for WeChat Native, its QR payload.',
+      },
+      {
+        signature: 'abstract getOrder(orderNo: string, signal?: AbortSignal): Promise<MioOrderStatus>',
+        description: 'Read one order\'s payment and provisioning state.',
+        parameters: [{ name: 'orderNo', description: 'order returned by the purchase call.' }, { name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the current order state.',
+      },
+      {
+        signature: 'abstract getSubscriptions(signal?: AbortSignal): Promise<MioSubscriptionsView>',
+        description: 'Read the current user\'s subscriptions.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'subscription items and whether the read refreshed NewAPI.',
       },
     ],
   },
@@ -1836,7 +1866,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       {
         signature: '@Remote async inspect(spec: string, options?: InspectOptions, signal?: AbortSignal): Promise<PluginSpecInspection>',
         description: 'Read what a spec names before installing it.',
-        parameters: [{ name: 'spec', description: 'One package spec: a registry name, an absolute path, a git address, or a tarball.' }, { name: 'options', description: 'The registry asked first.' }, { name: 'signal', description: 'Ends a registry lookup early.' }],
+        parameters: [{ name: 'spec', description: 'One package spec: a registry name, an absolute path, a git address, or a tarball.' }, { name: 'options', description: 'The registry asked first, and whether an installed package may be read for its registry version.' }, { name: 'signal', description: 'Ends a registry lookup early.' }],
         returns: 'The package the spec names, or why it is refused.',
       },
       {
@@ -4491,6 +4521,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [],
   },
   {
+    name: 'mio-plugin-preset/applied',
+    mode: 'emit',
+    signature: '\'mio-plugin-preset/applied\'(change: MioPluginPresetApplied): void',
+    summary: 'A mioagent catalog preset was written to an installed plugin\'s settings entry.',
+    description: 'A mioagent catalog preset was written to an installed plugin\'s settings entry.',
+    parameters: [{ name: 'change', description: 'package, target entry, and whether this Host process detected the installation.' }],
+  },
+  {
     name: 'permission-presets/catalog-changed',
     mode: 'emit',
     signature: '\'permission-presets/catalog-changed\'(): void',
@@ -5808,7 +5846,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'InspectOptions',
-    declaration: 'export interface InspectOptions {\n    readonly registry?: Registry;\n}',
+    declaration: 'export interface InspectOptions {\n    readonly registry?: Registry;\n    readonly allowInstalled?: boolean;\n}',
   },
   {
     name: 'InspectorId',
@@ -6336,7 +6374,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'MioAccountView',
-    declaration: 'export interface MioAccountView {\n    readonly status: \'signed-out\' | \'signed-in\';\n    readonly user: MioUser | null;\n    readonly expiresAt: number | null;\n}',
+    declaration: 'export interface MioAccountView {\n    readonly status: \'signed-out\' | \'signed-in\';\n    readonly user: MioUser | null;\n}',
   },
   {
     name: 'MioAgreement',
@@ -6363,8 +6401,32 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type MioModelType = \'LANGUAGE\' | \'EMBEDDING\' | \'RERANK\' | \'IMAGE\' | \'VIDEO\' | \'TTS\';',
   },
   {
+    name: 'MioOrderStatus',
+    declaration: 'export interface MioOrderStatus {\n    readonly orderNo: string;\n    readonly paymentStatus: string;\n    readonly paymentChannel?: string | null | undefined;\n    readonly paymentScene?: string | null | undefined;\n    readonly codeUrl?: string | null | undefined;\n    readonly expireTime?: string | null | undefined;\n    readonly grantStatus: string;\n    readonly subscriptionId?: number | null | undefined;\n}',
+  },
+  {
     name: 'MioPasswordLoginRequest',
     declaration: 'export interface MioPasswordLoginRequest {\n    readonly countryCode: string;\n    readonly mobile: string;\n    readonly password: string;\n}',
+  },
+  {
+    name: 'MioPlan',
+    declaration: 'export interface MioPlan {\n    readonly planId: number;\n    readonly planName: string;\n    readonly planType: string;\n    readonly planContent: string;\n    readonly quota: number;\n    readonly maxPurchasePerUser: number;\n    readonly price: number;\n    readonly currency: string;\n    readonly durationUnit: string;\n    readonly durationValue: number;\n    readonly customSeconds: number;\n    readonly quotaResetPeriod: string;\n    readonly quotaResetCustomSeconds: number;\n}',
+  },
+  {
+    name: 'MioPluginCatalogItem',
+    declaration: 'export interface MioPluginCatalogItem {\n    readonly pluginId: string;\n    readonly pluginName: string;\n    readonly packageName: string;\n    readonly category: string;\n    readonly description: string;\n    readonly config: Record<string, unknown> | null;\n}',
+  },
+  {
+    name: 'MioPluginPresetApplied',
+    declaration: 'export interface MioPluginPresetApplied {\n    readonly packageName: string;\n    readonly target: string;\n    readonly reload: boolean;\n}',
+  },
+  {
+    name: 'MioPurchaseRequest',
+    declaration: 'export interface MioPurchaseRequest {\n    readonly planId: number;\n    readonly requestId: string;\n    readonly paymentChannel?: string;\n}',
+  },
+  {
+    name: 'MioPurchaseResult',
+    declaration: 'export interface MioPurchaseResult {\n    readonly orderNo: string;\n    readonly paymentStatus: string;\n    readonly paymentChannel?: string | null | undefined;\n    readonly paymentScene?: string | null | undefined;\n    readonly codeUrl?: string | null | undefined;\n    readonly expireTime?: string | null | undefined;\n    readonly grantStatus: string;\n    readonly subscriptionId: number | null;\n}',
   },
   {
     name: 'MioQuotaView',
@@ -6376,7 +6438,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'MioResetPasswordRequest',
-    declaration: 'export interface MioResetPasswordRequest {\n    readonly countryCode: string;\n    readonly mobile: string;\n    readonly smsRequestId: string;\n    readonly smsCode: string;\n    readonly newPassword: string;\n}',
+    declaration: 'export interface MioResetPasswordRequest {\n    readonly countryCode: string;\n    readonly mobile: string;\n    readonly smsRequestId: string;\n    readonly smsCode: string;\n    readonly newPassword: string;\n    readonly authenticated?: boolean;\n}',
   },
   {
     name: 'MioSmsCode',
@@ -6384,7 +6446,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'MioSmsCodeRequest',
-    declaration: 'export interface MioSmsCodeRequest {\n    readonly countryCode: string;\n    readonly mobile: string;\n    readonly scene: MioSmsScene;\n}',
+    declaration: 'export interface MioSmsCodeRequest {\n    readonly countryCode: string;\n    readonly mobile: string;\n    readonly scene: MioSmsScene;\n    readonly authenticated?: boolean;\n}',
   },
   {
     name: 'MioSmsLoginRequest',
@@ -6393,6 +6455,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'MioSmsScene',
     declaration: 'export type MioSmsScene = \'REGISTER\' | \'LOGIN\' | \'RESET_PASSWORD\';',
+  },
+  {
+    name: 'MioSubscription',
+    declaration: 'export interface MioSubscription {\n    readonly subscriptionId: number;\n    readonly planId: number;\n    readonly planName: string;\n    readonly amountTotal: number;\n    readonly amountUsed: number;\n    readonly startTime: string;\n    readonly endTime: string;\n    readonly status: string;\n    readonly lastResetTime?: string | null | undefined;\n    readonly nextResetTime?: string | null | undefined;\n    readonly allowWalletOverflow: boolean;\n}',
+  },
+  {
+    name: 'MioSubscriptionsView',
+    declaration: 'export interface MioSubscriptionsView {\n    readonly items: readonly MioSubscription[];\n    readonly realtime: boolean;\n}',
   },
   {
     name: 'MioUser',
