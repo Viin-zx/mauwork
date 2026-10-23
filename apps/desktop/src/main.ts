@@ -718,6 +718,8 @@ async function main(): Promise<void> {
     assertProductSender(event)
     return readDeviceInfo()
   })
+  // Async keeps a synchronous sender rejection a rejected invoke for the renderer.
+  // oxlint-disable-next-line typescript/require-await
   ipcMain.handle(DESKTOP_IPC.onboardingApiKey, async (event) => {
     assertProductSender(event)
     return false
@@ -873,7 +875,7 @@ async function main(): Promise<void> {
   const applicationIconPath = development ? join(app.getAppPath(), 'resources', 'icon-windows.png')
     : join(process.resourcesPath, 'icon.png')
   app.setAboutPanelOptions({
-    applicationName: 'DeepSeek Harness',
+    applicationName: 'Mauwork',
     applicationVersion: app.getVersion(),
     // The release has no separate build number; omit Electron's bundle version.
     version: '',

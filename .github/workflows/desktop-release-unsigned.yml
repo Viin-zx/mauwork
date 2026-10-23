@@ -159,7 +159,8 @@ jobs:
 
   macos-x64:
     needs: version
-    runs-on: macos-14
+    # A native Intel host avoids running the x64 Electron, LibreOffice and the runtime smoke under Rosetta.
+    runs-on: macos-15-intel
     timeout-minutes: 240
     env:
       BUILD_VERSION: ${{ needs.version.outputs.build }}
@@ -176,12 +177,6 @@ jobs:
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: '24'
-      # The x64 runtime is executed by the packaged-runtime smoke check, which needs Rosetta on an arm64 host.
-      - name: Install Rosetta
-        run: |
-          if [ "$(uname -m)" = "arm64" ] && [ ! -e /Library/Apple/usr/libexec/oah ]; then
-            sudo softwareupdate --install-rosetta --agree-to-license
-          fi
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
       - name: Build the unsigned macOS x64 disk image

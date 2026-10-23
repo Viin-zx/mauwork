@@ -1,4 +1,5 @@
 import { officePackageDirectories } from '../../../scripts/libreoffice-packages.mjs'
+import { PRODUCT_NAME } from './product-name.mjs'
 import { X509Certificate } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
@@ -113,7 +114,7 @@ export function createElectronBuilderConfig(
       ...buildVersion === productVersion ? {} : { version: buildVersion },
       ...packaged === undefined ? {} : { dshBuildCommit: packaged.commit, dshBuildDirty: packaged.dirty },
     },
-    productName: 'Mauwork',
+    productName: PRODUCT_NAME,
     // Unsigned builds carry their own suffix so a shared file can never pass for a release artifact.
     artifactName: `mauwork-\${version}-\${os}-\${arch}${output.suffix}.\${ext}`,
     directories: { output: output.directory },
