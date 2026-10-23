@@ -62,16 +62,32 @@ if ($TestProgress -or $CompileProgressOnly) {
     }
 }
 Add-Type -AssemblyName System.Drawing
+# MUI stretches a welcome/finish bitmap to its 164x314 panel, so the sidebar is composed at that size
+# with the square mark centered at its own aspect ratio instead of being distorted to the panel.
+$sidebarWidth = 164
+$sidebarHeight = 314
+$sidebarMarkSize = 120
 foreach ($asset in @('brand', 'brand-2x', 'brand-dark', 'brand-dark-2x', 'uninstaller-sidebar')) {
     $image = [Drawing.Image]::FromFile((Join-Path $installerRoot "assets/$asset.png"))
     try {
-        $bitmap = [Drawing.Bitmap]::new($image.Width, $image.Height, [Drawing.Imaging.PixelFormat]::Format24bppRgb)
+        $canvasWidth = if ($asset -eq 'uninstaller-sidebar') { $sidebarWidth } else { $image.Width }
+        $canvasHeight = if ($asset -eq 'uninstaller-sidebar') { $sidebarHeight } else { $image.Height }
+        $bitmap = [Drawing.Bitmap]::new($canvasWidth, $canvasHeight, [Drawing.Imaging.PixelFormat]::Format24bppRgb)
         try {
             $graphics = [Drawing.Graphics]::FromImage($bitmap)
             try {
-                $background = if ($asset -like '*dark*') { [Drawing.Color]::FromArgb(21, 21, 23) } else { [Drawing.Color]::White }
+                # The uninstaller keeps MUI's light palette, so its sidebar uses the panel grey the artwork was designed against.
+                $background = if ($asset -eq 'uninstaller-sidebar') { [Drawing.Color]::FromArgb(243, 244, 246) } elseif ($asset -like '*dark*') { [Drawing.Color]::FromArgb(21, 21, 23) } else { [Drawing.Color]::White }
                 $graphics.Clear($background)
-                $graphics.DrawImage($image, 0, 0, $image.Width, $image.Height)
+                if ($asset -eq 'uninstaller-sidebar') {
+                    $graphics.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+                    $scale = [Math]::Min($sidebarMarkSize / $image.Width, $sidebarMarkSize / $image.Height)
+                    $markWidth = [int][Math]::Round($image.Width * $scale)
+                    $markHeight = [int][Math]::Round($image.Height * $scale)
+                    $graphics.DrawImage($image, [int](($canvasWidth - $markWidth) / 2), [int](($canvasHeight - $markHeight) / 2), $markWidth, $markHeight)
+                } else {
+                    $graphics.DrawImage($image, 0, 0, $image.Width, $image.Height)
+                }
             } finally { $graphics.Dispose() }
             $bitmap.Save((Join-Path $output "$asset.bmp"), [Drawing.Imaging.ImageFormat]::Bmp)
         } finally { $bitmap.Dispose() }
