@@ -59,6 +59,11 @@ export function createElectronBuilderConfig(
     throw new Error('desktop package: DSH_DESKTOP_UNSIGNED must be 0 or 1')
   }
   const unsigned = env.DSH_DESKTOP_UNSIGNED === '1'
+  if (env.DSH_DESKTOP_UNSIGNED_UPDATE !== undefined && !['0', '1'].includes(env.DSH_DESKTOP_UNSIGNED_UPDATE)) {
+    throw new Error('desktop package: DSH_DESKTOP_UNSIGNED_UPDATE must be 0 or 1')
+  }
+  const unsignedUpdate = env.DSH_DESKTOP_UNSIGNED_UPDATE === '1'
+  if (unsignedUpdate && !unsigned) throw new Error('desktop package: DSH_DESKTOP_UNSIGNED_UPDATE requires an unsigned build')
   const skipNotarization = env.DSH_DESKTOP_MACOS_SKIP_NOTARIZATION === '1'
   if (env.DSH_DESKTOP_MACOS_SKIP_NOTARIZATION !== undefined && !['0', '1'].includes(env.DSH_DESKTOP_MACOS_SKIP_NOTARIZATION)) {
     throw new Error('desktop package: DSH_DESKTOP_MACOS_SKIP_NOTARIZATION must be 0 or 1')
@@ -96,7 +101,11 @@ export function createElectronBuilderConfig(
   if (windowsSigner !== undefined) {
     installWindowsNsisBootstrapSigner({ sign: windowsSigner })
   }
-  const update = unsigned ? undefined : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
+  if (unsignedUpdate && resolvedPlatform !== 'win32') {
+    // Squirrel.Mac verifies the bundle signature before installing, so an unsigned macOS build cannot self-update.
+    throw new Error('desktop package: unsigned auto-update is supported only for Windows')
+  }
+  const update = unsigned && !unsignedUpdate ? undefined : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
   if (preparedRuntime !== undefined) buildPaths.dsh = preparedRuntime
   // electron-builder merges extraMetadata into the packaged manifest, so a build version here reaches
   // the artifact names, the update feed, and the installed app.getVersion() the updater compares against.

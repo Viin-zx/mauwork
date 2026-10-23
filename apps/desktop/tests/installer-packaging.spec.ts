@@ -77,6 +77,42 @@ describe('installer preparation preserves application dependencies', () => {
     expect(config.artifactName).toBe('mauwork-${version}-${os}-${arch}-unsigned.${ext}')
   })
 
+  it('embeds the OSS update feed in an unsigned Windows build only when asked', async () => {
+    const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
+    const environment = {
+      DSH_DESKTOP_APP_ID: 'com.example.installer',
+      DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN: 'https://policy.example.com',
+      DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: JSON.stringify({ allowedAuthOrigins: ['https://login.example.com'] }),
+      DSH_DESKTOP_TARGET_PLATFORM: 'win32',
+      DSH_DESKTOP_TARGET_ARCH: 'x64',
+      DSH_DESKTOP_UNSIGNED: '1',
+      DSH_DESKTOP_AUTO_UPDATE_ENV: 'test',
+      DOWNLOAD_TEST_ORIGIN: 'https://updates.example.com',
+      DOWNLOAD_TEST_RELEASE_ID: '0123456789abcdef0123456789abcdef',
+    }
+    expect(createElectronBuilderConfig(environment, 'win32', 'x64').publish).toBeNull()
+    expect(createElectronBuilderConfig({ ...environment, DSH_DESKTOP_UNSIGNED_UPDATE: '1' }, 'win32', 'x64').publish)
+      .toEqual([{ provider: 'generic', url: 'https://updates.example.com/dsh-desk/0123456789abcdef0123456789abcdef/feeds/win-x64/', channel: 'nightly' }])
+  })
+
+  it('rejects unsigned updates for macOS and for signed builds', async () => {
+    const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
+    const mac = {
+      DSH_DESKTOP_APP_ID: 'com.example.installer',
+      DSH_DESKTOP_TARGET_PLATFORM: 'darwin',
+      DSH_DESKTOP_TARGET_ARCH: 'arm64',
+      DSH_DESKTOP_UNSIGNED: '1',
+      DSH_DESKTOP_UNSIGNED_UPDATE: '1',
+      DSH_DESKTOP_AUTO_UPDATE_ENV: 'production',
+      DOWNLOAD_PROD_ORIGIN: 'https://updates.example.com',
+    }
+    expect(() => createElectronBuilderConfig(mac, 'darwin', 'arm64')).toThrow(/Windows/u)
+    expect(() => createElectronBuilderConfig({ ...mac, DSH_DESKTOP_UNSIGNED: '0', DSH_DESKTOP_TARGET_PLATFORM: 'win32' }, 'win32', 'x64'))
+      .toThrow(/requires an unsigned build/u)
+    expect(() => createElectronBuilderConfig({ ...mac, DSH_DESKTOP_UNSIGNED_UPDATE: 'yes' }, 'darwin', 'arm64'))
+      .toThrow(/must be 0 or 1/u)
+  })
+
   it('packages every preload entry point the shell loads', async () => {
     const { readdirSync, readFileSync } = await import('node:fs')
     const sourceDirectory = new URL('../src/', import.meta.url)

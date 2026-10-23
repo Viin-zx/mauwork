@@ -10,6 +10,12 @@
 # process environment, so the build writes that file from repository variables (or the
 # defaults below) before running the packaging command. Unsigned macOS builds ignore
 # .env.macos and use the product application identifier.
+#
+# A Windows build embeds the generic update feed and, on a release, publishes the feed and
+# installer to Aliyun OSS (dsh-desk/<release-id>/feeds/win-x64); unsigned macOS builds have no
+# updater because Squirrel.Mac verifies the bundle signature. Configure OSS_ACCESS_KEY_ID,
+# OSS_ACCESS_KEY_SECRET, and optionally OSS_BUCKET, OSS_REGION, OSS_ENDPOINT and
+# MAUWORK_DOWNLOAD_ORIGIN; the bucket must be publicly readable at that origin.
 name: Release Desktop · unsigned
 
 on:
@@ -36,6 +42,10 @@ on:
 
 permissions:
   contents: write
+
+env:
+  # One fixed test feed keeps every tag on the same OSS update path.
+  FEED_RELEASE_ID: 0123456789abcdef0123456789abcdef
 
 concurrency:
   group: desktop-release-unsigned-${{ github.ref_name }}
@@ -78,6 +88,7 @@ jobs:
     env:
       MAUWORK_APP_ID: ${{ vars.MAUWORK_APP_ID || 'com.mauwork.desktop' }}
       MAUWORK_UPDATE_ORIGIN: ${{ vars.MAUWORK_UPDATE_ORIGIN || 'https://mioagent.dev.zrshuiwu.com' }}
+      MAUWORK_DOWNLOAD_ORIGIN: ${{ vars.MAUWORK_DOWNLOAD_ORIGIN || 'https://mauwork-releases.oss-cn-hangzhou.aliyuncs.com' }}
       BUILD_VERSION: ${{ needs.version.outputs.build }}
     outputs:
       sha: ${{ steps.checkout.outputs.commit }}
@@ -103,6 +114,9 @@ jobs:
           $lines = @(
             "DSH_DESKTOP_APP_ID=$env:MAUWORK_APP_ID"
             'DSH_DESKTOP_AUTO_UPDATE_ENV=test'
+            "DOWNLOAD_TEST_ORIGIN=$env:MAUWORK_DOWNLOAD_ORIGIN"
+            "DOWNLOAD_TEST_RELEASE_ID=$env:FEED_RELEASE_ID"
+            'DSH_DESKTOP_UNSIGNED_UPDATE=1'
             "DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN=$origin"
             "DSH_DESKTOP_MANDATORY_UPDATE_CONFIG='$config'"
           )
@@ -120,6 +134,7 @@ jobs:
           path: |
             apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*.exe
             apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*.blockmap
+            apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*.yml
           if-no-files-found: error
           retention-days: 14
 
@@ -191,6 +206,97 @@ jobs:
           path: apps/desktop/.desktop-build/targets/mac-x64/unsigned-artifacts/*.dmg
           if-no-files-found: error
           retention-days: 14
+
+  publish-oss:
+    needs: windows
+    if: >-
+      always() && !cancelled()
+      && (github.event_name == 'push' || inputs.release_tag != '')
+      && needs.windows.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          name: mauwork-windows-x64-unsigned
+          path: dist
+      - name: Publish the Windows update feed to Aliyun OSS
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+          OSS_BUCKET: ${{ vars.OSS_BUCKET || 'mauwork-releases' }}
+          OSS_REGION: ${{ vars.OSS_REGION || 'cn-hangzhou' }}
+          OSS_ENDPOINT: ${{ vars.OSS_ENDPOINT }}
+          FEED_PREFIX: dsh-desk/${{ env.FEED_RELEASE_ID }}/feeds/win-x64
+        run: |
+          if [ -z "$OSS_ACCESS_KEY_ID" ] || [ -z "$OSS_ACCESS_KEY_SECRET" ]; then
+            echo 'OSS_ACCESS_KEY_ID and OSS_ACCESS_KEY_SECRET are not configured.' >&2
+            exit 1
+          fi
+          shopt -s nullglob
+          payload=(dist/*.exe dist/*.blockmap)
+          if [ ${#payload[@]} -eq 0 ]; then echo 'No installer artifact was downloaded.' >&2; exit 1; fi
+          if [ ! -f dist/nightly.yml ] && [ ! -f dist/latest.yml ]; then echo 'No update metadata was produced.' >&2; exit 1; fi
+          python3 -m pip install --user boto3 >/dev/null 2>&1
+          python3 - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          import boto3
+          from botocore.config import Config
+          from botocore.exceptions import ClientError
+          from boto3.s3.transfer import TransferConfig
+
+          endpoint = os.environ.get('OSS_ENDPOINT', '').strip() or 'https://oss-cn-hangzhou.aliyuncs.com'
+          bucket = os.environ.get('OSS_BUCKET', '').strip() or 'mauwork-releases'
+          region = os.environ.get('OSS_REGION', '').strip() or 'cn-hangzhou'
+          prefix = os.environ['FEED_PREFIX'].strip()
+
+          s3 = boto3.client(
+              's3',
+              endpoint_url=endpoint,
+              region_name=region,
+              aws_access_key_id=os.environ['OSS_ACCESS_KEY_ID'],
+              aws_secret_access_key=os.environ['OSS_ACCESS_KEY_SECRET'],
+              config=Config(
+                  signature_version='s3',
+                  s3={'addressing_style': 'virtual'},
+                  retries={'max_attempts': 10, 'mode': 'adaptive'},
+                  connect_timeout=10,
+                  read_timeout=120,
+                  max_pool_connections=32,
+              ),
+          )
+          transfer = TransferConfig(max_concurrency=16, multipart_threshold=64 * 1024 * 1024, multipart_chunksize=16 * 1024 * 1024)
+
+          def exists(key, size):
+              try:
+                  return s3.head_object(Bucket=bucket, Key=key).get('ContentLength') == size
+              except ClientError as error:
+                  code = error.response.get('Error', {}).get('Code', '')
+                  if code in ('404', 'NotFound', 'NoSuchKey', 'NoSuchBucket'):
+                      return False
+                  raise
+
+          def upload(path, force=False):
+              key = f'{prefix}/{path.name}'
+              size = path.stat().st_size
+              if not force and exists(key, size):
+                  print(f'skipped {path.name} (already on OSS)', flush=True)
+                  return
+              s3.upload_file(str(path), bucket, key, Config=transfer)
+              print(f'uploaded {path.name} ({size / 1024 / 1024:.1f} MiB)', flush=True)
+
+          metadata = {'nightly.yml', 'latest.yml'}
+          # Installers and blockmaps first; metadata last so no client reads a feed whose payload is missing.
+          for path in sorted(Path('dist').iterdir()):
+              if path.is_file() and path.name not in metadata and path.suffix != '.yml':
+                  upload(path)
+          for path in sorted(Path('dist').iterdir()):
+              if path.is_file() and path.name in metadata:
+                  upload(path, force=True)
+          print(f'published {prefix}/ to {bucket}')
+          PY
 
   release:
     needs: [version, windows, macos-arm64, macos-x64]

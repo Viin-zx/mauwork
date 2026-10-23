@@ -52,6 +52,19 @@ describe('Desktop local packaging configuration', () => {
     })
   })
 
+  it('keeps the unsigned update opt-in and download origin from the Windows file', async () => {
+    await withDirectory(async (directory) => {
+      await writeFile(join(directory, '.env.windows'), `DSH_DESKTOP_UNSIGNED_UPDATE=1
+DOWNLOAD_TEST_ORIGIN=https://updates.example.com
+`)
+      const environment = loadDesktopPackageEnvironment('win32', {}, directory, { unsigned: true })
+      expect(environment).toMatchObject({
+        DSH_DESKTOP_UNSIGNED_UPDATE: '1',
+        DOWNLOAD_TEST_ORIGIN: 'https://updates.example.com',
+      })
+    })
+  })
+
   it.each(['1', '2', '4', '8'])('accepts cache concurrency %s', (value) => {
     const settings = resolveWindowsPackageSettings({ DSH_DESKTOP_WINDOWS_SIGNATURE_CACHE_CONCURRENCY: value })
     expect(settings.signatureCacheConcurrency).toBe(Number(value))

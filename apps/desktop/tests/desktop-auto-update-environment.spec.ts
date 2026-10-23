@@ -78,6 +78,20 @@ describe('desktop auto-update environment', () => {
     })
   })
 
+  it('overrides the production origin when the deployment names one', () => {
+    expect(resolveDesktopAutoUpdateConfig({
+      DSH_DESKTOP_AUTO_UPDATE_ENV: 'production',
+      DOWNLOAD_PROD_ORIGIN: 'https://updates.example.com/',
+    }, 'win32', 'x64')).toMatchObject({
+      environment: 'production',
+      publicUrl: 'https://updates.example.com/dsh-desk/feeds/win-x64/',
+    })
+    expect(() => resolveDesktopAutoUpdateConfig({
+      DSH_DESKTOP_AUTO_UPDATE_ENV: 'production',
+      DOWNLOAD_PROD_ORIGIN: 'https://updates.example.com/releases',
+    }, 'win32', 'x64')).toThrow(/HTTPS origin without a path/u)
+  })
+
   it('requires the selected deployment origin for packages and bucket only for uploads', () => {
     expect(() => resolveDesktopAutoUpdateConfig({}, 'darwin', 'arm64'))
       .toThrow(/DOWNLOAD_TEST_ORIGIN/u)

@@ -1,4 +1,4 @@
-/** Resolve the Desktop auto-update channel and its Tencent COS destination. */
+/** Resolve the Desktop auto-update channel and its public feed origin. */
 
 import { valid } from 'semver'
 
@@ -25,7 +25,7 @@ const UPDATE_ENVIRONMENTS = {
     secretKeyEnvName: 'DOWNLOAD_TEST_COS_SECRET_KEY',
   },
   production: {
-    originEnvName: undefined,
+    originEnvName: 'DOWNLOAD_PROD_ORIGIN',
     fixedOrigin: 'https://download.deepseek.com',
     bucketEnvName: 'DOWNLOAD_PROD_COS_BUCKET',
     secretIdEnvName: 'DOWNLOAD_PROD_COS_SECRET_ID',
@@ -145,11 +145,13 @@ export function resolveDesktopAutoUpdateConfig(env, platform, arch) {
   const environment = resolveDesktopAutoUpdateEnvironment(env)
   const target = resolveDesktopAutoUpdateTarget(platform, arch)
   const deployment = UPDATE_ENVIRONMENTS[environment]
-  let origin = deployment.fixedOrigin
+  const configuredOrigin = deployment.originEnvName === undefined ? undefined : env[deployment.originEnvName]?.trim()
+  let origin = configuredOrigin !== undefined && configuredOrigin !== ''
+    ? httpsOrigin(configuredOrigin, deployment.originEnvName)
+    : deployment.fixedOrigin
   if (origin === undefined) {
-    const { originEnvName } = deployment
-    if (originEnvName === undefined) throw new Error('desktop auto-update: selected deployment has no origin')
-    origin = httpsOrigin(requiredEnvironmentValue(env, originEnvName), originEnvName)
+    if (deployment.originEnvName === undefined) throw new Error('desktop auto-update: selected deployment has no origin')
+    origin = httpsOrigin(requiredEnvironmentValue(env, deployment.originEnvName), deployment.originEnvName)
   }
   let releasePrefix = 'dsh-desk'
   if (environment === 'test') {
