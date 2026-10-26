@@ -158,6 +158,44 @@ it('waits for the GitHub check before installing and activating the bundle', asy
   expect(readProfileManifest('test', dir).dsh?.profile?.bundles).toContain('addon')
 })
 
+it('relinks a profile linked by an older pnpm store and retries the install', async () => {
+  const { manager, dir, bundle } = await fixture()
+  const calls: string[] = []
+  const pnpm = vi.spyOn(operations, 'runProfilePnpm').mockImplementation(async (_context, args) => {
+    calls.push(String(args[0]))
+    if (args[0] === 'add' && calls.filter(value => value === 'add').length === 1) {
+      return { exitCode: 1, output: 'ERR_PNPM_UNEXPECTED_STORE Unexpected store location', truncated: false, logPath: join(dir, 'pnpm.log') }
+    }
+    if (args[0] === 'install') {
+      return { exitCode: 0, output: 'relinked', truncated: false, logPath: join(dir, 'pnpm.log') }
+    }
+    const name = String(args[1])
+    bundle(name, [])
+    const manifest = readProfileManifest('test', dir)
+    manifest.dependencies = { ...manifest.dependencies, [name]: '1.0.0' }
+    writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest))
+    return { exitCode: 0, output: 'installed', truncated: false, logPath: join(dir, 'pnpm.log') }
+  })
+  onTestFinished(() => { pnpm.mockRestore() })
+  expect(await manager.installBundle('relinked-bundle')).toMatchObject({ application: 'applied', bundle: 'relinked-bundle' })
+  expect(calls).toEqual(['add', 'install', 'add'])
+})
+
+it('reports the relink failure instead of retrying the add', async () => {
+  const { manager, dir } = await fixture()
+  const calls: string[] = []
+  const pnpm = vi.spyOn(operations, 'runProfilePnpm').mockImplementation(async (_context, args) => {
+    calls.push(String(args[0]))
+    if (args[0] === 'install') {
+      return { exitCode: 1, output: 'ERR_PNPM_META_FETCH_FAIL relink failed', truncated: false, logPath: join(dir, 'pnpm.log') }
+    }
+    return { exitCode: 1, output: 'ERR_PNPM_UNEXPECTED_STORE Unexpected store location', truncated: false, logPath: join(dir, 'pnpm.log') }
+  })
+  onTestFinished(() => { pnpm.mockRestore() })
+  expect(await manager.installBundle('stuck-bundle')).toMatchObject({ application: 'failed' })
+  expect(calls).toEqual(['add', 'install'])
+})
+
 it('disposal waits for an active GitHub check to stop', async () => {
   const { ctx, manager, connection } = await fixture('startup')
   const entered = Promise.withResolvers<undefined>()

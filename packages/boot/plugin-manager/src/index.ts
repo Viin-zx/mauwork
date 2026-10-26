@@ -753,8 +753,31 @@ export class PluginManager extends TypertRemoteService {
     return { rows, overrides }
   }
 
-  /** Run one pnpm command in the profile, streaming its output as install-log chunks. */
+  /**
+   * Run one pnpm command in the profile. A profile linked by an older pnpm major refuses every
+   * add/remove with ERR_PNPM_UNEXPECTED_STORE; relink it with one `pnpm install` and retry.
+   * @param args - pnpm arguments, beginning with the command.
+   * @param signal - caller cancellation for every run in this operation.
+   * @param requestId - installation identity for streamed output.
+   * @returns The final run's result; a failed relink replaces the store refusal.
+   */
   private async runPnpm(
+    args: readonly string[], signal?: AbortSignal, requestId?: PluginInstallRequestId,
+  ): Promise<PackageResult> {
+    const result = await this.runPnpmOnce(args, signal, requestId)
+    if (result.exitCode === 0 || result.timedOut === true || args[0] === 'install'
+      || !/ERR_PNPM_UNEXPECTED_STORE/u.test(result.output)
+      || this.abort.signal.aborted || signal?.aborted === true) return result
+    this.ownerContext.logger.info('plugin manager: profile dependencies use an older pnpm store; relinking before retrying')
+    const relinked = await this.runPnpmOnce(['install'], signal, requestId)
+    // A failed relink is not registry-specific; `unknown` stops the registry fallback from
+    // repeating the same relink for every registry.
+    if (relinked.exitCode !== 0 || relinked.timedOut === true) return { ...relinked, kind: 'unknown' }
+    return this.runPnpmOnce(args, signal, requestId)
+  }
+
+  /** Run one pnpm command in the profile, streaming its output as install-log chunks. */
+  private async runPnpmOnce(
     args: readonly string[], signal?: AbortSignal, requestId?: PluginInstallRequestId,
   ): Promise<PackageResult> {
     const jobId = randomUUID()
