@@ -12,18 +12,27 @@ afterEach(async () => {
   await Promise.all(roots.splice(0).map(ctx => ctx.fiber.dispose()))
 })
 
-function fixture(options: { user?: Record<string, unknown>; installed?: boolean } = {}) {
+function fixture(options: {
+  user?: Record<string, unknown>
+  installed?: boolean
+  values?: Record<string, unknown>
+} = {}) {
   const ctx = new Context()
   roots.push(ctx)
+  let user = options.user ?? {}
   const settings = {
     describe: vi.fn(() => [{
       ns: 'imagegen',
       revision: 4,
-      user: options.user ?? {},
+      user,
       value: {},
     }]),
-    update: vi.fn(async () => undefined),
-    replace: vi.fn(async () => undefined),
+    update: vi.fn(async (_ns: string, patch: Record<string, unknown>) => {
+      user = { ...user, ...structuredClone(patch) }
+    }),
+    replace: vi.fn(async (_ns: string, section: Record<string, unknown>) => {
+      user = structuredClone(section)
+    }),
   }
   const account = {
     getState: vi.fn(async () => ({ status: 'signed-in', user: null })),
@@ -35,7 +44,7 @@ function fixture(options: { user?: Record<string, unknown>; installed?: boolean 
       description: '',
       config: {
         target: 'imagegen',
-        values: { channelSecrets: { mio: '{{MIO_API_KEY}}' }, apiUrl: '{{MIO_MODEL_BASE_URL}}' },
+        values: options.values ?? { channelSecrets: { mio: '{{MIO_API_KEY}}' }, apiUrl: '{{MIO_MODEL_BASE_URL}}' },
       },
     }]),
     getModelAccess: vi.fn(async () => ({
@@ -119,6 +128,81 @@ describe('catalog preset application', () => {
       channelSecrets: { mio: 'sk-test' },
       apiUrl: 'https://models.test/v1',
     }, 4)
+    expect(settings.update).not.toHaveBeenCalled()
+  })
+
+  it('refreshes the managed channel credentials after the account changes', async () => {
+    const values = {
+      channels: [{ id: 'mio-default', apiUrl: '{{MIO_MODEL_BASE_URL}}' }],
+      channelSecrets: { 'mio-default': '{{MIO_API_KEY}}' },
+      defaultChannelId: 'mio-default',
+    }
+    const user = {
+      channels: [
+        { id: 'mio-default', apiUrl: 'https://old.example/v1' },
+        { id: 'mine', apiUrl: 'https://mine.example/v1' },
+      ],
+      defaultChannelId: 'mio-default',
+    }
+    const { ctx, settings, account } = fixture({ user, values })
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+    // Startup never rewrites a non-empty target.
+    expect(settings.update).not.toHaveBeenCalled()
+
+    ctx.emit('mio-account/changed')
+    await vi.advanceTimersByTimeAsync(600)
+    expect(settings.update).toHaveBeenCalledExactlyOnceWith('imagegen', {
+      channels: [
+        { id: 'mio-default', apiUrl: 'https://models.test/v1' },
+        { id: 'mine', apiUrl: 'https://mine.example/v1' },
+      ],
+      channelSecrets: { 'mio-default': 'sk-test' },
+    }, 4)
+
+    // An unchanged credential version does not write again.
+    ctx.emit('mio-account/changed')
+    await vi.advanceTimersByTimeAsync(600)
+    expect(settings.update).toHaveBeenCalledTimes(1)
+
+    account.getModelAccess.mockResolvedValue({
+      baseUrl: 'https://models.test/v1', apiKey: 'sk-rotated', credentialVersion: 2, expiresAt: '2030-01-01 00:00:00',
+    })
+    ctx.emit('mio-account/changed')
+    await vi.advanceTimersByTimeAsync(600)
+    expect(settings.update).toHaveBeenCalledTimes(2)
+    expect(settings.update).toHaveBeenLastCalledWith('imagegen', {
+      channelSecrets: { 'mio-default': 'sk-rotated' },
+    }, 4)
+
+    // A fresh sign-in re-reads the credential even if its version did not change.
+    account.getState.mockResolvedValue({ status: 'signed-out', user: null })
+    ctx.emit('mio-account/changed')
+    await vi.advanceTimersByTimeAsync(600)
+    account.getState.mockResolvedValue({ status: 'signed-in', user: null })
+    account.getModelAccess.mockResolvedValue({
+      baseUrl: 'https://models.test/v1', apiKey: 'sk-after-relogin', credentialVersion: 2, expiresAt: '2030-01-01 00:00:00',
+    })
+    ctx.emit('mio-account/changed')
+    await vi.advanceTimersByTimeAsync(600)
+    expect(settings.update).toHaveBeenCalledTimes(3)
+    expect(settings.update).toHaveBeenLastCalledWith('imagegen', {
+      channelSecrets: { 'mio-default': 'sk-after-relogin' },
+    }, 4)
+  })
+
+  it('leaves channels the user replaced alone', async () => {
+    const values = {
+      channels: [{ id: 'mio-default', apiUrl: '{{MIO_MODEL_BASE_URL}}' }],
+      channelSecrets: { 'mio-default': '{{MIO_API_KEY}}' },
+      defaultChannelId: 'mio-default',
+    }
+    const { ctx, settings } = fixture({ user: { channels: [{ id: 'mine' }], defaultChannelId: 'mine' }, values })
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+    ctx.emit('mio-account/changed')
+    await vi.advanceTimersByTimeAsync(600)
+
     expect(settings.update).not.toHaveBeenCalled()
   })
 

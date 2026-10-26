@@ -68,9 +68,15 @@ export function accountMessage(error: unknown, fallback: string): string {
 /**
  * Bind the account Remote namespace to the login surface's operations.
  * @param ctx - client context carrying the mounted mioAccount Remote.
+ * @param reload - resets the renderer after sign-out. Plugins mount pages
+ *   outside the React tree, so a document reload is the only teardown that
+ *   closes all of them before the login surface shows.
  * @returns operations shared by every registration.
  */
-export function createMioAccountOperations(ctx: Context): MioAccountOperations {
+export function createMioAccountOperations(
+  ctx: Context,
+  reload: () => void = () => { globalThis.location.reload() },
+): MioAccountOperations {
   const call = async <T>(operation: () => Promise<RemoteResult<T>>): Promise<T> => {
     const result = await operation()
     if (result.ok) return result.value
@@ -87,6 +93,10 @@ export function createMioAccountOperations(ctx: Context): MioAccountOperations {
     purchasePlan: request => call(() => ctx.remote.mioAccount.purchasePlan(request)),
     getOrder: orderNo => call(() => ctx.remote.mioAccount.getOrder(orderNo)),
     getSubscriptions: () => call(() => ctx.remote.mioAccount.getSubscriptions()),
-    logout: () => call(() => ctx.remote.mioAccount.logout()),
+    logout: async () => {
+      const view = await call(() => ctx.remote.mioAccount.logout())
+      reload()
+      return view
+    },
   }
 }

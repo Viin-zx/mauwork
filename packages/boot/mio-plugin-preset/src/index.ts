@@ -1,8 +1,10 @@
 /**
  * Apply mioagent catalog presets to installed plugins. A newly installed
  * package always receives the catalog preset; startup and later settings
- * events only fill a target that has no user channels. A small profile-local
- * marker keeps the force intent across a restart-required installation.
+ * events only fill a target that has no user channels. A fresh sign-in or a
+ * changed model credential refreshes only the preset-managed channel. A small
+ * profile-local marker keeps the force intent across a restart-required
+ * installation.
  */
 
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
@@ -13,7 +15,7 @@ import type {} from './types.ts'
 export type * from './types.ts'
 import type {} from '@deepseek-ai/dsh-plugin-manager'
 import type {} from '@deepseek-ai/dsh-settings'
-import { isEmptyTargetUser, PRESET_TARGET_PACKAGES, readPreset, resolvePresetValues } from './preset.ts'
+import { isEmptyTargetUser, PRESET_TARGET_PACKAGES, readPreset, refreshPresetUser, resolvePresetValues } from './preset.ts'
 
 /** Stable plugin name. */
 export const name = 'mio-plugin-preset'
@@ -48,6 +50,10 @@ interface SweepState {
   pending: Set<string>
   /** Pending packages installed in this process, whose applied write reloads the renderer. */
   reloadPending: Set<string>
+  /** Model access last written per target, so a repeated account event does not rewrite settings. */
+  readonly access: Map<string, { readonly credentialVersion: number; readonly baseUrl: string }>
+  /** Whether the previous sweep saw a signed-in account; a fresh sign-in re-reads every credential. */
+  signedIn: boolean
 }
 
 /** What one catalog entry did, for deciding whether a pending marker can go. */
@@ -69,7 +75,10 @@ export function apply(ctx: Context): void {
   let running = false
   let disposed = false
   let retryAttempts = 0
-  const state: SweepState = { known: undefined, pending: new Set(), reloadPending: new Set() }
+  let accountChanged = false
+  const state: SweepState = {
+    known: undefined, pending: new Set(), reloadPending: new Set(), access: new Map(), signedIn: false,
+  }
 
   const schedule = (delayMs = EVENT_DELAY_MS): void => {
     if (disposed || timer !== undefined) return
@@ -85,8 +94,10 @@ export function apply(ctx: Context): void {
       return
     }
     running = true
+    const refresh = accountChanged
+    accountChanged = false
     try {
-      await sweepCatalog(ctx, state)
+      await sweepCatalog(ctx, state, refresh)
     } catch (error) {
       ctx.logger.warn('mio-plugin-preset: catalog sweep failed: %s', messageOf(error))
     } finally {
@@ -117,7 +128,10 @@ export function apply(ctx: Context): void {
     const offSettings = ctx.on('settings/document-updated', () => { schedule() })
     // A sweep that ran before login has no catalog; retry once the account
     // publishes a stored or refreshed session.
-    const offAccount = ctx.on('mio-account/changed', () => { schedule() })
+    const offAccount = ctx.on('mio-account/changed', () => {
+      accountChanged = true
+      schedule()
+    })
     schedule(STARTUP_DELAY_MS)
     return () => {
       disposed = true
@@ -131,9 +145,17 @@ export function apply(ctx: Context): void {
 }
 
 /** Apply presets and remember installations that must overwrite their target. */
-async function sweepCatalog(ctx: Context, state: SweepState): Promise<void> {
+async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean): Promise<void> {
   const session = await ctx.mioAccount.getState()
-  if (session.status !== 'signed-in') return
+  if (session.status !== 'signed-in') {
+    state.signedIn = false
+    return
+  }
+  // A new sign-in can rotate the model credential without changing its version, so refresh it.
+  if (!state.signedIn) {
+    state.access.clear()
+    state.signedIn = true
+  }
   const [catalog, bundles] = await Promise.all([
     ctx.mioAccount.getPlugins(),
     ctx.pluginManager.listBundles(),
@@ -178,7 +200,7 @@ async function sweepCatalog(ctx: Context, state: SweepState): Promise<void> {
   for (const item of catalog) {
     if (!installed.has(item.packageName)) continue
     try {
-      const result = await applyOne(ctx, item, state.pending.has(item.packageName))
+      const result = await applyOne(ctx, item, state.pending.has(item.packageName), refresh, state.access)
       if (state.pending.has(item.packageName) && result.outcome !== 'retry') {
         const reload = state.reloadPending.delete(item.packageName)
         state.pending.delete(item.packageName)
@@ -211,8 +233,20 @@ async function sweepCatalog(ctx: Context, state: SweepState): Promise<void> {
   if (pendingChanged) await writePending(ctx, state.pending)
 }
 
-/** Apply one catalog entry; installation force ignores existing user channels. */
-async function applyOne(ctx: Context, item: MioPluginCatalogItem, force: boolean): Promise<ApplyResult> {
+/**
+ * Apply one catalog entry; installation force ignores existing user channels,
+ * while an account change refreshes only the managed channel's credentials.
+ * @param ctx - Host context with account and settings services.
+ * @param item - catalog entry carrying the preset.
+ * @param force - installation overwrite of the whole target.
+ * @param refresh - account-change credential refresh for an existing target.
+ * @param accessHistory - model access last written per target.
+ * @returns the attempt's outcome and whether it wrote settings.
+ */
+async function applyOne(
+  ctx: Context, item: MioPluginCatalogItem, force: boolean, refresh: boolean,
+  accessHistory: Map<string, { readonly credentialVersion: number; readonly baseUrl: string }>,
+): Promise<ApplyResult> {
   const preset = readPreset(item.config)
   if (preset === null) return { outcome: 'skipped', applied: false }
   if (PRESET_TARGET_PACKAGES[preset.target] !== item.packageName) {
@@ -221,17 +255,34 @@ async function applyOne(ctx: Context, item: MioPluginCatalogItem, force: boolean
   const descriptor = ctx.settings.describe({ redactSecrets: true })
     .find(row => String(row.ns) === preset.target)
   if (descriptor === undefined) return { outcome: 'retry', applied: false }
-  if (!force && !isEmptyTargetUser(preset.target, descriptor.user)) return { outcome: 'skipped', applied: false }
+  const empty = isEmptyTargetUser(descriptor.user)
+  if (!force && !refresh && !empty) return { outcome: 'skipped', applied: false }
 
   let access: Promise<MioModelAccess> | undefined
+  const readAccess = (): Promise<MioModelAccess> => access ??= ctx.mioAccount.getModelAccess()
   const resolve = async (placeholder: 'MIO_MODEL_BASE_URL' | 'MIO_API_KEY'): Promise<string> => {
-    access ??= ctx.mioAccount.getModelAccess()
-    const value = await access
+    const value = await readAccess()
     return placeholder === 'MIO_MODEL_BASE_URL' ? value.baseUrl : value.apiKey
   }
   const values = await resolvePresetValues(preset.values, resolve)
+
+  if (!force && !empty) {
+    const current = await readAccess()
+    const previous = accessHistory.get(preset.target)
+    if (previous !== undefined && previous.credentialVersion === current.credentialVersion
+      && previous.baseUrl === current.baseUrl) return { outcome: 'skipped', applied: false }
+    accessHistory.set(preset.target, { credentialVersion: current.credentialVersion, baseUrl: current.baseUrl })
+    const patch = refreshPresetUser(preset.values, values, descriptor.user)
+    if (patch === undefined) return { outcome: 'skipped', applied: false }
+    await ctx.settings.update(preset.target, patch, descriptor.revision)
+    ctx.logger.info('mio-plugin-preset: refreshed credentials for %s', preset.target)
+    return { outcome: 'applied', applied: true, target: preset.target }
+  }
+
   if (force) await ctx.settings.replace(preset.target, values, descriptor.revision)
   else await ctx.settings.update(preset.target, values, descriptor.revision)
+  const current = await readAccess()
+  accessHistory.set(preset.target, { credentialVersion: current.credentialVersion, baseUrl: current.baseUrl })
   ctx.logger.info('mio-plugin-preset: applied %s to %s%s', item.packageName, preset.target, force ? ' (install)' : '')
   return { outcome: 'applied', applied: true, target: preset.target }
 }

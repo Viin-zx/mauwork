@@ -22,6 +22,11 @@ export function isPlainObject(value: unknown): value is Record<string, unknown> 
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+/** @param value - candidate JSON value. @returns whether it is an array. */
+function isArray(value: unknown): value is readonly unknown[] {
+  return Array.isArray(value)
+}
+
 /**
  * Read the product preset envelope from a catalog entry's config.
  * @param config - backend config object, or null when unconfigured.
@@ -38,7 +43,7 @@ export function readPreset(config: Record<string, unknown> | null): PresetEnvelo
     throw new Error(`unsupported preset target "${String(target)}"`)
   }
   const policy = config.policy ?? 'empty-only'
-  if (policy !== 'empty-only') throw new Error(`unsupported preset policy "${String(policy)}"`)
+  if (policy !== 'empty-only') throw new Error(`unsupported preset policy "${JSON.stringify(policy)}"`)
   const values = config.values
   if (!isPlainObject(values)) throw new Error('preset values must be a JSON object')
   return { target: target as keyof typeof PRESET_TARGET_PACKAGES, policy: 'empty-only', values }
@@ -46,19 +51,15 @@ export function readPreset(config: Record<string, unknown> | null): PresetEnvelo
 
 /**
  * Whether the target settings have no user-owned connection values.
- * @param target - validated preset target.
  * @param user - the settings service's user layer for that entry.
  * @returns whether the preset may fill the entry.
  */
-export function isEmptyTargetUser(target: PresetEnvelope['target'], user: unknown): boolean {
+export function isEmptyTargetUser(user: unknown): boolean {
   if (!isPlainObject(user)) return true
-  if (target === 'imagegen') {
-    if (Array.isArray(user.channels) && user.channels.length > 0) return false
-    if (isPlainObject(user.channelSecrets) && Object.keys(user.channelSecrets).length > 0) return false
-    if (typeof user.defaultChannelId === 'string' && user.defaultChannelId !== '') return false
-    return true
-  }
-  return Object.keys(user).length === 0
+  if (isArray(user.channels) && user.channels.length > 0) return false
+  if (isPlainObject(user.channelSecrets) && Object.keys(user.channelSecrets).length > 0) return false
+  if (typeof user.defaultChannelId === 'string' && user.defaultChannelId !== '') return false
+  return true
 }
 
 /**
@@ -94,4 +95,74 @@ export async function resolvePresetValues(
     return value
   }
   return await walk(values) as Record<string, unknown>
+}
+
+/** Fields a credential refresh may rewrite inside an existing user layer. */
+export interface PresetRefreshPatch {
+  readonly apiUrl?: string
+  readonly channels?: unknown[]
+  readonly channelSecrets?: Record<string, string>
+}
+
+/**
+ * Rewrite only the preset-managed connection values of an existing user layer.
+ * A channel the user deleted is never recreated, and unrelated channels and
+ * settings stay untouched.
+ * @param values - preset values with placeholders intact.
+ * @param resolved - the same values with account placeholders resolved.
+ * @param user - the target entry's user layer as the settings descriptor reports it.
+ * @returns fields to merge, or undefined when nothing managed changed.
+ */
+export function refreshPresetUser(
+  values: Record<string, unknown>, resolved: Record<string, unknown>, user: unknown,
+): PresetRefreshPatch | undefined {
+  if (!isPlainObject(user)) return undefined
+  const patch: { apiUrl?: string; channels?: unknown[]; channelSecrets?: Record<string, string> } = {}
+
+  if (values.apiUrl === '{{MIO_MODEL_BASE_URL}}' && typeof resolved.apiUrl === 'string'
+    && user.apiUrl !== resolved.apiUrl) {
+    patch.apiUrl = resolved.apiUrl
+  }
+
+  const presetChannels = isArray(values.channels) ? values.channels : []
+  const resolvedChannels = isArray(resolved.channels) ? resolved.channels : []
+  const userChannels = isArray(user.channels) ? user.channels : undefined
+  if (userChannels !== undefined && presetChannels.length > 0) {
+    const next = userChannels.map((item) => {
+      if (!isPlainObject(item) || typeof item.id !== 'string') return item
+      const index = presetChannels.findIndex(candidate => isPlainObject(candidate) && candidate.id === item.id)
+      if (index < 0) return item
+      const template = presetChannels[index]
+      const current = resolvedChannels[index]
+      if (!isPlainObject(template) || !isPlainObject(current)) return item
+      if (template.apiUrl !== '{{MIO_MODEL_BASE_URL}}' || typeof current.apiUrl !== 'string') return item
+      if (item.apiUrl === current.apiUrl) return item
+      return { ...item, apiUrl: current.apiUrl }
+    })
+    if (next.some((item, index) => item !== userChannels[index])) patch.channels = next
+  }
+
+  const presetSecrets = isPlainObject(values.channelSecrets) ? values.channelSecrets : {}
+  const resolvedSecrets = isPlainObject(resolved.channelSecrets) ? resolved.channelSecrets : {}
+  if (userChannels !== undefined && Object.keys(presetSecrets).length > 0) {
+    const secrets: Record<string, string> = {}
+    if (isPlainObject(user.channelSecrets)) {
+      for (const [key, value] of Object.entries(user.channelSecrets)) {
+        if (typeof value === 'string') secrets[key] = value
+      }
+    }
+    const nextSecrets = { ...secrets }
+    for (const [id, placeholder] of Object.entries(presetSecrets)) {
+      if (placeholder !== '{{MIO_API_KEY}}') continue
+      if (!userChannels.some(candidate => isPlainObject(candidate) && candidate.id === id)) continue
+      const value = resolvedSecrets[id]
+      if (typeof value !== 'string') continue
+      nextSecrets[id] = value
+    }
+    if (Object.entries(nextSecrets).some(([key, value]) => secrets[key] !== value)) {
+      patch.channelSecrets = nextSecrets
+    }
+  }
+
+  return Object.keys(patch).length === 0 ? undefined : patch
 }

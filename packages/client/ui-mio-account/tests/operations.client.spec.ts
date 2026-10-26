@@ -18,7 +18,8 @@ function fixture(overrides: Partial<Record<'sendSmsCode' | 'loginWithSms' | 'log
   }
   const ctx = new Context()
   ctx.provide('remote', { mioAccount: namespace } as never)
-  return { operations: createMioAccountOperations(ctx), namespace }
+  const reload = vi.fn()
+  return { operations: createMioAccountOperations(ctx, reload), namespace, reload }
 }
 
 describe('account operations', () => {
@@ -43,6 +44,21 @@ describe('account operations', () => {
     expect(namespace.resetPassword).toHaveBeenCalledExactlyOnceWith(reset)
     expect(namespace.getAgreements).toHaveBeenCalledTimes(1)
     expect(namespace.logout).toHaveBeenCalledTimes(1)
+  })
+
+  it('reloads the renderer only after a successful sign-out', async () => {
+    const signedOut = fixture()
+    await signedOut.operations.logout()
+    expect(signedOut.reload).toHaveBeenCalledTimes(1)
+
+    const failed = fixture({
+      logout: async () => ({
+        ok: false as const,
+        error: new RemoteError('gateway/internal', 'offline', {}),
+      }),
+    })
+    await expect(failed.operations.logout()).rejects.toBeInstanceOf(MioAccountClientError)
+    expect(failed.reload).not.toHaveBeenCalled()
   })
 
   it('keeps the backend error code for branching', async () => {

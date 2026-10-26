@@ -35,12 +35,12 @@ describe('catalog preset envelope', () => {
   })
 
   it('treats only user-owned channels as configured', () => {
-    expect(isEmptyTargetUser('imagegen', undefined)).toBe(true)
-    expect(isEmptyTargetUser('imagegen', {})).toBe(true)
-    expect(isEmptyTargetUser('imagegen', { enabled: false, channels: [] })).toBe(true)
-    expect(isEmptyTargetUser('imagegen', { channels: [{ id: 'mine' }] })).toBe(false)
-    expect(isEmptyTargetUser('imagegen', { channelSecrets: { mine: '{{MIO_API_KEY}}' } })).toBe(false)
-    expect(isEmptyTargetUser('imagegen', { defaultChannelId: 'mine' })).toBe(false)
+    expect(isEmptyTargetUser(undefined)).toBe(true)
+    expect(isEmptyTargetUser({})).toBe(true)
+    expect(isEmptyTargetUser({ enabled: false, channels: [] })).toBe(true)
+    expect(isEmptyTargetUser({ channels: [{ id: 'mine' }] })).toBe(false)
+    expect(isEmptyTargetUser({ channelSecrets: { mine: '{{MIO_API_KEY}}' } })).toBe(false)
+    expect(isEmptyTargetUser({ defaultChannelId: 'mine' })).toBe(false)
   })
 })
 
