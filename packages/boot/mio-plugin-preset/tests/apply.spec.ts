@@ -313,6 +313,86 @@ describe('default plugin installation', () => {
     }
   })
 
+  it('re-applies the preset when a plugin is uninstalled and reinstalled', async () => {
+    const { ctx, settings, manager } = fixture({ user: { channels: [{ id: 'mine' }] } })
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+    // Startup: user has channels, so no overwrite.
+    expect(settings.replace).not.toHaveBeenCalled()
+    expect(settings.update).not.toHaveBeenCalled()
+
+    // Simulate uninstall: plugin disappears from the bundle list.
+    manager.listBundles.mockResolvedValue([] as never)
+    ctx.emit('plugin-manager/changed', { reason: 'bundle' })
+    await vi.advanceTimersByTimeAsync(600)
+
+    // Simulate reinstall: plugin reappears as newly installed.
+    manager.listBundles.mockResolvedValue([{ name: PACKAGE, installed: true, enabled: true }] as never)
+    ctx.emit('plugin-manager/changed', { reason: 'install' })
+    await vi.advanceTimersByTimeAsync(600)
+
+    // The reinstall must force-apply the preset, overwriting user channels.
+    expect(settings.replace).toHaveBeenCalledExactlyOnceWith('imagegen', {
+      channelSecrets: { mio: 'sk-test' },
+      apiUrl: 'https://models.test/v1',
+    }, 4)
+  })
+
+  it('re-applies the preset across process restarts after uninstall and reinstall', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'mio-preset-'))
+    try {
+      // First process: install the plugin, then uninstall it.
+      const first = fixture({ home, installed: false })
+      await first.ctx.plugin(presetPlugin)
+      // Run all pending timers and async operations to ensure the first sweep completes.
+      await vi.runAllTimersAsync()
+
+      // Simulate installation.
+      first.manager.listBundles.mockResolvedValue([{ name: PACKAGE, installed: true, enabled: true }] as never)
+      first.ctx.emit('plugin-manager/changed', { reason: 'install' })
+      // Wait for the sweep to complete and call settings.replace.
+      await vi.waitFor(() => {
+        expect(first.settings.replace).toHaveBeenCalledTimes(1)
+      }, { timeout: 2_000 })
+
+      // Verify the applied marker was persisted.
+      const appliedPath = join(home, 'storages', 'mio-plugin-preset', 'desktop.applied.json')
+      await vi.waitFor(async () => {
+        const marker: unknown = JSON.parse(await readFile(appliedPath, 'utf8'))
+        expect(marker).toEqual(expect.arrayContaining([PACKAGE]))
+      })
+
+      // Simulate uninstall: the applied marker is cleared.
+      first.manager.listBundles.mockResolvedValue([] as never)
+      first.ctx.emit('plugin-manager/changed', { reason: 'bundle' })
+      await vi.advanceTimersByTimeAsync(600)
+
+      // Verify the applied marker was cleared on disk.
+      await vi.waitFor(async () => {
+        const marker: unknown = JSON.parse(await readFile(appliedPath, 'utf8'))
+        expect(marker).not.toContain(PACKAGE)
+      })
+
+      // Second process: plugin is reinstalled. The applied marker on disk is empty,
+      // so the reinstall is treated as new and force-applies the preset.
+      const second = fixture({ home, installed: false })
+      await second.ctx.plugin(presetPlugin)
+      await vi.runAllTimersAsync()
+
+      second.manager.listBundles.mockResolvedValue([{ name: PACKAGE, installed: true, enabled: true }] as never)
+      second.ctx.emit('plugin-manager/changed', { reason: 'install' })
+      await vi.waitFor(() => {
+        expect(second.settings.replace).toHaveBeenCalledTimes(1)
+      }, { timeout: 2_000 })
+      expect(second.settings.replace).toHaveBeenCalledExactlyOnceWith('imagegen', {
+        channelSecrets: { mio: 'sk-test' },
+        apiUrl: 'https://models.test/v1',
+      }, 4)
+    } finally {
+      await rm(home, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 })
+    }
+  })
+
   it('retries a failed default only after a new sign-in', async () => {
     const { ctx, manager } = fixture({ defaultsInstalled: false })
     manager.installBundle.mockRejectedValue(new Error('offline'))

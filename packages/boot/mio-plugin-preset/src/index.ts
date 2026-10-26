@@ -34,6 +34,8 @@ const PENDING_DIRECTORY = 'mio-plugin-preset'
 const PENDING_FILE = 'pending.json'
 /** Marker naming default packages already handled for this profile. */
 const DEFAULTS_FILE = 'defaults.json'
+/** Packages whose preset has been applied; a reinstall after uninstall re-applies. */
+const APPLIED_FILE = 'applied.json'
 /** Last non-secret application failure, kept beside the pending marker for diagnosis. */
 const DIAGNOSTIC_FILE = 'last-error.json'
 /** Retries after an install while the plugin's settings entry is still activating. */
@@ -70,6 +72,8 @@ interface SweepState {
   defaultsLoaded: boolean
   /** Defaults that failed in this process; the next sign-in or process start retries them. */
   defaultTried: Set<string>
+  /** Packages whose preset has been applied; a reinstall after uninstall re-triggers force. */
+  applied: Set<string>
 }
 
 /** What one catalog entry did, for deciding whether a pending marker can go. */
@@ -94,7 +98,7 @@ export function apply(ctx: Context): void {
   let accountChanged = false
   const state: SweepState = {
     known: undefined, pending: new Set(), reloadPending: new Set(), access: new Map(), signedIn: false,
-    defaults: new Set(), defaultsLoaded: false, defaultTried: new Set(),
+    defaults: new Set(), defaultsLoaded: false, defaultTried: new Set(), applied: new Set(),
   }
 
   const schedule = (delayMs = EVENT_DELAY_MS): void => {
@@ -186,10 +190,12 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean): 
   const bundles = await ctx.pluginManager.listBundles()
   const installed = new Set(bundles.filter(bundle => bundle.installed).map(bundle => bundle.name))
   let pendingChanged = false
+  let appliedChanged = false
 
   if (state.known === undefined) {
     state.known = new Set(installed)
     state.pending = await readPending(ctx)
+    state.applied = await readApplied(ctx)
     // A marker loaded from disk belongs to the previous process; its write
     // happens before any settings page can be open, so it needs no reload.
     state.reloadPending = new Set()
@@ -199,9 +205,17 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean): 
         pendingChanged = true
       }
     }
+    // A package the previous process uninstalled left a stale applied marker;
+    // clear it so a later reinstall re-triggers the force write.
+    for (const name of [...state.applied]) {
+      if (!installed.has(name)) {
+        state.applied.delete(name)
+        appliedChanged = true
+      }
+    }
   } else {
     for (const name of installed) {
-      if (!state.known.has(name) && !state.pending.has(name)) {
+      if (!state.known.has(name) && !state.pending.has(name) && !state.applied.has(name)) {
         state.pending.add(name)
         state.reloadPending.add(name)
         pendingChanged = true
@@ -212,6 +226,12 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean): 
         state.pending.delete(name)
         state.reloadPending.delete(name)
         pendingChanged = true
+      }
+    }
+    for (const name of [...state.applied]) {
+      if (!installed.has(name) && !state.pending.has(name)) {
+        state.applied.delete(name)
+        appliedChanged = true
       }
     }
     state.known = new Set(installed)
@@ -238,6 +258,12 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean): 
     if (!installed.has(item.packageName)) continue
     try {
       const result = await applyOne(ctx, item, state.pending.has(item.packageName), refresh, state.access)
+      if (result.outcome !== 'retry') {
+        if (!state.applied.has(item.packageName)) {
+          state.applied.add(item.packageName)
+          appliedChanged = true
+        }
+      }
       if (state.pending.has(item.packageName) && result.outcome !== 'retry') {
         const reload = state.reloadPending.delete(item.packageName)
         state.pending.delete(item.packageName)
@@ -267,7 +293,12 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean): 
       pendingChanged = true
     }
   }
-  if (pendingChanged) await writePending(ctx, state.pending)
+  if (pendingChanged) {
+    await writePending(ctx, state.pending)
+  }
+  if (appliedChanged) {
+    await writeApplied(ctx, state.applied)
+  }
 }
 
 /** One defaults pass: packages installed here and whether a reload can load them. */
@@ -438,6 +469,33 @@ async function writePending(ctx: Context, pending: ReadonlySet<string>): Promise
   }
 }
 
+/** @returns package names whose preset has been applied. */
+async function readApplied(ctx: Context): Promise<Set<string>> {
+  const profile = profileOf(ctx)
+  if (profile === undefined) return new Set()
+  try {
+    const raw: unknown = JSON.parse(await readFile(appliedPath(profile), 'utf8'))
+    return new Set(Array.isArray(raw) ? raw.filter((value): value is string => typeof value === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+/** Persist the applied set so a reinstall after process restart still re-triggers force. */
+async function writeApplied(ctx: Context, applied: ReadonlySet<string>): Promise<void> {
+  const profile = profileOf(ctx)
+  if (profile === undefined) return
+  try {
+    const path = appliedPath(profile)
+    await mkdir(join(profile.home, 'storages', PENDING_DIRECTORY), { recursive: true })
+    const temporary = `${path}.tmp`
+    await writeFile(temporary, JSON.stringify([...applied]), 'utf8')
+    await rename(temporary, path)
+  } catch (error) {
+    ctx.logger.warn('mio-plugin-preset: could not persist applied installs: %s', messageOf(error))
+  }
+}
+
 /** Record a non-secret failure beside the pending marker for local diagnosis. */
 async function writeDiagnostic(ctx: Context, packageName: string, message: string): Promise<void> {
   const profile = profileOf(ctx)
@@ -458,6 +516,11 @@ async function writeDiagnostic(ctx: Context, packageName: string, message: strin
 /** @returns the profile-local pending marker path. */
 function pendingPath(profile: ProfileLike): string {
   return join(profile.home, 'storages', PENDING_DIRECTORY, `${profile.name}.${PENDING_FILE}`)
+}
+
+/** @returns the profile-local applied marker path. */
+function appliedPath(profile: ProfileLike): string {
+  return join(profile.home, 'storages', PENDING_DIRECTORY, `${profile.name}.${APPLIED_FILE}`)
 }
 
 /** @returns the profile-local handled-defaults marker path. */
