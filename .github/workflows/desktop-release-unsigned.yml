@@ -238,9 +238,9 @@ jobs:
           OSS_BUCKET: ${{ vars.OSS_BUCKET || 'mauwork-releases' }}
           OSS_REGION: ${{ vars.OSS_REGION || 'cn-hangzhou' }}
           OSS_ENDPOINT: ${{ vars.OSS_ENDPOINT }}
+          DOWNLOAD_ORIGIN: ${{ vars.MAUWORK_DOWNLOAD_ORIGIN || 'https://mauwork-releases.oss-cn-hangzhou.aliyuncs.com' }}
           FEED_PREFIX: dsh-desk/${{ env.FEED_RELEASE_ID }}/feeds/win-x64
           WEBSITE_PREFIX: updates
-          BUILD_VERSION: ${{ needs.version.outputs.build }}
           RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
         run: |
           if [ -z "$OSS_ACCESS_KEY_ID" ] || [ -z "$OSS_ACCESS_KEY_SECRET" ]; then
@@ -251,7 +251,6 @@ jobs:
           python3 - <<'PY'
           import json
           import os
-          from datetime import datetime, timezone
           from pathlib import Path
 
           import boto3
@@ -264,7 +263,7 @@ jobs:
           region = os.environ.get('OSS_REGION', '').strip() or 'cn-hangzhou'
           feed_prefix = os.environ['FEED_PREFIX'].strip()
           website_prefix = os.environ['WEBSITE_PREFIX'].strip()
-          version = os.environ['BUILD_VERSION'].strip()
+          origin = os.environ['DOWNLOAD_ORIGIN'].strip().rstrip('/')
           tag = os.environ['RELEASE_TAG'].strip()
 
           s3 = boto3.client(
@@ -332,13 +331,17 @@ jobs:
               upload(path, f'{website_prefix}/{path.name}')
 
           manifest = {
-              'version': version,
               'tag': tag,
-              'publishedAt': datetime.now(timezone.utc).isoformat(timespec='seconds').replace('+00:00', 'Z'),
+              'unsigned': True,
+              'files': {
+                  'windows-x64': f'{origin}/{website_prefix}/{installer.name}',
+                  'mac-arm64': f'{origin}/{website_prefix}/{dmg_arm64.name}',
+                  'mac-x64': f'{origin}/{website_prefix}/{dmg_x64.name}',
+              },
           }
           upload_bytes((json.dumps(manifest, ensure_ascii=False, indent=2) + '\n').encode(),
                        f'{website_prefix}/latest.json', 'application/json')
-          print(f'published {version} ({tag}) to {website_prefix}', flush=True)
+          print(f'published {tag} to {website_prefix}', flush=True)
           PY
 
   release:
