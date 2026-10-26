@@ -68,7 +68,7 @@ const MIRROR_OPTION = `${en.registryNpmmirror} registry.npmmirror.com`
 const IDLE_INSTALL: InstallState = {
   open: false, spec: '', registries: null, registry: { kind: 'offered', registry: null }, registryOpen: false, registryError: false, attempts: null,
   phase: 'idle', inputError: null, subject: null, runs: [], detailsOpen: false,
-  installed: null, installedVersion: null, restartRequired: false, failure: null, approvedBuilds: [], enabling: false,
+  installed: null, installedVersion: null, restartRequired: false, failure: null, approvedBuilds: [],
 }
 
 const READY: PluginManagerState = {
@@ -125,7 +125,6 @@ function renderTab(
     changeRegistry: vi.fn(),
     useGithubMirror: vi.fn(),
     approveBuildsAndRetry: vi.fn(),
-    enableInstalled: vi.fn(),
     clearHighlight: vi.fn(),
     setEnabled: vi.fn(),
     uninstall: vi.fn(),
@@ -1637,7 +1636,7 @@ describe('PluginManagerPage', () => {
     expect(screen.getByRole('button', { name: en.installCancel })).toHaveProperty('disabled', false)
   })
 
-  it('offers to enable what a finished install added, and says when it waits for a restart', () => {
+  it('closes a finished install and says when it waits for a restart', () => {
     const subject = { spec: '/plugins/dsh-x', status: 'accepted', kind: 'path', name: 'dsh-x', bundle: true, registry: null } as const
     const { actions, set } = renderTab({
       install: {
@@ -1656,20 +1655,17 @@ describe('PluginManagerPage', () => {
     expect(screen.getByText('dsh-x')).toBeTruthy()
     expect(screen.getByText(en.installSubjectPath)).toBeTruthy()
     expect(screen.queryByText(en.installDoneRestart)).toBeNull()
-    // No way back to the spec from here; enabling is the one action.
+    // No way back to the spec from here; closing is the one action.
     expect(screen.queryByRole('button', { name: en.installEditAria })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: en.installEnableNow }))
-    expect(actions.enableInstalled).toHaveBeenCalledTimes(1)
-    set({ install: { ...IDLE_INSTALL, open: true, spec: '/plugins/dsh-x', phase: 'done', subject, installed: 'dsh-x', restartRequired: true, restartReason: 'host-module', enabling: true } })
-    expect(screen.getByRole('button', { name: en.installEnableNow })).toHaveProperty('disabled', true)
+    fireEvent.click(screen.getByRole('button', { name: en.installClose }))
+    expect(actions.closeInstall).toHaveBeenCalledTimes(1)
+    set({ install: { ...IDLE_INSTALL, open: true, spec: '/plugins/dsh-x', phase: 'done', subject, installed: 'dsh-x', restartRequired: true, restartReason: 'host-module' } })
     expect(screen.getByText(en.installDoneRestart.replace('{reason}', en.restartReasonHostModule))).toBeTruthy()
 
     // A run that named no bundle leaves only Done.
     set({ install: { ...IDLE_INSTALL, open: true, spec: 'dsh-x', phase: 'done', subject: { spec: 'dsh-x', status: 'accepted', kind: 'registry', name: 'dsh-x', bundle: true, registry: null } } })
     expect(screen.getByText(en.installDoneNothing)).toBeTruthy()
-    expect(screen.queryByRole('button', { name: en.installEnableNow })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: en.installClose }))
-    expect(actions.closeInstall).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('button', { name: en.installClose })).toBeTruthy()
   })
 
   it('asks to allow the scripts a blocked install left pending, retries with them, and says what was allowed', () => {

@@ -4529,6 +4529,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'change', description: 'package, target entry, and whether this Host process detected the installation.' }],
   },
   {
+    name: 'mio-plugin-preset/defaults-installed',
+    mode: 'emit',
+    signature: '\'mio-plugin-preset/defaults-installed\'(change: MioPluginDefaultsInstalled): void',
+    summary: 'The catalog defaults installed packages for this profile.',
+    description: 'The catalog defaults installed packages for this profile.',
+    parameters: [{ name: 'change', description: 'installed packages and whether the renderer can load them now.' }],
+  },
+  {
     name: 'permission-presets/catalog-changed',
     mode: 'emit',
     signature: '\'permission-presets/catalog-changed\'(): void',
@@ -6415,6 +6423,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'MioPluginCatalogItem',
     declaration: 'export interface MioPluginCatalogItem {\n    readonly pluginId: string;\n    readonly pluginName: string;\n    readonly packageName: string;\n    readonly category: string;\n    readonly description: string;\n    readonly config: Record<string, unknown> | null;\n}',
+  },
+  {
+    name: 'MioPluginDefaultsInstalled',
+    declaration: 'export interface MioPluginDefaultsInstalled {\n    readonly packages: readonly string[];\n    readonly reload: boolean;\n}',
   },
   {
     name: 'MioPluginPresetApplied',

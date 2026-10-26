@@ -255,8 +255,6 @@ export interface InstallState {
   } | null
   /** The packages whose install scripts the finished run was allowed to execute, saved for this profile. */
   readonly approvedBuilds: readonly string[]
-  /** Enabling the newly installed bundle from the installed screen is crossing the wire. */
-  readonly enabling: boolean
 }
 
 /**
@@ -368,8 +366,6 @@ export interface PluginManagerFace {
   /** Ask the Host for the result of an installation whose original reply was lost. */
   reconcileInstall: () => void
   toggleInstallDetails: () => void
-  /** Enable the bundle the finished install added, then close the dialog and mark it in the list. */
-  enableInstalled: () => void
   /** Drop the list mark once it has been shown. */
   clearHighlight: () => void
   /** Put a bundle into, or take it out of, the profile's layer list. */
@@ -490,7 +486,7 @@ export function sortPackages(packages: readonly PackageView[]): PackageView[] {
 const IDLE_INSTALL: InstallState = {
   open: false, spec: '', registries: null, registry: OFFICIAL_REGISTRY, registryOpen: false, registryError: false, attempts: null,
   phase: 'idle', inputError: null, subject: null, runs: [], detailsOpen: false,
-  installed: null, installedVersion: null, restartRequired: false, failure: null, approvedBuilds: [], enabling: false,
+  installed: null, installedVersion: null, restartRequired: false, failure: null, approvedBuilds: [],
 }
 
 /** The dialog back at its spec: the run and its outcome forgotten, the spec and the registries kept. */
@@ -672,7 +668,6 @@ export class PluginManagerController {
       cancelInstall: () => { void this.cancelInstall() },
       reconcileInstall: () => { void this.reconcileInstall() },
       toggleInstallDetails: () => { this.patchInstall({ detailsOpen: !this.getSnapshot().install.detailsOpen }) },
-      enableInstalled: () => { void this.enableInstalled() },
       clearHighlight: () => { if (this.getSnapshot().highlight !== null) this.patch({ highlight: null }) },
       setEnabled: (packageName, enabled) => {
         const pkg = this.getSnapshot().packages.find(pkg => pkg.name === packageName)
@@ -1035,7 +1030,10 @@ export class PluginManagerController {
     // the wire, and every such event reads again; those reads must not cancel
     // the run's settlement.
     const result = await this.ctx.remote.pluginManager.installBundle(spec, {
-      enabled: subject.selection ?? false, requestId, registry,
+      requestId, registry,
+      // The Host enables an installation by default; only a catalog operation
+      // that preserves an existing switched-off state names it explicitly.
+      ...subject.selection === undefined ? {} : { enabled: subject.selection },
       ...subject.saveExact === undefined ? {} : { saveExact: subject.saveExact },
       ...approvedBuilds === undefined ? {} : { approvedBuilds: [...approvedBuilds] },
     })
@@ -1203,30 +1201,6 @@ export class PluginManagerController {
   private offerSpecAgain(notice: ManagerNotice | null = null): void {
     this.request = undefined
     this.patch({ install: specAgain(this.getSnapshot().install), ...notice === null ? {} : { notice } })
-  }
-
-  /**
-   * Enable the bundle the finished install added, then close the dialog and
-   * mark it in the list. A refusal toasts and still closes: the list shows
-   * what did not switch on.
-   */
-  private async enableInstalled(): Promise<void> {
-    const install = this.getSnapshot().install
-    if (install.phase !== 'done' || install.enabling) return
-    const name = install.installed
-    this.patchInstall({ enabling: true })
-    if (name !== null) {
-      const result = await this.ctx.remote.pluginManager.setBundleEnabled(name, true)
-      if (this.disposed) return
-      try {
-        this.applied(result, name)
-        if (result.ok && (result.value.application === 'applied' || result.value.application === 'restart-required')) this.trackToggle(name, true)
-      } catch (error) {
-        this.patch({ notice: failedNotice(error, { packageName: name, action: 'enable' }, ++this.noticeSeq) })
-      }
-    }
-    this.patch({ install: IDLE_INSTALL, highlight: name })
-    await this.load()
   }
 
   /**

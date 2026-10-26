@@ -45,6 +45,11 @@ export function apply(ctx: ClientContext): void {
         // install so it opens against the newly written catalog preset.
         if (change.reload) globalThis.location.reload()
       }),
+      ctx.remote.$on('mio-plugin-preset/defaults-installed', (change) => {
+        // Default packages install after the first sign-in; the running page
+        // never loaded their client bundles.
+        if (change.reload) globalThis.location.reload()
+      }),
       ctx.on('connection/reset', () => { controller.reset() }),
     ]
     return () => { for (const dispose of disposers) dispose() }

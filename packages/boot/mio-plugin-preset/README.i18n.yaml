@@ -3,17 +3,17 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/boot/mio-plugin-preset/README.md
 /:
-  en: e0301d4cec907b87
-  zh: 252ae5849d404a33
+  en: bffed0db5fdafc4b
+  zh: ebf2e61f4afb75ca
 /deepseek-ai-dsh-mio-plugin-preset:
   en: 963c8abe785393dd
   zh: b36033d5de2f266a
 /deepseek-ai-dsh-mio-plugin-preset/summary:
-  en: de522cc94906e608
-  zh: 8045fc91f3346d79
+  en: 0156f9a720649171
+  zh: 58ab301170e1c6a8
 /deepseek-ai-dsh-mio-plugin-preset/use-this-package:
-  en: f45d21caaca805c4
-  zh: 5155db5942051316
+  en: fc856482475de669
+  zh: c71ff682b2ebc88d
 /deepseek-ai-dsh-mio-plugin-preset/model-experience:
   en: 215e7ba838619b7b
   zh: a311da3843709f90

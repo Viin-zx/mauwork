@@ -914,6 +914,7 @@ export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   ApprovalRequestId: 'dynamic Plugin approval identity is owned by packages/extensions/cordis-host-runner/src/types.ts',
   CordisErrorDetails: 'Cordis runtime error payload is owned by packages/extensions/cordis-host-runner/src/types.ts',
   MioPluginPresetApplied: 'catalog preset event contract is owned by packages/boot/mio-plugin-preset/README.md',
+  MioPluginDefaultsInstalled: 'catalog defaults event contract is owned by packages/boot/mio-plugin-preset/README.md',
   MioPluginCatalogItem: 'raw catalog preset payload is owned by packages/credentials/mio-account/README.md',
   CordisInspectPlatform: 'Cordis inspect platform identity is owned by packages/extensions/cordis-host-runner/src/types.ts',
   CordisInspectProviderManifest: 'Cordis inspect provider manifest is owned by packages/extensions/cordis-host-runner/src/types.ts',

@@ -655,7 +655,7 @@ describe('PluginManagerController', () => {
     const requestId = await started()
     expect(state().install.subject).toEqual({ spec: 'dsh-new', ...INSPECTED })
     expect(plugins.installBundle).toHaveBeenCalledTimes(1)
-    expect(plugins.installBundle).toHaveBeenCalledWith('dsh-new', { enabled: false, requestId, registry: null })
+    expect(plugins.installBundle).toHaveBeenCalledWith('dsh-new', { requestId, registry: null })
     // The Host's acknowledgement makes the run stoppable; a chunk of another request is not this run's.
     controller.installProgress({ requestId, phase: 'installing' })
     expect(state().install.phase).toBe('running')
@@ -1098,58 +1098,6 @@ describe('PluginManagerController', () => {
     expect(state().notice).toBeNull()
   })
 
-  it('enables what a finished install added from its screen, closes, and marks it in the list', async () => {
-    const { plugins, face, state, controller } = bench({
-      installBundle: vi.fn()
-        .mockResolvedValueOnce(ok({ ...APPLIED, bundle: 'dsh-a' }))
-        .mockResolvedValueOnce(ok({ ...APPLIED, bundle: 'dsh-a' }))
-        .mockResolvedValueOnce(ok({ ...APPLIED, application: 'overridden' })),
-      setBundleEnabled: vi.fn()
-        .mockResolvedValueOnce(ok({ ...APPLIED, application: 'restart-required' }))
-        .mockResolvedValueOnce(ok(failed({ code: 'operation-error', diagnostic: 'the tree rejected it' }))),
-    })
-    await controller.load()
-    face.enableInstalled()
-    expect(plugins.setBundleEnabled).not.toHaveBeenCalled()
-    face.openInstall()
-    face.editInstallSpec('dsh-a')
-    face.runInstall()
-    await vi.waitFor(() => { expect(state().install.phase).toBe('done') })
-    face.enableInstalled()
-    face.enableInstalled()
-    expect(state().install.enabling).toBe(true)
-    await vi.waitFor(() => { expect(state().install.open).toBe(false) })
-    expect(plugins.setBundleEnabled).toHaveBeenCalledExactlyOnceWith('dsh-a', true)
-    // A restart it waits for is said in passing; the list marks it.
-    expect(state().notice).toEqual({ kind: 'restart', packageName: 'dsh-a', seq: 1 })
-    expect(state().highlight).toBe('dsh-a')
-    face.clearHighlight()
-    face.clearHighlight()
-    expect(state().highlight).toBeNull()
-
-    // A refusal toasts it and still closes.
-    face.openInstall()
-    face.editInstallSpec('dsh-a')
-    face.runInstall()
-    await vi.waitFor(() => { expect(state().install.phase).toBe('done') })
-    face.enableInstalled()
-    await vi.waitFor(() => { expect(state().install.open).toBe(false) })
-    expect(plugins.setBundleEnabled).toHaveBeenCalledTimes(2)
-    expect(state().notice).toEqual({ kind: 'failed', action: 'enable', code: 'operation-error', reason: 'the tree rejected it', packageName: 'dsh-a', seq: 2 })
-    expect(state().highlight).toBe('dsh-a')
-
-    // An install that named no bundle has nothing to enable or mark: the screen just closes.
-    face.openInstall()
-    face.editInstallSpec('lib')
-    face.runInstall()
-    await vi.waitFor(() => { expect(state().install.phase).toBe('done') })
-    expect(state().install.installed).toBeNull()
-    face.enableInstalled()
-    await vi.waitFor(() => { expect(state().install.open).toBe(false) })
-    expect(plugins.setBundleEnabled).toHaveBeenCalledTimes(2)
-    expect(state().highlight).toBeNull()
-  })
-
   it.each([true, false])('offers the scripts a blocked run left pending, and retries with analytics enabled=%s', async (enabled) => {
     const gates: ReturnType<typeof deferred<Awaited<ReturnType<typeof ok<ChangeResult>> | ReturnType<typeof refused>>>>[] = []
     const { face, state, controller, plugins, started } = bench({
@@ -1177,31 +1125,12 @@ describe('PluginManagerController', () => {
     face.approveBuildsAndRetry()
     const second = await started()
     expect(second).not.toBe(first)
-    expect(plugins.installBundle).toHaveBeenLastCalledWith('x', { enabled: false, requestId: second, registry: null, approvedBuilds: ['native'] })
+    expect(plugins.installBundle).toHaveBeenLastCalledWith('x', { requestId: second, registry: null, approvedBuilds: ['native'] })
     expect(state().install).toMatchObject({ subject: { spec: 'x', name: 'dsh-better-sidebar' }, failure: null })
     gates[1]!.resolve(ok({ ...APPLIED, bundle: 'dsh-better-sidebar', approvedBuilds: ['native'] }))
     await vi.waitFor(() => { expect(state().install.phase).toBe('done') })
     expect(state().install).toMatchObject({ installed: 'dsh-better-sidebar', approvedBuilds: ['native'] })
     expect(plugins.installBundle).toHaveBeenCalledTimes(2)
-  })
-
-  it('drops an enable from the installed screen that settles after disposal', async () => {
-    const enableGate = deferred<ReturnType<typeof ok<ChangeResult>>>()
-    const { plugins, face, state, controller } = bench({ setBundleEnabled: vi.fn().mockReturnValueOnce(enableGate.promise) })
-    await controller.load()
-    face.openInstall()
-    face.editInstallSpec('dsh-a')
-    face.runInstall()
-    await vi.waitFor(() => { expect(state().install.phase).toBe('done') })
-    face.enableInstalled()
-    expect(plugins.setBundleEnabled).toHaveBeenCalledWith('dsh-new', true)
-    const before = state()
-    controller.dispose()
-    enableGate.resolve(ok(APPLIED))
-    await Promise.resolve()
-    await Promise.resolve()
-    await Promise.resolve()
-    expect(state()).toBe(before)
   })
 
   it('settles an install while reads run beside it', async () => {
@@ -1413,7 +1342,7 @@ describe('PluginManagerController', () => {
     const requestId = await started()
     // The run starts at the registry that answered the check.
     expect(state().install.subject).toMatchObject({ registry: MIRROR })
-    expect(plugins.installBundle).toHaveBeenCalledWith('dsh-new', { enabled: false, requestId, registry: MIRROR })
+    expect(plugins.installBundle).toHaveBeenCalledWith('dsh-new', { requestId, registry: MIRROR })
     // The Host names each registry it asks; the dialog keeps their order and how many there may be.
     controller.installProgress({ requestId, phase: 'installing', attempt: { registry: MIRROR, index: 1, total: 2 } })
     controller.installProgress({ requestId, phase: 'installing', attempt: { registry: null, index: 2, total: 2 } })
@@ -1865,7 +1794,10 @@ const CATALOG: BundleInfo = {
 }
 
 it('installs an absent Official entry directly at the host target and enables it through the normal installer', async () => {
-  const { controller, plugins, face, state } = bench({ listBundles: vi.fn().mockResolvedValue(ok([CATALOG])) })
+  const { controller, plugins, face, state } = bench({
+    listBundles: vi.fn().mockResolvedValue(ok([CATALOG])),
+    installBundle: vi.fn().mockResolvedValue(ok({ ...APPLIED, bundle: CATALOG.name })),
+  })
   await controller.load()
   face.setEnabled(CATALOG.name, true)
   await vi.waitFor(() => { expect(plugins.installBundle).toHaveBeenCalledOnce() })
@@ -1874,6 +1806,11 @@ it('installs an absent Official entry directly at the host target and enables it
     enabled: true, saveExact: true, requestId: state().install.requestId, registry: null,
   })
   expect(state().install.subject).toMatchObject({ selection: true, saveExact: true, version: '2.0.0' })
+  // The selected installation marks its card so the list can show what appeared.
+  await vi.waitFor(() => { expect(state().install.phase).toBe('done') })
+  expect(state().highlight).toBe(CATALOG.name)
+  face.clearHighlight()
+  expect(state().highlight).toBeNull()
 })
 
 it.each(['before', 'after'] as const)('reports one Official toggle when inventory refresh finishes %s installation', async (order) => {

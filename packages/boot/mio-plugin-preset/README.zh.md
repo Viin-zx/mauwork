@@ -1,5 +1,5 @@
 ---
-description: "把 mioagent 插件目录中的预设写入尚未被用户配置的插件设置。"
+description: "把 mioagent 插件目录中的预设写入插件设置，并为每个 profile 安装一次目录默认插件。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`mio-plugin-preset` 监听安装和设置变化，通过 `mioAccount` 读取已启用插件目录，并写入该条目的预设。被发现为新安装的包始终套用目录预设，覆盖已有的用户渠道；启动和后续设置事件只为没有用户配置渠道的目标填充，而重新登录或模型凭据变化时只刷新预设管理的渠道密钥和 base URL。目录的 `config` 使用产品约定的 envelope，包含目标和值；Host 在写入前解析账号占位符，因此渲染进程永远拿不到原始预设。profile 本地的标记会把强制意图保留到需要重启的安装之后。目标设置项不存在、插件未启用或占位符无法解析时，预设留待下次扫描，不会导致安装失败。
+`mio-plugin-preset` 监听安装和设置变化，通过 `mioAccount` 读取已启用插件目录，并写入该条目的预设。被发现为新安装的包始终套用目录预设，覆盖已有的用户渠道；启动和后续设置事件只为没有用户配置渠道的目标填充，而重新登录或模型凭据变化时只刷新预设管理的渠道密钥和 base URL。目录的 `config` 使用产品约定的 envelope，包含目标和值；Host 在写入前解析账号占位符，因此渲染进程永远拿不到原始预设。profile 本地的标记会把强制意图保留到需要重启的安装之后。它还会为每个 profile 安装一次目录默认插件。目标设置项不存在、插件未启用或占位符无法解析时，预设留待下次扫描，不会导致安装失败。
 
 ## 使用此包
 
@@ -21,6 +21,8 @@ kind: "package-reference"
 ```
 
 插件注入 `mioAccount`、`settings` 和 `pluginManager`。它在启动后不久、`plugin-manager/changed` 的 `install` 或 `bundle` 事件后，以及设置文档更新后各扫描一次。每次扫描都会跳过未登录账号、包未安装的目录条目、没有预设的条目，以及已经带有用户渠道、渠道密钥或默认渠道的 imagegen 设置项。由 `mio-account/changed` 触发的扫描会刷新已配置目标的受管渠道：只把解析后的 base URL 和 API key 合并进该渠道，用户已删除的渠道不会重建。新出现的包会用 `settings.replace` 强制覆盖；待应用标记在写入前保存，因此需要重启的安装也会在下次启动时强制覆盖。待应用安装会每秒重试一次，最多 20 秒，等待其设置项激活；非敏感失败记录在标记旁的 `last-error.json`。进程内强制安装写入完成且标记清除后，Host 发送 `mio-plugin-preset/applied`，插件市场据此重载一次渲染进程，使插件设置页按新配置重新挂载；启动时加载标记的应用不会触发重载。
+
+同一次扫描还会为从未处理过默认插件的 profile 安装 `DEFAULT_INSTALL_PACKAGES`（`dsh-skill-mcp-panel` 与 `@wxg-prc-cpg/browser-skill-dsh-plugin`）。已经存在的包会记为已处理，之后即使被卸载也不会再装回。安装失败不会记录，下一次登录或进程启动时重试，避免被自身的变更事件触发成循环。一次安装了包默认插件后会发送 `mio-plugin-preset/defaults-installed`，插件市场据此重载渲染进程，加载新的客户端 bundle。
 
 目录的 `config` 使用以下 envelope 时才会被当作预设：
 

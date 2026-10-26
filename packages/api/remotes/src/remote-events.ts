@@ -51,6 +51,7 @@ export const API_REMOTE_FORWARDED_EVENTS = [
   { event: 'plugin-manager/install-state', mode: 'emit' },
   { event: 'plugin-market/changed', mode: 'emit' },
   { event: 'mio-plugin-preset/applied', mode: 'emit' },
+  { event: 'mio-plugin-preset/defaults-installed', mode: 'emit' },
   { event: 'settings/document-updated', mode: 'emit' },
   { event: 'schedule/changed', mode: 'emit' },
   { event: 'user-questions/request', mode: 'waterfall' },

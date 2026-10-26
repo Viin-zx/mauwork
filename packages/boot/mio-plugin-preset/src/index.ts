@@ -1,10 +1,11 @@
 /**
- * Apply mioagent catalog presets to installed plugins. A newly installed
- * package always receives the catalog preset; startup and later settings
- * events only fill a target that has no user channels. A fresh sign-in or a
- * changed model credential refreshes only the preset-managed channel. A small
- * profile-local marker keeps the force intent across a restart-required
- * installation.
+ * Apply mioagent catalog presets to installed plugins and install the catalog
+ * defaults once per profile. A newly installed package always receives the
+ * catalog preset; startup and later settings events only fill a target that
+ * has no user channels. A fresh sign-in or a changed model credential refreshes
+ * only the preset-managed channel. Small profile-local markers keep the force
+ * intent across a restart-required installation and keep a default the person
+ * removed afterward removed.
  */
 
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
@@ -30,11 +31,19 @@ const EVENT_DELAY_MS = 500
 /** Profile-local file naming packages whose installation must overwrite their preset target. */
 const PENDING_DIRECTORY = 'mio-plugin-preset'
 const PENDING_FILE = 'pending.json'
+/** Marker naming default packages already handled for this profile. */
+const DEFAULTS_FILE = 'defaults.json'
 /** Last non-secret application failure, kept beside the pending marker for diagnosis. */
 const DIAGNOSTIC_FILE = 'last-error.json'
 /** Retries after an install while the plugin's settings entry is still activating. */
 const PENDING_RETRY_LIMIT = 20
 const PENDING_RETRY_MS = 1_000
+
+/** Catalog packages the client installs by default; a removed one is not reinstalled. */
+export const DEFAULT_INSTALL_PACKAGES: readonly string[] = [
+  'dsh-skill-mcp-panel',
+  '@wxg-prc-cpg/browser-skill-dsh-plugin',
+]
 
 /** The subset of the profile context this plugin needs. */
 interface ProfileLike {
@@ -54,6 +63,12 @@ interface SweepState {
   readonly access: Map<string, { readonly credentialVersion: number; readonly baseUrl: string }>
   /** Whether the previous sweep saw a signed-in account; a fresh sign-in re-reads every credential. */
   signedIn: boolean
+  /** Default packages installed here or found already present; never installed again after removal. */
+  defaults: Set<string>
+  /** Whether the persisted defaults marker has been read. */
+  defaultsLoaded: boolean
+  /** Defaults that failed in this process; the next sign-in or process start retries them. */
+  defaultTried: Set<string>
 }
 
 /** What one catalog entry did, for deciding whether a pending marker can go. */
@@ -78,6 +93,7 @@ export function apply(ctx: Context): void {
   let accountChanged = false
   const state: SweepState = {
     known: undefined, pending: new Set(), reloadPending: new Set(), access: new Map(), signedIn: false,
+    defaults: new Set(), defaultsLoaded: false, defaultTried: new Set(),
   }
 
   const schedule = (delayMs = EVENT_DELAY_MS): void => {
@@ -130,6 +146,8 @@ export function apply(ctx: Context): void {
     // publishes a stored or refreshed session.
     const offAccount = ctx.on('mio-account/changed', () => {
       accountChanged = true
+      // A default that failed before this sign-in gets one new attempt.
+      state.defaultTried.clear()
       schedule()
     })
     schedule(STARTUP_DELAY_MS)
@@ -156,10 +174,7 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean): 
     state.access.clear()
     state.signedIn = true
   }
-  const [catalog, bundles] = await Promise.all([
-    ctx.mioAccount.getPlugins(),
-    ctx.pluginManager.listBundles(),
-  ])
+  const bundles = await ctx.pluginManager.listBundles()
   const installed = new Set(bundles.filter(bundle => bundle.installed).map(bundle => bundle.name))
   let pendingChanged = false
 
@@ -196,6 +211,19 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean): 
   // still overwrites its target on the next process start.
   if (pendingChanged) await writePending(ctx, state.pending)
 
+  if (!state.defaultsLoaded) {
+    state.defaults = await readDefaults(ctx)
+    state.defaultsLoaded = true
+  }
+  const installedDefaults = await installDefaults(ctx, state, installed)
+  if (installedDefaults.packages.length > 0) {
+    ctx.emit('mio-plugin-preset/defaults-installed', {
+      packages: installedDefaults.packages,
+      reload: installedDefaults.applied,
+    })
+  }
+
+  const catalog = await ctx.mioAccount.getPlugins()
   const catalogPackages = new Set(catalog.map(item => item.packageName))
   for (const item of catalog) {
     if (!installed.has(item.packageName)) continue
@@ -231,6 +259,58 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean): 
     }
   }
   if (pendingChanged) await writePending(ctx, state.pending)
+}
+
+/** One defaults pass: packages installed here and whether a reload can load them. */
+interface DefaultsResult {
+  readonly packages: readonly string[]
+  /** True when at least one installation applied without a restart. */
+  readonly applied: boolean
+}
+
+/**
+ * Install the catalog defaults this profile has never handled. A package found
+ * already present is recorded as handled so a later removal stays removed.
+ * @param ctx - Host context with the plugin manager service.
+ * @param state - sweep state carrying the handled and failed sets.
+ * @param installed - installed package names, extended with each new default.
+ * @returns installed packages and whether a renderer reload applies them.
+ */
+async function installDefaults(
+  ctx: Context, state: SweepState, installed: Set<string>,
+): Promise<DefaultsResult> {
+  let changed = false
+  let applied = false
+  const packages: string[] = []
+  for (const name of DEFAULT_INSTALL_PACKAGES) {
+    if (state.defaults.has(name) || state.defaultTried.has(name)) continue
+    if (installed.has(name)) {
+      state.defaults.add(name)
+      changed = true
+      continue
+    }
+    try {
+      const result = await ctx.pluginManager.installBundle(name)
+      if (result.application === 'failed' || result.application === 'cancelled') {
+        throw new Error(`installation ${result.application}: ${result.error?.code ?? 'unknown'}`)
+      }
+      state.defaults.add(name)
+      installed.add(name)
+      packages.push(name)
+      changed = true
+      if (result.application === 'applied') applied = true
+      ctx.logger.info('mio-plugin-preset: installed default plugin %s', name)
+    } catch (error) {
+      // No retry until the next sign-in or process start: the installation's
+      // own change event must not drive a failing pnpm run in a loop.
+      state.defaultTried.add(name)
+      const message = messageOf(error)
+      ctx.logger.warn('mio-plugin-preset: could not install default plugin %s: %s', name, message)
+      await writeDiagnostic(ctx, name, message)
+    }
+  }
+  if (changed) await writeDefaults(ctx, state.defaults)
+  return { packages, applied }
 }
 
 /**
@@ -307,6 +387,33 @@ async function readPending(ctx: Context): Promise<Set<string>> {
   }
 }
 
+/** @returns default packages this profile already handled. */
+async function readDefaults(ctx: Context): Promise<Set<string>> {
+  const profile = profileOf(ctx)
+  if (profile === undefined) return new Set()
+  try {
+    const raw: unknown = JSON.parse(await readFile(defaultsPath(profile), 'utf8'))
+    return new Set(Array.isArray(raw) ? raw.filter((value): value is string => typeof value === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+/** Persist handled defaults; a later failure must not reinstall a removed default. */
+async function writeDefaults(ctx: Context, defaults: ReadonlySet<string>): Promise<void> {
+  const profile = profileOf(ctx)
+  if (profile === undefined) return
+  try {
+    const path = defaultsPath(profile)
+    await mkdir(join(profile.home, 'storages', PENDING_DIRECTORY), { recursive: true })
+    const temporary = `${path}.tmp`
+    await writeFile(temporary, JSON.stringify([...defaults]), 'utf8')
+    await rename(temporary, path)
+  } catch (error) {
+    ctx.logger.warn('mio-plugin-preset: could not persist default installs: %s', messageOf(error))
+  }
+}
+
 /** Persist the force intent; failures never block installation. */
 async function writePending(ctx: Context, pending: ReadonlySet<string>): Promise<void> {
   const profile = profileOf(ctx)
@@ -342,6 +449,11 @@ async function writeDiagnostic(ctx: Context, packageName: string, message: strin
 /** @returns the profile-local pending marker path. */
 function pendingPath(profile: ProfileLike): string {
   return join(profile.home, 'storages', PENDING_DIRECTORY, `${profile.name}.${PENDING_FILE}`)
+}
+
+/** @returns the profile-local handled-defaults marker path. */
+function defaultsPath(profile: ProfileLike): string {
+  return join(profile.home, 'storages', PENDING_DIRECTORY, `${profile.name}.${DEFAULTS_FILE}`)
 }
 
 /** @param error - caught value. @returns a log-safe message without preset values. */

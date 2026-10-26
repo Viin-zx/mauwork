@@ -1,5 +1,5 @@
 ---
-description: "Apply mioagent plugin catalog presets to installed plugins whose settings entry has no user overrides."
+description: "Apply mioagent plugin catalog presets to installed plugins and install the catalog defaults once per profile."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`mio-plugin-preset` watches installation and settings changes, reads the plugin catalog through `mioAccount`, and writes the catalog preset into its target settings entry. A newly installed package always overwrites existing user channels; startup and later events only fill targets without user channels, while a fresh sign-in or changed model credential refreshes only the preset-managed channel's key and base URL. The Host resolves account placeholders before writing, and a profile-local marker keeps the force intent across a restart. Missing entries, inactive plugins, and unresolved placeholders leave the preset for a later sweep without failing installation.
+`mio-plugin-preset` watches installation and settings changes, reads the plugin catalog through `mioAccount`, and writes the catalog preset into its target settings entry. A newly installed package always overwrites existing user channels; startup and later events only fill targets without user channels, while a fresh sign-in or changed model credential refreshes only the preset-managed channel's key and base URL. The Host resolves account placeholders before writing, and a profile-local marker keeps the force intent across a restart. It also installs the catalog defaults once per profile. Missing entries, inactive plugins, and unresolved placeholders leave the preset for a later sweep without failing installation.
 
 ## Use this package
 
@@ -21,6 +21,8 @@ Mount the row beside `mio-account`:
 ```
 
 The plugin injects `mioAccount`, `settings`, and `pluginManager`. It runs once shortly after startup, after `plugin-manager/changed` with `install` or `bundle`, and after a settings document update. Each sweep ignores signed-out accounts, catalog entries whose package is not installed, entries without a preset, and imagegen entries that already carry user channels, channel secrets, or a default channel. A sweep caused by `mio-account/changed` refreshes the managed channel of a configured target: the resolved base URL and API key are merged into that channel only, and a channel the user deleted is not recreated. A package that appears as newly installed is force-applied with `settings.replace`; the pending marker is written before that write so a restart-required installation is still forced on the next start. A pending install retries once per second for up to 20 seconds while its settings entry activates, and a non-secret failure is recorded in `last-error.json` beside the marker. After a forced in-process install is written and its marker cleared, the Host emits `mio-plugin-preset/applied`; the plugin market reloads the renderer once so the plugin's settings page mounts against the new config. A marker loaded at startup applies without that reload.
+
+The same sweep installs `DEFAULT_INSTALL_PACKAGES` (`dsh-skill-mcp-panel` and `@wxg-prc-cpg/browser-skill-dsh-plugin`) when the profile has never handled them. A package found already present is recorded as handled, so a later removal keeps it removed. A failed installation stays unrecorded and retries at the next sign-in or process start instead of reacting to its own change event in a loop. One defaults pass that installs packages emits `mio-plugin-preset/defaults-installed`; the plugin market reloads the renderer so the new client bundles load.
 
 A catalog `config` is a preset when it carries this envelope:
 

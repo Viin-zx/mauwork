@@ -986,7 +986,7 @@ function useInstallComposition(active: boolean) {
  * install scripts undecided shows them for approval in place of plain retry.
  */
 function InstallDialog({
-  install, t, onClose, onEditSpec, onRun, onCancel, onReconcile, onToggleDetails, onEnableNow, onApproveBuilds,
+  install, t, onClose, onEditSpec, onRun, onCancel, onReconcile, onToggleDetails, onApproveBuilds,
   onToggleRegistry, onChooseRegistry, onChangeRegistry, onUseGithubMirror,
 }: {
   readonly install: InstallState
@@ -997,7 +997,6 @@ function InstallDialog({
   readonly onCancel: () => void
   readonly onReconcile: () => void
   readonly onToggleDetails: () => void
-  readonly onEnableNow: () => void
   readonly onApproveBuilds: () => void
   readonly onToggleRegistry: () => void
   readonly onChooseRegistry: (choice: RegistryChoice) => void
@@ -1463,9 +1462,7 @@ function InstallDialog({
             : null}
           {phase !== 'done'
             ? null
-            : install.installed !== null && install.subject?.selection === undefined
-              ? <Button variant="primary" className={css.wide} disabled={install.enabling} aria-busy={install.enabling} onClick={onEnableNow}>{t('installEnableNow')}</Button>
-              : <Button variant="primary" className={css.wide} onClick={onClose}>{t('installClose')}</Button>}
+            : <Button variant="primary" className={css.wide} onClick={onClose}>{t('installClose')}</Button>}
         </div>
       </div>
     </Modal>
@@ -1790,7 +1787,6 @@ export function PluginManagerPage(props: PluginManagerPageProps): ReactNode {
         onCancel={props.cancelInstall}
         onReconcile={props.reconcileInstall}
         onToggleDetails={props.toggleInstallDetails}
-        onEnableNow={() => { setActivation(state.install.installed); props.enableInstalled() }}
         onApproveBuilds={props.approveBuildsAndRetry}
         onToggleRegistry={props.toggleRegistryOptions}
         onChooseRegistry={props.chooseRegistry}

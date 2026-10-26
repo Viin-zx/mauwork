@@ -1,6 +1,10 @@
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import * as presetPlugin from '../src/index.ts'
+import { DEFAULT_INSTALL_PACKAGES } from '../src/index.ts'
 
 const PACKAGE = '@q253595422/dsh-imagegen-video'
 
@@ -16,6 +20,8 @@ function fixture(options: {
   user?: Record<string, unknown>
   installed?: boolean
   values?: Record<string, unknown>
+  defaultsInstalled?: boolean
+  home?: string
 } = {}) {
   const ctx = new Context()
   roots.push(ctx)
@@ -51,12 +57,26 @@ function fixture(options: {
       baseUrl: 'https://models.test/v1', apiKey: 'sk-test', credentialVersion: 1, expiresAt: '2030-01-01 00:00:00',
     })),
   }
+  const defaults = (options.defaultsInstalled ?? true)
+    ? DEFAULT_INSTALL_PACKAGES.map(name => ({ name, installed: true, enabled: true }))
+    : []
   const manager = {
-    listBundles: vi.fn(async () => [{ name: PACKAGE, installed: options.installed ?? true, enabled: true }]),
+    listBundles: vi.fn(async () => [{ name: PACKAGE, installed: options.installed ?? true, enabled: true }, ...defaults]),
+    installBundle: vi.fn(async (name: string): Promise<{
+      changed: boolean
+      application: 'applied' | 'restart-required' | 'failed' | 'cancelled'
+      stage: 'install'
+      target: string
+      bundle?: string
+      error?: { code: string }
+    }> => ({ changed: true, application: 'applied', stage: 'install', target: name, bundle: name })),
   }
   ctx.provide('mioAccount', account as never)
   ctx.provide('settings', settings as never)
   ctx.provide('pluginManager', manager as never)
+  if (options.home !== undefined) {
+    ctx.provide('profileContext', { name: 'desktop', home: options.home } as never)
+  }
   return { ctx, settings, account, manager }
 }
 
@@ -237,5 +257,94 @@ describe('catalog preset application', () => {
     settings.describe.mockReturnValue([descriptor])
     await vi.advanceTimersByTimeAsync(1_100)
     expect(settings.replace).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('default plugin installation', () => {
+  it('installs the defaults once and announces the renderer reload', async () => {
+    const { ctx, manager } = fixture({ defaultsInstalled: false })
+    const installed = vi.fn()
+    ctx.on('mio-plugin-preset/defaults-installed', installed)
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+
+    expect(manager.installBundle.mock.calls.map(([name]) => name)).toEqual([...DEFAULT_INSTALL_PACKAGES])
+    expect(installed).toHaveBeenCalledExactlyOnceWith({
+      packages: [...DEFAULT_INSTALL_PACKAGES], reload: true,
+    })
+  })
+
+  it('handles defaults found installed, and keeps a later removal removed across processes', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'mio-preset-'))
+    try {
+      const first = fixture({ home })
+      await first.ctx.plugin(presetPlugin)
+      await vi.advanceTimersByTimeAsync(1_600)
+      expect(first.manager.installBundle).not.toHaveBeenCalled()
+
+      const markerPath = join(home, 'storages', 'mio-plugin-preset', 'desktop.defaults.json')
+      await vi.waitFor(async () => {
+        const marker: unknown = JSON.parse(await readFile(markerPath, 'utf8'))
+        expect(marker).toEqual(expect.arrayContaining([...DEFAULT_INSTALL_PACKAGES]))
+        expect(marker).toHaveLength(DEFAULT_INSTALL_PACKAGES.length)
+      })
+
+      const second = fixture({ defaultsInstalled: false, home })
+      await second.ctx.plugin(presetPlugin)
+      await vi.advanceTimersByTimeAsync(1_600)
+      expect(second.manager.installBundle).not.toHaveBeenCalled()
+    } finally {
+      // Windows can hold a just-closed marker handle for a moment.
+      await rm(home, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 })
+    }
+  })
+
+  it('retries a failed default only after a new sign-in', async () => {
+    const { ctx, manager } = fixture({ defaultsInstalled: false })
+    manager.installBundle.mockRejectedValue(new Error('offline'))
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+    expect(manager.installBundle).toHaveBeenCalledTimes(DEFAULT_INSTALL_PACKAGES.length)
+
+    // The failed run's own change event must not drive a retry loop.
+    ctx.emit('plugin-manager/changed', { reason: 'install' })
+    await vi.advanceTimersByTimeAsync(600)
+    expect(manager.installBundle).toHaveBeenCalledTimes(DEFAULT_INSTALL_PACKAGES.length)
+
+    ctx.emit('mio-account/changed')
+    await vi.advanceTimersByTimeAsync(600)
+    expect(manager.installBundle).toHaveBeenCalledTimes(DEFAULT_INSTALL_PACKAGES.length * 2)
+  })
+
+  it('keeps refused defaults unhandled and announces nothing', async () => {
+    const { ctx, manager } = fixture({ defaultsInstalled: false })
+    manager.installBundle
+      .mockResolvedValueOnce({
+        changed: false, application: 'failed', stage: 'install', target: 'a',
+        error: { code: 'operation-error' },
+      })
+      .mockResolvedValueOnce({ changed: false, application: 'cancelled', stage: 'install', target: 'b' })
+    const installed = vi.fn()
+    ctx.on('mio-plugin-preset/defaults-installed', installed)
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+
+    expect(manager.installBundle).toHaveBeenCalledTimes(DEFAULT_INSTALL_PACKAGES.length)
+    expect(installed).not.toHaveBeenCalled()
+  })
+
+  it('does not announce a reload for an installation that waits for a restart', async () => {
+    const { ctx, manager } = fixture({ defaultsInstalled: false })
+    manager.installBundle.mockImplementation(async (name: string) => ({
+      changed: true, application: 'restart-required', stage: 'install', target: name, bundle: name,
+    }))
+    const installed = vi.fn()
+    ctx.on('mio-plugin-preset/defaults-installed', installed)
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+
+    expect(installed).toHaveBeenCalledExactlyOnceWith({
+      packages: [...DEFAULT_INSTALL_PACKAGES], reload: false,
+    })
   })
 })
