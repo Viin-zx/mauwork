@@ -135,4 +135,11 @@ describe('installer preparation preserves application dependencies', () => {
     const packaged = new Set(config.files.filter((entry): entry is string => typeof entry === 'string'))
     for (const name of referenced) expect(packaged.has(`lib/${name}`)).toBe(true)
   })
+
+  it('names the product Mauwork in every installer message', () => {
+    const read = (path: string): string => readFileSync(new URL(path, import.meta.url), 'utf8')
+    const copy = read('../installer/strings.nsh') + read('../installer/extract-report.h')
+    expect(copy).not.toContain('DeepSeek Harness')
+    expect(copy).toContain('Mauwork 正在运行')
+  })
 })
