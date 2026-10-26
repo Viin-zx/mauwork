@@ -15,6 +15,9 @@
       "path": "../../credentials/mio-account"
     },
     {
+      "path": "../../boot/hmr"
+    },
+    {
       "path": "../../boot/plugin-manager"
     },
     {

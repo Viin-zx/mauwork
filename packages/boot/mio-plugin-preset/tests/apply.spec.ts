@@ -260,6 +260,20 @@ describe('catalog preset application', () => {
   })
 })
 
+describe('sweep scheduling', () => {
+  it('starts every sweep outside an inherited HMR transaction', async () => {
+    const { ctx, settings } = fixture()
+    const runDetached = vi.fn((run: () => void) => { run() })
+    ctx.provide('hmr', { runDetached } as never)
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+
+    expect(runDetached).toHaveBeenCalled()
+    // The sweep still applies the empty target it found.
+    expect(settings.update).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('default plugin installation', () => {
   it('installs the defaults once and announces the renderer reload', async () => {
     const { ctx, manager } = fixture({ defaultsInstalled: false })

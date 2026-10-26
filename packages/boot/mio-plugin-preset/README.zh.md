@@ -20,7 +20,7 @@ kind: "package-reference"
   name: '@deepseek-ai/dsh-mio-plugin-preset'
 ```
 
-插件注入 `mioAccount`、`settings` 和 `pluginManager`。它在启动后不久、`plugin-manager/changed` 的 `install` 或 `bundle` 事件后，以及设置文档更新后各扫描一次。每次扫描都会跳过未登录账号、包未安装的目录条目、没有预设的条目，以及已经带有用户渠道、渠道密钥或默认渠道的 imagegen 设置项。由 `mio-account/changed` 触发的扫描会刷新已配置目标的受管渠道：只把解析后的 base URL 和 API key 合并进该渠道，用户已删除的渠道不会重建。新出现的包会用 `settings.replace` 强制覆盖；待应用标记在写入前保存，因此需要重启的安装也会在下次启动时强制覆盖。待应用安装会每秒重试一次，最多 20 秒，等待其设置项激活；非敏感失败记录在标记旁的 `last-error.json`。进程内强制安装写入完成且标记清除后，Host 发送 `mio-plugin-preset/applied`，插件市场据此重载一次渲染进程，使插件设置页按新配置重新挂载；启动时加载标记的应用不会触发重载。
+插件注入 `mioAccount`、`settings` 和 `pluginManager`。它在启动后不久、`plugin-manager/changed` 的 `install` 或 `bundle` 事件后，以及设置文档更新后各扫描一次。每次扫描的定时器都在当前 HMR 事务之外创建：插件重载期间设置项发布时，事件是在该事务内发出的，在那里创建的扫描会因子事务嵌套而被拒绝写设置。每次扫描都会跳过未登录账号、包未安装的目录条目、没有预设的条目，以及已经带有用户渠道、渠道密钥或默认渠道的 imagegen 设置项。由 `mio-account/changed` 触发的扫描会刷新已配置目标的受管渠道：只把解析后的 base URL 和 API key 合并进该渠道，用户已删除的渠道不会重建。新出现的包会用 `settings.replace` 强制覆盖；待应用标记在写入前保存，因此需要重启的安装也会在下次启动时强制覆盖。待应用安装会每秒重试一次，最多 20 秒，等待其设置项激活；非敏感失败记录在标记旁的 `last-error.json`。进程内强制安装写入完成且标记清除后，Host 发送 `mio-plugin-preset/applied`，插件市场据此重载一次渲染进程，使插件设置页按新配置重新挂载；启动时加载标记的应用不会触发重载。
 
 同一次扫描还会为从未处理过默认插件的 profile 安装 `DEFAULT_INSTALL_PACKAGES`（`dsh-skill-mcp-panel` 与 `@wxg-prc-cpg/browser-skill-dsh-plugin`）。已经存在的包会记为已处理，之后即使被卸载也不会再装回。安装失败不会记录，下一次登录或进程启动时重试，避免被自身的变更事件触发成循环。一次安装了包默认插件后会发送 `mio-plugin-preset/defaults-installed`，插件市场据此重载渲染进程，加载新的客户端 bundle。
 

@@ -14,6 +14,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { MioModelAccess, MioPluginCatalogItem } from '@deepseek-ai/dsh-mio-account'
 import type {} from './types.ts'
 export type * from './types.ts'
+import type {} from '@deepseek-ai/dsh-hmr'
 import type {} from '@deepseek-ai/dsh-plugin-manager'
 import type {} from '@deepseek-ai/dsh-settings'
 import { isEmptyTargetUser, PRESET_TARGET_PACKAGES, readPreset, refreshPresetUser, resolvePresetValues } from './preset.ts'
@@ -97,11 +98,19 @@ export function apply(ctx: Context): void {
   }
 
   const schedule = (delayMs = EVENT_DELAY_MS): void => {
-    if (disposed || timer !== undefined) return
-    timer = setTimeout(() => {
-      timer = undefined
-      void sweep()
-    }, delayMs)
+    const start = (): void => {
+      if (disposed || timer !== undefined) return
+      timer = setTimeout(() => {
+        timer = undefined
+        void sweep()
+      }, delayMs)
+    }
+    // A settings entry publishing during a reload emits its event inside that
+    // HMR transaction; a timer created there inherits the context, and the
+    // sweep's settings write would be refused as a nested transaction.
+    const hmr = ctx.get('hmr')
+    if (hmr === undefined) start()
+    else hmr.runDetached(start)
   }
 
   const sweep = async (): Promise<void> => {

@@ -275,6 +275,19 @@ class Hmr extends Service {
     return task
   }
 
+  /**
+   * Run work outside the active transaction and the asynchronous context it
+   * created, so a timer or promise the work schedules can start its own
+   * transaction later. Events emitted while a transaction runs — such as a
+   * settings entry publishing during a reload — reach their listeners with
+   * that context still attached.
+   * @param operation - work to run outside the current transaction context.
+   * @returns the operation's result.
+   */
+  runDetached<T>(operation: () => T): T {
+    return this.executing.exit(operation)
+  }
+
   private runReload(operation: () => Promise<void>): Promise<void> {
     return this.runExclusive(async () => {
       if (await this.applicationReady) await operation()

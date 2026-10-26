@@ -105,6 +105,17 @@ Hot reload service with Cordis-compatible module configuration and events.
  */
 runExclusive<T>(operation: () => Promise<T>): Promise<T>
 
+/**
+ * Run work outside the active transaction and the asynchronous context it
+ * created, so a timer or promise the work schedules can start its own
+ * transaction later. Events emitted while a transaction runs — such as a
+ * settings entry publishing during a reload — reach their listeners with
+ * that context still attached.
+ * @param operation - work to run outside the current transaction context.
+ * @returns the operation's result.
+ */
+runDetached<T>(operation: () => T): T
+
 /** Watch a configuration path through the same queue as module replacement.
  * @param filename Absolute path, which may not exist yet.
  * @param refresh Rebuilds configuration from its current files and awaits Loader completion.

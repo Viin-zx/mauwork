@@ -86,6 +86,22 @@ it('waits for application readiness and applies profile, home and manifest chang
   expect(f.ctx.get('profileProbe')).toBe('edited')
 })
 
+it('runs detached work so the timers it schedules can start their own transaction', async () => {
+  const f = await fixture()
+  let deferred: Promise<void> | undefined
+  await f.ctx.hmr.runExclusive(async () => {
+    await expect(f.ctx.hmr.runExclusive(async () => {})).rejects.toThrow('cannot be nested')
+    // The timer must be created outside the transaction, or it inherits the
+    // context that makes a later settings write a nested transaction.
+    f.ctx.hmr.runDetached(() => {
+      deferred = new Promise<void>((resolve) => {
+        setTimeout(() => { resolve(f.ctx.hmr.runExclusive(async () => {})) }, 0)
+      })
+    })
+  })
+  await expect(deferred).resolves.toBeUndefined()
+})
+
 it('applies configuration while a CLI operation holds the package writer lock', async () => {
   const f = await fixture()
   f.commit()
