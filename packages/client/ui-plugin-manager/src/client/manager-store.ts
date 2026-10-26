@@ -678,7 +678,10 @@ export class PluginManagerController {
         void this.run(packageName, { packageName, action: enabled ? 'enable' : 'disable' }, async () => {
           const result = await this.ctx.remote.pluginManager.setBundleEnabled(packageName, enabled)
           this.applied(result, packageName)
-          if (result.ok && (result.value.application === 'applied' || result.value.application === 'restart-required')) this.trackToggle(packageName, enabled)
+          if (result.ok && (result.value.application === 'applied' || result.value.application === 'restart-required')) {
+            this.trackToggle(packageName, enabled)
+            this.reloadPage()
+          }
         })
       },
       update: (packageName) => {
@@ -719,7 +722,10 @@ export class PluginManagerController {
         void this.run(rowKey(entryId), { packageName: entryId, action: enabled ? 'rowEnable' : 'rowDisable' }, async () => {
           const result = await this.ctx.remote.pluginManager.setPluginEnabled(entryId, enabled)
           this.applied(result, entryId)
-          if (result.ok && (result.value.application === 'applied' || result.value.application === 'restart-required')) this.trackToggle(entryId, enabled, true)
+          if (result.ok && (result.value.application === 'applied' || result.value.application === 'restart-required')) {
+            this.trackToggle(entryId, enabled, true)
+            this.reloadPage()
+          }
         })
       },
       dismissNotice: () => { this.patch({ notice: null }) },

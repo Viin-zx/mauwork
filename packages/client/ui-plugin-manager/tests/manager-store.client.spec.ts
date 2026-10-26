@@ -580,6 +580,24 @@ describe('PluginManagerController', () => {
     expect(reload).not.toHaveBeenCalled()
   })
 
+  it('reloads the renderer when a disable is applied so stale plugin UI is cleared', async () => {
+    const { face, state, controller, reload } = bench()
+    await controller.load()
+    face.setEnabled(BUNDLE.name, false)
+    await vi.waitFor(() => { expect(reload).toHaveBeenCalledTimes(1) })
+    await vi.waitFor(() => { expect(state().busy).toEqual([]) })
+  })
+
+  it('reloads the renderer when a disable waits for a restart so the plugin UI is cleared', async () => {
+    const { face, state, controller, reload } = bench({
+      setBundleEnabled: vi.fn().mockResolvedValue(ok({ ...APPLIED, application: 'restart-required' })),
+    })
+    await controller.load()
+    face.setEnabled(BUNDLE.name, false)
+    await vi.waitFor(() => { expect(reload).toHaveBeenCalledTimes(1) })
+    await vi.waitFor(() => { expect(state().busy).toEqual([]) })
+  })
+
   it('switches rows under their own busy keys and reports what the Host said', async () => {
     const gate = deferred<ReturnType<typeof ok<ChangeResult>>>()
     const { plugins, face, state, controller } = bench({
