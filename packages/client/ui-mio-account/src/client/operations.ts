@@ -68,9 +68,9 @@ export function accountMessage(error: unknown, fallback: string): string {
 /**
  * Bind the account Remote namespace to the login surface's operations.
  * @param ctx - client context carrying the mounted mioAccount Remote.
- * @param reload - resets the renderer after sign-out. Plugins mount pages
- *   outside the React tree, so a document reload is the only teardown that
- *   closes all of them before the login surface shows.
+ * @param reload - resets the renderer after the session ends. Plugins mount
+ *   pages outside the React tree, so a document reload is the only teardown
+ *   that closes all of them before the login surface shows.
  * @returns operations shared by every registration.
  */
 export function createMioAccountOperations(
@@ -86,7 +86,12 @@ export function createMioAccountOperations(
     sendSmsCode: request => call(() => ctx.remote.mioAccount.sendSmsCode(request)),
     loginWithSms: request => call(() => ctx.remote.mioAccount.loginWithSms(request)),
     loginWithPassword: request => call(() => ctx.remote.mioAccount.loginWithPassword(request)),
-    resetPassword: request => call(() => ctx.remote.mioAccount.resetPassword(request)),
+    resetPassword: async (request) => {
+      await call(() => ctx.remote.mioAccount.resetPassword(request))
+      // An authenticated change revokes the stored session; reset every page
+      // so the client restarts at the login surface instead of a dead page.
+      if (request.authenticated === true) reload()
+    },
     getAgreements: () => call(() => ctx.remote.mioAccount.getAgreements()),
     getQuota: () => call(() => ctx.remote.mioAccount.getQuota()),
     getPlans: () => call(() => ctx.remote.mioAccount.getPlans()),

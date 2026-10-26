@@ -61,6 +61,31 @@ describe('account operations', () => {
     expect(failed.reload).not.toHaveBeenCalled()
   })
 
+  it('resets the renderer only after an authenticated password change succeeds', async () => {
+    const reset = {
+      countryCode: '+86', mobile: '', smsRequestId: 'sms-1', smsCode: '123456', newPassword: 'newsecret123',
+    }
+    const changed = fixture()
+    await changed.operations.resetPassword({ ...reset, authenticated: true })
+    expect(changed.namespace.resetPassword).toHaveBeenCalledExactlyOnceWith({ ...reset, authenticated: true })
+    expect(changed.reload).toHaveBeenCalledTimes(1)
+
+    // The anonymous recovery flow stays on the login surface.
+    const anonymous = fixture()
+    await anonymous.operations.resetPassword({ ...reset, mobile: '13800000000' })
+    expect(anonymous.reload).not.toHaveBeenCalled()
+
+    const failed = fixture({
+      resetPassword: async () => ({
+        ok: false as const,
+        error: new RemoteError('mio-account/failure', 'code expired', { code: 'SMS_CODE_INVALID' }),
+      }),
+    })
+    await expect(failed.operations.resetPassword({ ...reset, authenticated: true }))
+      .rejects.toBeInstanceOf(MioAccountClientError)
+    expect(failed.reload).not.toHaveBeenCalled()
+  })
+
   it('keeps the backend error code for branching', async () => {
     const { operations } = fixture({
       sendSmsCode: async () => ({
