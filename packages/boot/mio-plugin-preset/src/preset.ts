@@ -17,7 +17,11 @@ export type PresetPlaceholder = 'MIO_MODEL_BASE_URL' | 'MIO_API_KEY'
 
 const PLACEHOLDER = /^\{\{([A-Z0-9_]+)\}\}$/u
 
-/** @param value - candidate JSON value. @returns whether it is a non-array object. */
+/**
+ * Whether a JSON value is an object rather than an array or a scalar.
+ * @param value - candidate JSON value.
+ * @returns whether it is a non-array object.
+ */
 export function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

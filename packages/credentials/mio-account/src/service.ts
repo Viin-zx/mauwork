@@ -37,6 +37,8 @@ export interface MioPluginCatalogItem {
   readonly category: string
   /** Display description supplied by the backend. */
   readonly description: string
+  /** Whether the administration asks every catalog sweep to overwrite this plugin's settings. */
+  readonly autoRefresh: boolean
   /** Default plugin configuration stored by the backend; null when unconfigured. */
   readonly config: Record<string, unknown> | null
 }

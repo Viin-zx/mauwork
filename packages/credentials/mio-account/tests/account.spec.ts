@@ -319,6 +319,7 @@ describe('login and registration', () => {
       category: 'image',
       description: 'Generate images',
       status: '0',
+      autoRefresh: '0',
       config: { target: 'imagegen', values: { channels: [] } },
     }]))
 
@@ -328,6 +329,7 @@ describe('login and registration', () => {
       packageName: '@q253595422/dsh-imagegen-video',
       category: 'image',
       description: 'Generate images',
+      autoRefresh: true,
       config: { target: 'imagegen', values: { channels: [] } },
     }])
     expect(requests[0]).toMatchObject({
@@ -335,6 +337,17 @@ describe('login and registration', () => {
       method: 'GET',
       headers: { authorization: 'Bearer at-1' },
     })
+  })
+
+  it('reads the refresh switch only from the status-convention on value', async () => {
+    const ctx = await signedIn()
+    const entry = (autoRefresh: unknown): Record<string, unknown> => ({
+      pluginId: 1, pluginName: 'p', packageName: '@acme/dsh-p', category: '', description: '', autoRefresh,
+    })
+    replies.push(ok([entry('0'), entry(0), entry('1'), entry(1), entry(undefined), entry(true)]))
+
+    expect((await ctx.mioAccount.getPlugins()).map(item => item.autoRefresh))
+      .toEqual([true, true, false, false, false, false])
   })
 
   it('uses the stored token for the authenticated password-change flow', async () => {

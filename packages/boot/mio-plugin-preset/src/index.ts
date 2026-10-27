@@ -3,20 +3,24 @@
  * defaults once per profile. A newly installed package always receives the
  * catalog preset; startup and later settings events only fill a target that
  * has no user channels. A fresh sign-in or a changed model credential refreshes
- * only the preset-managed channel. Small profile-local markers keep the force
- * intent across a restart-required installation and keep a default the person
- * removed afterward removed.
+ * only the preset-managed channel. A catalog entry whose `autoRefresh` switch
+ * the admin turned on is overwritten with the current preset on every sweep,
+ * so a model upgrade reaches the client without a reinstall. Small profile-local
+ * markers keep the force intent across a restart-required installation and keep
+ * a default the person removed afterward removed.
  */
 
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { MioModelAccess, MioPluginCatalogItem } from '@deepseek-ai/dsh-mio-account'
 import type {} from './types.ts'
 export type * from './types.ts'
+export * from './markers.ts'
 import type {} from '@deepseek-ai/dsh-hmr'
 import type {} from '@deepseek-ai/dsh-plugin-manager'
 import type {} from '@deepseek-ai/dsh-settings'
+import { PENDING_DIRECTORY, appliedPath, defaultsPath, pendingPath, profileOf, readMarkerSet, writeMarkerSet } from './markers.ts'
 import { isEmptyTargetUser, PRESET_TARGET_PACKAGES, readPreset, refreshPresetUser, resolvePresetValues } from './preset.ts'
 
 /** Stable plugin name. */
@@ -29,13 +33,8 @@ export const inject = ['mioAccount', 'settings', 'pluginManager']
 const STARTUP_DELAY_MS = 1_500
 /** Debounce for installation, settings, and composition events. */
 const EVENT_DELAY_MS = 500
-/** Profile-local file naming packages whose installation must overwrite their preset target. */
-const PENDING_DIRECTORY = 'mio-plugin-preset'
-const PENDING_FILE = 'pending.json'
-/** Marker naming default packages already handled for this profile. */
-const DEFAULTS_FILE = 'defaults.json'
-/** Packages whose preset has been applied; a reinstall after uninstall re-applies. */
-const APPLIED_FILE = 'applied.json'
+/** Cadence of catalog re-reads that carry an admin-tuned preset to the client. */
+const AUTO_REFRESH_INTERVAL_MS = 5 * 60_000
 /** Last non-secret application failure, kept beside the pending marker for diagnosis. */
 const DIAGNOSTIC_FILE = 'last-error.json'
 /** Retries after an install while the plugin's settings entry is still activating. */
@@ -47,12 +46,6 @@ export const DEFAULT_INSTALL_PACKAGES: readonly string[] = [
   'dsh-skill-mcp-panel',
   '@wxg-prc-cpg/browser-skill-dsh-plugin',
 ]
-
-/** The subset of the profile context this plugin needs. */
-interface ProfileLike {
-  readonly name: string
-  readonly home: string
-}
 
 /** One sweep's installation memory. */
 interface SweepState {
@@ -96,6 +89,8 @@ export function apply(ctx: Context): void {
   let disposed = false
   let retryAttempts = 0
   let accountChanged = false
+  /** The next sweep reads the catalog as a timed refresh, overwriting entries the admin switched on. */
+  let catalogTick = true
   const state: SweepState = {
     known: undefined, pending: new Set(), reloadPending: new Set(), access: new Map(), signedIn: false,
     defaults: new Set(), defaultsLoaded: false, defaultTried: new Set(), applied: new Set(),
@@ -124,9 +119,11 @@ export function apply(ctx: Context): void {
     }
     running = true
     const refresh = accountChanged
+    const tick = catalogTick
     accountChanged = false
+    catalogTick = false
     try {
-      await sweepCatalog(ctx, state, refresh)
+      await sweepCatalog(ctx, state, refresh, tick)
     } catch (error) {
       ctx.logger.warn('mio-plugin-preset: catalog sweep failed: %s', messageOf(error))
     } finally {
@@ -163,9 +160,18 @@ export function apply(ctx: Context): void {
       state.defaultTried.clear()
       schedule()
     })
+    // The catalog itself carries the refresh switch, so a tick re-reads it and
+    // overwrites every entry the admin turned on; the first sweep runs as a
+    // tick, so a preset tuned while the client was closed arrives at startup.
+    // Disposal clears this interval, so its callback never runs afterward.
+    const interval = setInterval(() => {
+      catalogTick = true
+      schedule()
+    }, AUTO_REFRESH_INTERVAL_MS)
     schedule(STARTUP_DELAY_MS)
     return () => {
       disposed = true
+      clearInterval(interval)
       offChange()
       offSettings()
       offAccount()
@@ -175,8 +181,8 @@ export function apply(ctx: Context): void {
   }, 'mio-plugin-preset: catalog sweep')
 }
 
-/** Apply presets and remember installations that must overwrite their target. */
-async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean): Promise<void> {
+/** Apply presets, remember force intent, and overwrite switched entries on a catalog tick. */
+async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean, tick: boolean): Promise<void> {
   const session = await ctx.mioAccount.getState()
   if (session.status !== 'signed-in') {
     state.signedIn = false
@@ -257,7 +263,7 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean): 
   for (const item of catalog) {
     if (!installed.has(item.packageName)) continue
     try {
-      const result = await applyOne(ctx, item, state.pending.has(item.packageName), refresh, state.access)
+      const result = await applyOne(ctx, item, state.pending.has(item.packageName), refresh, tick, state.access)
       if (result.outcome !== 'retry') {
         if (!state.applied.has(item.packageName)) {
           state.applied.add(item.packageName)
@@ -360,15 +366,19 @@ async function installDefaults(
  * @param item - catalog entry carrying the preset.
  * @param force - installation overwrite of the whole target.
  * @param refresh - account-change credential refresh for an existing target.
+ * @param tick - catalog re-read that carries an admin-tuned preset to the client.
  * @param accessHistory - model access last written per target.
  * @returns the attempt's outcome and whether it wrote settings.
  */
 async function applyOne(
-  ctx: Context, item: MioPluginCatalogItem, force: boolean, refresh: boolean,
+  ctx: Context, item: MioPluginCatalogItem, force: boolean, refresh: boolean, tick: boolean,
   accessHistory: Map<string, { readonly credentialVersion: number; readonly baseUrl: string }>,
 ): Promise<ApplyResult> {
   const preset = readPreset(item.config)
   if (preset === null) return { outcome: 'skipped', applied: false }
+  // An event-driven sweep never overwrites channels the person edited; only a
+  // catalog tick does, and only for an entry whose record the admin switched on.
+  const overwrite = force || (tick && item.autoRefresh)
   if (PRESET_TARGET_PACKAGES[preset.target] !== item.packageName) {
     throw new Error(`preset target "${preset.target}" belongs to another package`)
   }
@@ -376,7 +386,7 @@ async function applyOne(
     .find(row => String(row.ns) === preset.target)
   if (descriptor === undefined) return { outcome: 'retry', applied: false }
   const empty = isEmptyTargetUser(descriptor.user)
-  if (!force && !refresh && !empty) return { outcome: 'skipped', applied: false }
+  if (!overwrite && !refresh && !empty) return { outcome: 'skipped', applied: false }
 
   let access: Promise<MioModelAccess> | undefined
   const readAccess = (): Promise<MioModelAccess> => access ??= ctx.mioAccount.getModelAccess()
@@ -386,7 +396,7 @@ async function applyOne(
   }
   const values = await resolvePresetValues(preset.values, resolve)
 
-  if (!force && !empty) {
+  if (!overwrite && !empty) {
     const current = await readAccess()
     const previous = accessHistory.get(preset.target)
     if (previous !== undefined && previous.credentialVersion === current.credentialVersion
@@ -399,101 +409,48 @@ async function applyOne(
     return { outcome: 'applied', applied: true, target: preset.target }
   }
 
-  if (force) await ctx.settings.replace(preset.target, values, descriptor.revision)
+  if (overwrite) await ctx.settings.replace(preset.target, values, descriptor.revision)
   else await ctx.settings.update(preset.target, values, descriptor.revision)
   const current = await readAccess()
   accessHistory.set(preset.target, { credentialVersion: current.credentialVersion, baseUrl: current.baseUrl })
-  ctx.logger.info('mio-plugin-preset: applied %s to %s%s', item.packageName, preset.target, force ? ' (install)' : '')
+  ctx.logger.info('mio-plugin-preset: applied %s to %s%s', item.packageName, preset.target, overwrite ? ' (install)' : '')
   return { outcome: 'applied', applied: true, target: preset.target }
-}
-
-/** Resolve the active profile without requiring its service type in this package. */
-function profileOf(ctx: Context): ProfileLike | undefined {
-  const profile = ctx.get('profileContext') as ProfileLike | undefined
-  return profile !== undefined && typeof profile.home === 'string' && typeof profile.name === 'string'
-    ? profile
-    : undefined
 }
 
 /** @returns package names whose installation must overwrite the target. */
 async function readPending(ctx: Context): Promise<Set<string>> {
   const profile = profileOf(ctx)
-  if (profile === undefined) return new Set()
-  try {
-    const raw: unknown = JSON.parse(await readFile(pendingPath(profile), 'utf8'))
-    return new Set(Array.isArray(raw) ? raw.filter((value): value is string => typeof value === 'string') : [])
-  } catch {
-    return new Set()
-  }
+  return profile === undefined ? new Set() : readMarkerSet(pendingPath(profile))
 }
 
 /** @returns default packages this profile already handled. */
 async function readDefaults(ctx: Context): Promise<Set<string>> {
   const profile = profileOf(ctx)
-  if (profile === undefined) return new Set()
-  try {
-    const raw: unknown = JSON.parse(await readFile(defaultsPath(profile), 'utf8'))
-    return new Set(Array.isArray(raw) ? raw.filter((value): value is string => typeof value === 'string') : [])
-  } catch {
-    return new Set()
-  }
+  return profile === undefined ? new Set() : readMarkerSet(defaultsPath(profile))
 }
 
 /** Persist handled defaults; a later failure must not reinstall a removed default. */
 async function writeDefaults(ctx: Context, defaults: ReadonlySet<string>): Promise<void> {
   const profile = profileOf(ctx)
-  if (profile === undefined) return
-  try {
-    const path = defaultsPath(profile)
-    await mkdir(join(profile.home, 'storages', PENDING_DIRECTORY), { recursive: true })
-    const temporary = `${path}.tmp`
-    await writeFile(temporary, JSON.stringify([...defaults]), 'utf8')
-    await rename(temporary, path)
-  } catch (error) {
-    ctx.logger.warn('mio-plugin-preset: could not persist default installs: %s', messageOf(error))
-  }
+  if (profile !== undefined) await writeMarkerSet(ctx, defaultsPath(profile), defaults)
 }
 
 /** Persist the force intent; failures never block installation. */
 async function writePending(ctx: Context, pending: ReadonlySet<string>): Promise<void> {
   const profile = profileOf(ctx)
-  if (profile === undefined) return
-  try {
-    const path = pendingPath(profile)
-    await mkdir(join(profile.home, 'storages', PENDING_DIRECTORY), { recursive: true })
-    const temporary = `${path}.tmp`
-    await writeFile(temporary, JSON.stringify([...pending]), 'utf8')
-    await rename(temporary, path)
-  } catch (error) {
-    ctx.logger.warn('mio-plugin-preset: could not persist pending installs: %s', messageOf(error))
-  }
+  if (profile !== undefined) await writeMarkerSet(ctx, pendingPath(profile), pending)
 }
 
 /** @returns package names whose preset has been applied. */
 async function readApplied(ctx: Context): Promise<Set<string>> {
   const profile = profileOf(ctx)
-  if (profile === undefined) return new Set()
-  try {
-    const raw: unknown = JSON.parse(await readFile(appliedPath(profile), 'utf8'))
-    return new Set(Array.isArray(raw) ? raw.filter((value): value is string => typeof value === 'string') : [])
-  } catch {
-    return new Set()
-  }
+  return profile === undefined ? new Set() : readMarkerSet(appliedPath(profile))
 }
 
 /** Persist the applied set so a reinstall after process restart still re-triggers force. */
 async function writeApplied(ctx: Context, applied: ReadonlySet<string>): Promise<void> {
   const profile = profileOf(ctx)
-  if (profile === undefined) return
-  try {
-    const path = appliedPath(profile)
-    await mkdir(join(profile.home, 'storages', PENDING_DIRECTORY), { recursive: true })
-    const temporary = `${path}.tmp`
-    await writeFile(temporary, JSON.stringify([...applied]), 'utf8')
-    await rename(temporary, path)
-  } catch (error) {
-    ctx.logger.warn('mio-plugin-preset: could not persist applied installs: %s', messageOf(error))
-  }
+  if (profile !== undefined) await writeMarkerSet(ctx, appliedPath(profile), applied)
 }
 
 /** Record a non-secret failure beside the pending marker for local diagnosis. */
@@ -511,21 +468,6 @@ async function writeDiagnostic(ctx: Context, packageName: string, message: strin
   } catch (error) {
     ctx.logger.warn('mio-plugin-preset: could not write diagnostics: %s', messageOf(error))
   }
-}
-
-/** @returns the profile-local pending marker path. */
-function pendingPath(profile: ProfileLike): string {
-  return join(profile.home, 'storages', PENDING_DIRECTORY, `${profile.name}.${PENDING_FILE}`)
-}
-
-/** @returns the profile-local applied marker path. */
-function appliedPath(profile: ProfileLike): string {
-  return join(profile.home, 'storages', PENDING_DIRECTORY, `${profile.name}.${APPLIED_FILE}`)
-}
-
-/** @returns the profile-local handled-defaults marker path. */
-function defaultsPath(profile: ProfileLike): string {
-  return join(profile.home, 'storages', PENDING_DIRECTORY, `${profile.name}.${DEFAULTS_FILE}`)
 }
 
 /** @param error - caught value. @returns a log-safe message without preset values. */

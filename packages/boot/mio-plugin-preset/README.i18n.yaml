@@ -9,11 +9,14 @@
   en: 963c8abe785393dd
   zh: b36033d5de2f266a
 /deepseek-ai-dsh-mio-plugin-preset/summary:
-  en: 0156f9a720649171
-  zh: 58ab301170e1c6a8
+  en: a5c6eae0f76da8ab
+  zh: d1aa28c78b0fbede
+/deepseek-ai-dsh-mio-plugin-preset/table-of-contents:
+  en: 2e89ddb1e73218cb
+  zh: 8a6bc778724bb498
 /deepseek-ai-dsh-mio-plugin-preset/use-this-package:
-  en: 781abfbcc42ae8e4
-  zh: b577edc24e64705b
+  en: aa7215ed7d97f0ff
+  zh: 16e0968195af34fa
 /deepseek-ai-dsh-mio-plugin-preset/model-experience:
   en: 215e7ba838619b7b
   zh: a311da3843709f90
@@ -30,5 +33,8 @@
   en: ca3015e252db0114
   zh: fe6eeae83f30f17d
 /deepseek-ai-dsh-mio-plugin-preset/known-limitations-and-deferred-work:
-  en: 003873512de49526
-  zh: f81a747bfb835e8c
+  en: f1d394fd706e4779
+  zh: 7a79688884de1595
+/deepseek-ai-dsh-mio-plugin-preset/known-limitations-and-deferred-work/dev-note:
+  en: c2e36c82d4a5ee9d
+  zh: 6f338197000ad374

@@ -2,83 +2,15 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { Context } from '@deepseek-ai/cordis'
 import * as presetPlugin from '../src/index.ts'
 import { DEFAULT_INSTALL_PACKAGES } from '../src/index.ts'
-
-const PACKAGE = '@q253595422/dsh-imagegen-video'
-
-const roots: Context[] = []
+import { catalogEntry, fixture, PACKAGE, roots, settle } from './fixture.ts'
 
 beforeEach(() => { vi.useFakeTimers() })
 afterEach(async () => {
   vi.useRealTimers()
   await Promise.all(roots.splice(0).map(ctx => ctx.fiber.dispose()))
 })
-
-function fixture(options: {
-  user?: Record<string, unknown>
-  installed?: boolean
-  values?: Record<string, unknown>
-  defaultsInstalled?: boolean
-  home?: string
-} = {}) {
-  const ctx = new Context()
-  roots.push(ctx)
-  let user = options.user ?? {}
-  const settings = {
-    describe: vi.fn(() => [{
-      ns: 'imagegen',
-      revision: 4,
-      user,
-      value: {},
-    }]),
-    update: vi.fn(async (_ns: string, patch: Record<string, unknown>) => {
-      user = { ...user, ...structuredClone(patch) }
-    }),
-    replace: vi.fn(async (_ns: string, section: Record<string, unknown>) => {
-      user = structuredClone(section)
-    }),
-  }
-  const account = {
-    getState: vi.fn(async () => ({ status: 'signed-in', user: null })),
-    getPlugins: vi.fn(async () => [{
-      pluginId: '1',
-      pluginName: 'AI 生图',
-      packageName: PACKAGE,
-      category: 'image',
-      description: '',
-      config: {
-        target: 'imagegen',
-        values: options.values ?? { channelSecrets: { mio: '{{MIO_API_KEY}}' }, apiUrl: '{{MIO_MODEL_BASE_URL}}' },
-      },
-    }]),
-    getModelAccess: vi.fn(async () => ({
-      baseUrl: 'https://models.test/v1', apiKey: 'sk-test', credentialVersion: 1, expiresAt: '2030-01-01 00:00:00',
-    })),
-  }
-  const defaults = (options.defaultsInstalled ?? true)
-    ? DEFAULT_INSTALL_PACKAGES.map(name => ({ name, installed: true, enabled: true }))
-    : []
-  const manager = {
-    listBundles: vi.fn(async () => [{ name: PACKAGE, installed: options.installed ?? true, enabled: true }, ...defaults]),
-    installBundle: vi.fn(async (name: string): Promise<{
-      changed: boolean
-      application: 'applied' | 'restart-required' | 'failed' | 'cancelled'
-      stage: 'install'
-      target: string
-      bundle?: string
-      error?: { code: string }
-    }> => ({ changed: true, application: 'applied', stage: 'install', target: name, bundle: name })),
-  }
-  ctx.provide('mioAccount', account as never)
-  ctx.provide('settings', settings as never)
-  ctx.provide('pluginManager', manager as never)
-  if (options.home !== undefined) {
-    ctx.provide('profileContext', { name: 'desktop', home: options.home } as never)
-  }
-  return { ctx, settings, account, manager }
-}
 
 describe('catalog preset application', () => {
   it('writes a configured preset into an empty settings entry', async () => {
@@ -340,50 +272,35 @@ describe('default plugin installation', () => {
 
   it('re-applies the preset across process restarts after uninstall and reinstall', async () => {
     const home = await mkdtemp(join(tmpdir(), 'mio-preset-'))
+    const appliedMarker = join(home, 'storages', 'mio-plugin-preset', 'desktop.applied.json')
+    /** @returns the applied marker's package names. */
+    const applied = async (): Promise<string[]> => JSON.parse(await readFile(appliedMarker, 'utf8')) as string[]
+    const installed = [{ name: PACKAGE, installed: true, enabled: true }]
     try {
-      // First process: install the plugin, then uninstall it.
+      // First process: the plugin installs, applies, and is then uninstalled.
       const first = fixture({ home, installed: false })
       await first.ctx.plugin(presetPlugin)
-      // Run all pending timers and async operations to ensure the first sweep completes.
-      await vi.runAllTimersAsync()
+      await settle()
 
-      // Simulate installation.
-      first.manager.listBundles.mockResolvedValue([{ name: PACKAGE, installed: true, enabled: true }] as never)
+      first.manager.listBundles.mockResolvedValue(installed)
       first.ctx.emit('plugin-manager/changed', { reason: 'install' })
-      // Wait for the sweep to complete and call settings.replace.
-      await vi.waitFor(() => {
-        expect(first.settings.replace).toHaveBeenCalledTimes(1)
-      }, { timeout: 2_000 })
+      await settle()
+      expect(first.settings.replace).toHaveBeenCalledTimes(1)
+      expect(await applied()).toEqual([PACKAGE])
 
-      // Verify the applied marker was persisted.
-      const appliedPath = join(home, 'storages', 'mio-plugin-preset', 'desktop.applied.json')
-      await vi.waitFor(async () => {
-        const marker: unknown = JSON.parse(await readFile(appliedPath, 'utf8'))
-        expect(marker).toEqual(expect.arrayContaining([PACKAGE]))
-      })
-
-      // Simulate uninstall: the applied marker is cleared.
       first.manager.listBundles.mockResolvedValue([] as never)
       first.ctx.emit('plugin-manager/changed', { reason: 'bundle' })
-      await vi.advanceTimersByTimeAsync(600)
+      await settle()
+      expect(await applied()).toEqual([])
 
-      // Verify the applied marker was cleared on disk.
-      await vi.waitFor(async () => {
-        const marker: unknown = JSON.parse(await readFile(appliedPath, 'utf8'))
-        expect(marker).not.toContain(PACKAGE)
-      })
-
-      // Second process: plugin is reinstalled. The applied marker on disk is empty,
-      // so the reinstall is treated as new and force-applies the preset.
+      // Second process: the reinstall is new again, because the applied marker was cleared.
       const second = fixture({ home, installed: false })
       await second.ctx.plugin(presetPlugin)
-      await vi.runAllTimersAsync()
+      await settle()
 
-      second.manager.listBundles.mockResolvedValue([{ name: PACKAGE, installed: true, enabled: true }] as never)
+      second.manager.listBundles.mockResolvedValue(installed)
       second.ctx.emit('plugin-manager/changed', { reason: 'install' })
-      await vi.waitFor(() => {
-        expect(second.settings.replace).toHaveBeenCalledTimes(1)
-      }, { timeout: 2_000 })
+      await settle()
       expect(second.settings.replace).toHaveBeenCalledExactlyOnceWith('imagegen', {
         channelSecrets: { mio: 'sk-test' },
         apiUrl: 'https://models.test/v1',
@@ -440,5 +357,25 @@ describe('default plugin installation', () => {
     expect(installed).toHaveBeenCalledExactlyOnceWith({
       packages: [...DEFAULT_INSTALL_PACKAGES], reload: false,
     })
+  })
+
+  it('records a preset failure in the profile storage for local diagnosis', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'mio-preset-'))
+    try {
+      const { ctx, account } = fixture({ home })
+      // A preset whose target package is not the entry it arrived on cannot be applied.
+      account.getPlugins.mockResolvedValue([{ ...catalogEntry(), packageName: 'dsh-skill-mcp-panel' }] as never)
+      await ctx.plugin(presetPlugin)
+      await settle()
+
+      const diagnostic = JSON.parse(
+        await readFile(join(home, 'storages', 'mio-plugin-preset', 'last-error.json'), 'utf8'),
+      ) as { at: string; message: string; packageName: string }
+      expect(diagnostic.packageName).toBe('dsh-skill-mcp-panel')
+      expect(diagnostic.message).toContain('belongs to another package')
+      expect(Number.isNaN(Date.parse(diagnostic.at))).toBe(false)
+    } finally {
+      await rm(home, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 })
+    }
   })
 })

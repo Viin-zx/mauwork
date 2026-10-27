@@ -25,8 +25,10 @@ function respond(reply: { status?: number; body?: string }): void {
 
 function waitForAbort(): typeof fetch {
   return vi.fn((_input: string | URL | Request, init: RequestInit = {}) => new Promise<Response>((_resolve, reject) => {
-    init.signal?.addEventListener('abort', () => {
-      reject(init.signal?.reason ?? new DOMException('aborted', 'AbortError'))
+    const signal = init.signal
+    if (signal === null || signal === undefined) return
+    signal.addEventListener('abort', () => {
+      reject(signal.reason instanceof Error ? signal.reason : new DOMException('aborted', 'AbortError'))
     }, { once: true })
   }))
 }
@@ -139,7 +141,7 @@ it('sends the documented prefix, bearer token, and JSON body', async () => {
   expect(fetch).toHaveBeenCalledExactlyOnceWith('http://mio.test/mio/client/v1/thing', expect.objectContaining({
     method: 'POST',
     body: '{"mobile":"1"}',
-    headers: expect.objectContaining({ authorization: 'Bearer at-1', 'content-type': 'application/json' }),
+    headers: { accept: 'application/json', authorization: 'Bearer at-1', 'content-type': 'application/json' },
   }))
 })
 

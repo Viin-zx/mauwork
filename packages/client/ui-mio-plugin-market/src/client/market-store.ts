@@ -44,7 +44,12 @@ const INITIAL: MioMarketState = {
   updating: null, updateError: '', error: '',
 }
 
-/** Whether the registry version is a valid upgrade over the installed one. */
+/**
+ * Whether the registry version is a valid upgrade over the installed one.
+ * @param installed - the installed version as the inventory reports it.
+ * @param latest - the registry's newest version.
+ * @returns whether an update should be offered.
+ */
 export function updateAvailable(installed: string | undefined, latest: string | undefined): boolean {
   if (installed === undefined || latest === undefined) return false
   return valid(installed) !== null && valid(latest) !== null && gt(latest, installed)

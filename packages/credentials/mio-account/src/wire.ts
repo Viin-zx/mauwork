@@ -169,7 +169,14 @@ export const subscriptionsSchema: z.ZodType<MioSubscriptionsView> = z.object({
   realtime: z.boolean().nullish().transform(value => value ?? true),
 })
 
-/** Agreement documents in the backend's fixed order. */
+/**
+ * A backend flag in the service's status convention: `'0'` is on and `'1'` is off. The
+ * string and numeric forms of `0` are both read as on; every other value, an absent one
+ * included, stays off so an unreadable flag never replaces a user's configuration.
+ */
+const flagSchema = z.union([z.boolean(), z.string(), z.number()]).nullish()
+  .transform(value => value === '0' || value === 0)
+
 /** Enabled plugin catalog; `config` is a raw JSON object retained only by the Host. */
 export const pluginCatalogSchema: z.ZodType<readonly MioPluginCatalogItem[]> = z.array(z.object({
   pluginId: z.union([z.string(), z.number()]).transform(value => String(value)),
@@ -177,9 +184,11 @@ export const pluginCatalogSchema: z.ZodType<readonly MioPluginCatalogItem[]> = z
   packageName: z.string(),
   category: z.string().nullish().transform(value => value ?? ''),
   description: z.string().nullish().transform(value => value ?? ''),
+  autoRefresh: flagSchema,
   config: z.record(z.string(), z.unknown()).nullish().transform(value => value ?? null),
 }))
 
+/** Agreement documents in the backend's fixed order; title, version, and updated time are optional. */
 export const agreementsSchema: z.ZodType<readonly MioAgreement[]> = z.array(z.object({
   agreementType: z.string().min(1),
   title: z.string().optional(),

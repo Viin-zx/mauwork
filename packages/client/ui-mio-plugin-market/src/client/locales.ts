@@ -24,6 +24,7 @@ export const en = {
 /** Locale keys the market tab owns. */
 export type MioPluginMarketKey = keyof typeof en
 
+/** The market tab's Chinese copy, required to carry every {@link MioPluginMarketKey}. */
 export const zh: Record<MioPluginMarketKey, string> = {
   title: '插件市场',
   description: '这里列出当前账号可安装的插件，安装后可在当前工作区直接使用。',

@@ -45,6 +45,7 @@ const plugins: readonly MioPluginCatalogItem[] = [{
   packageName: '@q253595422/dsh-imagegen-video',
   category: 'image',
   description: 'Generate images',
+  autoRefresh: true,
   config: { target: 'imagegen', values: {} },
 }]
 const pluginListings: readonly MioPluginListing[] = [{
