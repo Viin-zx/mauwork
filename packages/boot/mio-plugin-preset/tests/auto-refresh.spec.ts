@@ -4,6 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { SettingsNamespace } from '@deepseek-ai/dsh-settings'
 import * as sweep from '../src/index.ts'
 import { catalogEntry, fixture, roots, settle } from './fixture.ts'
 
@@ -42,7 +43,7 @@ describe('catalog refresh switch', () => {
       expect(applied).not.toHaveBeenCalled()
 
       // An event-driven sweep leaves the entry alone until the next tick.
-      ctx.emit('settings/document-updated', { ns: 'imagegen' })
+      ctx.emit('settings/document-updated', 'imagegen' as SettingsNamespace, 5)
       await settle()
       expect(settings.replace).toHaveBeenCalledTimes(1)
 
