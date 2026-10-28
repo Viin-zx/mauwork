@@ -259,10 +259,6 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean, t
   }
 
   const catalog = await ctx.mioAccount.getPlugins()
-  console.log('[DEBUG] mio-plugin-preset: catalog has %d plugins, tick=%s', catalog.length, String(tick))
-  for (const item of catalog) {
-    console.log('[DEBUG] mio-plugin-preset: %s autoRefresh=%s', item.packageName, String(item.autoRefresh))
-  }
   const catalogPackages = new Set(catalog.map(item => item.packageName))
   for (const item of catalog) {
     if (!installed.has(item.packageName)) continue
