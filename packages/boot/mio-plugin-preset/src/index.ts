@@ -33,8 +33,6 @@ export const inject = ['mioAccount', 'settings', 'pluginManager']
 const STARTUP_DELAY_MS = 1_500
 /** Debounce for installation, settings, and composition events. */
 const EVENT_DELAY_MS = 500
-/** Cadence of catalog re-reads that carry an admin-tuned preset to the client. */
-const AUTO_REFRESH_INTERVAL_MS = 5 * 60_000
 /** Last non-secret application failure, kept beside the pending marker for diagnosis. */
 const DIAGNOSTIC_FILE = 'last-error.json'
 /** Retries after an install while the plugin's settings entry is still activating. */
@@ -89,7 +87,7 @@ export function apply(ctx: Context): void {
   let disposed = false
   let retryAttempts = 0
   let accountChanged = false
-  /** The next sweep reads the catalog as a timed refresh, overwriting entries the admin switched on. */
+  /** The first sweep of the process reads the catalog as a startup refresh, overwriting entries the admin switched on. */
   let catalogTick = true
   const state: SweepState = {
     known: undefined, pending: new Set(), reloadPending: new Set(), access: new Map(), signedIn: false,
@@ -121,9 +119,10 @@ export function apply(ctx: Context): void {
     const refresh = accountChanged
     const tick = catalogTick
     accountChanged = false
-    catalogTick = false
     try {
-      await sweepCatalog(ctx, state, refresh, tick)
+      // A sweep that ran before login has no catalog; the startup tick stays
+      // armed so the first signed-in sweep still overwrites switched entries.
+      if (await sweepCatalog(ctx, state, refresh, tick)) catalogTick = false
     } catch (error) {
       ctx.logger.warn('mio-plugin-preset: catalog sweep failed: %s', messageOf(error))
     } finally {
@@ -160,18 +159,12 @@ export function apply(ctx: Context): void {
       state.defaultTried.clear()
       schedule()
     })
-    // The catalog itself carries the refresh switch, so a tick re-reads it and
-    // overwrites every entry the admin turned on; the first sweep runs as a
-    // tick, so a preset tuned while the client was closed arrives at startup.
-    // Disposal clears this interval, so its callback never runs afterward.
-    const interval = setInterval(() => {
-      catalogTick = true
-      schedule()
-    }, AUTO_REFRESH_INTERVAL_MS)
+    // The catalog itself carries the refresh switch, so the startup sweep
+    // reads it and overwrites every entry the admin turned on: a preset tuned
+    // while the client was closed arrives at the next launch.
     schedule(STARTUP_DELAY_MS)
     return () => {
       disposed = true
-      clearInterval(interval)
       offChange()
       offSettings()
       offAccount()
@@ -181,12 +174,19 @@ export function apply(ctx: Context): void {
   }, 'mio-plugin-preset: catalog sweep')
 }
 
-/** Apply presets, remember force intent, and overwrite switched entries on a catalog tick. */
-async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean, tick: boolean): Promise<void> {
+/**
+ * Apply presets, remember force intent, and overwrite switched entries on the startup tick.
+ * @param ctx - the plugin context whose account, settings, and manager services answer.
+ * @param state - the sweep's cross-run memory.
+ * @param refresh - whether the account had changed since the previous sweep.
+ * @param tick - whether this sweep carries the startup catalog refresh.
+ * @returns whether the catalog was read; a signed-out sweep leaves the startup tick armed.
+ */
+async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean, tick: boolean): Promise<boolean> {
   const session = await ctx.mioAccount.getState()
   if (session.status !== 'signed-in') {
     state.signedIn = false
-    return
+    return false
   }
   // A new sign-in can rotate the model credential without changing its version, so refresh it.
   if (!state.signedIn) {
@@ -305,6 +305,7 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean, t
   if (appliedChanged) {
     await writeApplied(ctx, state.applied)
   }
+  return true
 }
 
 /** One defaults pass: packages installed here and whether a reload can load them. */
