@@ -255,7 +255,7 @@ describe('default plugin installation', () => {
 
     // Simulate uninstall: plugin disappears from the bundle list.
     manager.listBundles.mockResolvedValue([] as never)
-    ctx.emit('plugin-manager/changed', { reason: 'bundle' })
+    ctx.emit('plugin-manager/changed', { reason: 'remove' })
     await vi.advanceTimersByTimeAsync(600)
 
     // Simulate reinstall: plugin reappears as newly installed.
@@ -289,7 +289,7 @@ describe('default plugin installation', () => {
       expect(await applied()).toEqual([PACKAGE])
 
       first.manager.listBundles.mockResolvedValue([] as never)
-      first.ctx.emit('plugin-manager/changed', { reason: 'bundle' })
+      first.ctx.emit('plugin-manager/changed', { reason: 'remove' })
       await settle()
       expect(await applied()).toEqual([])
 
