@@ -227,6 +227,28 @@ describe('route publication', () => {
     })
   })
 
+  it('declares each chat model thinking depths from its catalog name', async () => {
+    const { account, adapter } = await harness()
+    account.state = READY
+    account.catalog = {
+      items: [
+        { modelId: 'deepseek-v4-flash-0731', displayName: 'DeepSeek V4 Flash', providerName: 'mio', modelType: 'LANGUAGE', requestTimeoutMs: 30_000, isDefault: true, parameters: {} },
+        { modelId: 'MiniMax-H3', displayName: 'MiniMax H3', providerName: 'mio', modelType: 'LANGUAGE', requestTimeoutMs: 30_000, isDefault: false, parameters: {} },
+        { modelId: 'plain-chat', displayName: 'Plain Chat', providerName: 'mio', modelType: 'LANGUAGE', requestTimeoutMs: 30_000, isDefault: false, parameters: {} },
+      ],
+      fetchedAt: '2026-10-20T00:00:00Z',
+      stale: false,
+    }
+    await adapter.refreshNow()
+
+    const deepseek = await adapter.resolveModel('mio', 'deepseek-v4-flash-0731')
+    expect(deepseek.reasoning?.efforts.map(effort => effort.id)).toEqual(['off', 'low', 'medium', 'high'])
+    expect(deepseek.reasoning?.defaultEffort).toBeUndefined()
+    const minimax = await adapter.resolveModel('mio', 'MiniMax-H3')
+    expect(minimax.reasoning?.efforts.map(effort => effort.id)).toEqual(['off', 'low', 'high'])
+    expect((await adapter.resolveModel('mio', 'plain-chat')).reasoning).toBeUndefined()
+  })
+
   it('withholds the route while account provisioning is incomplete', async () => {
     const { ctx, account, adapter } = await harness()
     account.state = {

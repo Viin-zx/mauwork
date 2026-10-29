@@ -18,6 +18,7 @@ import type { MioAccount } from '@deepseek-ai/dsh-mio-account'
 import type { MioModel, MioModelCatalogView } from '@deepseek-ai/dsh-mio-account/types'
 import type {} from '@deepseek-ai/dsh-attachment'
 import type {} from '@deepseek-ai/dsh-fs'
+import { reasoningEffortsFor } from './reasoning.ts'
 
 /** Construction facts of {@link MioAdapter}. */
 export interface MioAdapterOptions {
@@ -40,12 +41,14 @@ export interface MioAdapterOptions {
 /** One catalog entry projected into the pi-ai model vocabulary. */
 function toPiModel(model: MioModel): PiAiModelProfile {
   const { parameters } = model
+  const efforts = reasoningEffortsFor(model.modelId)
   return {
     id: model.modelId,
     ...model.displayName === '' ? {} : { name: model.displayName },
     ...parameters.contextWindowTokens === undefined ? {} : { contextWindow: parameters.contextWindowTokens },
     ...parameters.maxOutputTokens === undefined ? {} : { maxTokens: parameters.maxOutputTokens },
     input: parameters.visionEnabled === true ? ['text', 'image'] : ['text'],
+    ...efforts === undefined ? {} : { reasoningEfforts: efforts },
   }
 }
 

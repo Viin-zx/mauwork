@@ -45,7 +45,7 @@ Account readiness is re-read before every model operation. A route that has just
 
 #### What the model sees
 
-The selectable model set and each model's display name, context window, output capability, and text/image input modalities come from the business model directory. Only `LANGUAGE` entries are offered, and request model names are the backend's `modelId` values. System prompts, tools, and transcript projection follow the shared pi-ai adapter.
+The selectable model set and each model's display name, context window, output capability, and text/image input modalities come from the business model directory. Only `LANGUAGE` entries are offered, and request model names are the backend's `modelId` values. Thinking depths are decided from that `modelId`: [`reasoning.ts`](src/reasoning.ts) maps the DeepSeek chat families and MiniMax to their effort levels, sent as `reasoning_effort`, and a model with no matching family offers none, so its selector hides the effort menu. Add a family row there when the catalog starts serving another reasoning model. System prompts, tools, and transcript projection follow the shared pi-ai adapter.
 
 #### Token effect
 
@@ -59,7 +59,7 @@ No model request prefix changes; the route only supplies the endpoint, credentia
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- Reasoning levels, temperature defaults, and tool-calling capability reported by the backend are not mapped into request options; only capacities and modalities reach the adapter. A model that cannot call tools is still offered to the agent loop.
+- Thinking depths come from the model-name table in `src/reasoning.ts`, not from the backend. A renamed model id that no family matches loses its effort menu until a row names it, and a gateway that spells its levels differently needs that table's wire values changed. Temperature defaults and tool-calling capability reported by the backend are still not mapped into request options. A model that cannot call tools is still offered to the agent loop.
 - The default-model policy commits through the configuration editor. A deployment without a profile entry keeps its composed default selection.
 
 <a id="dev-note"></a>
