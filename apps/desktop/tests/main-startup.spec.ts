@@ -325,7 +325,7 @@ vi.mock('../src/update-dialog.ts', () => ({ DesktopUpdateDialog: class {
   readonly focus = harness.shellDialog.focus
   dispose() {}
 } }))
-vi.mock('../src/update-coordinator.ts', () => ({ DesktopUpdateCoordinator: class {
+vi.mock('../src/update-coordinator.ts', () => ({ hasPackagedUpdateSource: () => true, DesktopUpdateCoordinator: class {
   constructor(publish: (state: DesktopUpdateState) => DesktopUpdateState, beforeRestart: () => Promise<boolean>) {
     harness.prepareUpdate = beforeRestart
     harness.publishUpdate = publish

@@ -11,6 +11,16 @@ import { DesktopUpdatePreparationError } from './update-error.ts'
 
 const { autoUpdater } = electronUpdater
 
+/**
+ * Whether this process carries the packaged update feed electron-updater reads.
+ * An unsigned macOS bundle ships none, because Squirrel.Mac verifies the bundle
+ * signature before installing, so that build can only be replaced by hand.
+ * @returns whether a packaged update source exists here.
+ */
+export function hasPackagedUpdateSource(): boolean {
+  return app.isPackaged && existsSync(join(process.resourcesPath, 'app-update.yml'))
+}
+
 /** Owns one updater target until its download and installation settle. */
 export class DesktopUpdateCoordinator {
   private current: DesktopUpdateState = { phase: 'idle' }
@@ -52,7 +62,7 @@ export class DesktopUpdateCoordinator {
     private readonly publish: (state: DesktopUpdateState) => DesktopUpdateState,
     private readonly beforeRestart: () => Promise<boolean>,
     private readonly updater: AppUpdater = autoUpdater,
-    private readonly enabled: () => boolean = () => app.isPackaged && existsSync(join(process.resourcesPath, 'app-update.yml')),
+    private readonly enabled: () => boolean = hasPackagedUpdateSource,
     private readonly currentVersion: () => string = () => app.getVersion(),
     private readonly downloadResult?: (success: boolean, reason?: string) => void,
     private readonly channel: 'nightly' | 'latest' = 'nightly',
@@ -184,7 +194,9 @@ export class DesktopUpdateCoordinator {
   private async doCheck(): Promise<DesktopUpdateState> {
     try {
       this.assertLive()
-      if (!this.enabled()) throw new Error('desktop update: this application has no packaged update source')
+      // A build without an update feed has nothing to check; the shell offers
+      // its download page instead of reporting a missing-source failure.
+      if (!this.enabled()) return this.setState({ phase: 'idle' })
       const result = await this.updater.checkForUpdates()
       if (result === null) throw new Error('desktop update: no check result was returned')
       const version = result.updateInfo.version

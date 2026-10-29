@@ -33,7 +33,8 @@ import { readDeviceInfo } from './device-info.ts'
 import { desktopUpdateReadyConfirmation, formatDesktopMessage, resolveDesktopLocale, resolveDesktopStartupLocale } from './locale.ts'
 import { claimDesktopSingleInstance } from './single-instance.ts'
 import { desktopUpdateChannel } from './update-channel.ts'
-import { DesktopUpdateCoordinator } from './update-coordinator.ts'
+import { DesktopUpdateCoordinator, hasPackagedUpdateSource } from './update-coordinator.ts'
+import { offerDownloadPage } from './update-download-page.ts'
 import { DesktopCommandManager } from './command-management.ts'
 import { serveWebDocument, authenticateWebHost, forwardWebRequest } from './web-document.ts'
 import { DesktopFatalRecovery } from './fatal-recovery.ts'
@@ -749,6 +750,14 @@ async function main(): Promise<void> {
     let failedOperation: 'check' | 'download' | 'install' = 'check'
     promptOperation ??= Promise.resolve().then(async () => {
       if (manual) updateJournal?.action('check-requested')
+      // An unsigned macOS bundle carries no update feed; offering the product
+      // page beats reporting the updater's missing-source failure.
+      if (!hasPackagedUpdateSource()) {
+        if (manual) {
+          await offerDownloadPage({ messages: () => locale.messages, show: ordinaryMessageBox, open: url => shell.openExternal(url) })
+        }
+        return
+      }
       const joinedPolicyAuthentication = authenticationOperation !== undefined
       if (joinedPolicyAuthentication) await authenticatePolicy()
       if (isMandatory()) {
