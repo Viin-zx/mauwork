@@ -10,6 +10,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import type {} from '@deepseek-ai/dsh-plugin-manager/types'
 import { MioMarketTab } from './MioMarketTab.tsx'
+import { MarketUpdateDot } from './MarketUpdateDot.tsx'
 import { MioMarketController } from './market-store.ts'
 import { en, zh, type MioPluginMarketKey } from './locales.ts'
 
@@ -59,4 +60,9 @@ export function apply(ctx: ClientContext): void {
   ctx.slots.inject('plugins.tab', () => ctx.slots.register({
     name: 'plugins.tab', id: 'mio-market', label: () => t('title'), locale: NS, inject: () => face,
   }, MioMarketTab))
+  // The dot mounts with the page's tab bar, so it can start the catalog read
+  // and mark the tab before the market tab itself has ever been opened.
+  ctx.slots.inject('plugins.tab.badge', () => ctx.slots.register({
+    name: 'plugins.tab.badge', id: 'mio-market', locale: NS, inject: () => face,
+  }, MarketUpdateDot))
 }

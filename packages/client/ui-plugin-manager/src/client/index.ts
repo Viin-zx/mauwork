@@ -122,6 +122,7 @@ export function apply(ctx: ClientContext): void {
       children: {
         'plugins.add.actions': { kind: 'list', scope: 'root' },
         'plugins.tab': { kind: 'list', scope: 'root' },
+        'plugins.tab.badge': { kind: 'list', scope: 'root' },
         'plugins.item': { kind: 'list', scope: 'root' },
         'plugins.bundle.activation': { kind: 'keyed', scope: 'root' },
         'plugins.bundle.config': { kind: 'keyed', scope: 'root' },

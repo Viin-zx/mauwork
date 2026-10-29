@@ -1530,6 +1530,13 @@ label.registryOption {
   min-width: 240px;
 }
 
+/* A contributed tab's label with the marker its badge occupant draws, if any. */
+.tabLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* The Installed groups keep the page's row gap inside their tab panel. */
 .installedPanel {
   display: flex;

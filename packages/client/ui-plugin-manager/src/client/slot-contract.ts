@@ -112,6 +112,12 @@ export interface PluginAddActionsProps {
   readonly onDismiss: () => void
 }
 
+/** What a tab badge occupant knows: which contributed tab it decorates. */
+export interface PluginTabBadgeProps {
+  /** The `plugins.tab` registration id the page renders this badge beside. */
+  readonly id: string
+}
+
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap {
     /** Additional MenuItemButton rows after installation: 72px high, with a title and a description capped at two lines. */
@@ -122,6 +128,12 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * through the owner's `install`.
      */
     'plugins.tab': { kind: 'list'; scope: 'root'; owner: PluginTabProps }
+    /**
+     * A marker beside one contributed tab's label, such as a dot while that
+     * tab has something new: the entry renders nothing when it has nothing to
+     * mark, and `id` names the `plugins.tab` entry it decorates.
+     */
+    'plugins.tab.badge': { kind: 'list'; scope: 'root'; owner: PluginTabBadgeProps }
     /** Optional guidance after the user enables a bundle from the list, keyed by npm package name. */
     'plugins.bundle.activation': { kind: 'keyed'; scope: 'root'; owner: PluginActivationOwnerProps }
     /**

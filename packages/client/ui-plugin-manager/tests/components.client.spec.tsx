@@ -87,7 +87,7 @@ const READY: PluginManagerState = {
  * (a list slot's cell is empty), the view asked for — `detail` for a detail
  * contribution — and the owner props.
  */
-type SlotBodies = Record<string, (view: 'summary' | 'page' | 'activation' | 'detail' | 'add' | 'tab', owner: unknown, form?: ConfigPageForm) => ReactNode>
+type SlotBodies = Record<string, (view: 'summary' | 'page' | 'activation' | 'detail' | 'add' | 'tab' | 'badge', owner: unknown, form?: ConfigPageForm) => ReactNode>
 
 /** The subject a detail contribution was rendered with. */
 function subjectOf(owner: unknown): PluginsSubject | undefined {
@@ -170,6 +170,7 @@ function renderTab(
       if (name === 'plugins.bundle.activation') return body('activation', owner)
       if (name === 'plugins.add.actions') return body('add', owner)
       if (name === 'plugins.tab') return body('tab', owner)
+      if (name === 'plugins.tab.badge') return body('badge', owner)
       if (name.startsWith('plugins.detail.')) return body('detail', owner)
       if (!('view' in owner) || (owner.view !== 'summary' && owner.view !== 'page')) {
         throw new Error('Plugin configuration fixture requires a summary or page view')
@@ -244,6 +245,19 @@ describe('PluginManagerPage', () => {
     set({ highlight: 'dsh-better-sidebar' })
     expect(navigation.getSnapshot().tab).toBe('installed')
     expect(screen.getByRole('tabpanel', { name: en.installedTab })).toBeTruthy()
+  })
+
+  it('draws a contributed tab badge beside its own label only', () => {
+    const { setTabs } = renderTab({ packages: [pkg()] }, {}, {
+      'plugins.tab:discover': () => <span>Discover body</span>,
+      'plugins.tab.badge:discover': (_view, owner) => (
+        <span data-testid="tab-badge">{(owner as { id: string }).id}</span>
+      ),
+    })
+    setTabs([{ id: 'discover', label: 'Discover' }])
+    const discover = screen.getByRole('tab', { name: /Discover/u })
+    expect(discover.querySelector('[data-testid="tab-badge"]')?.textContent).toBe('discover')
+    expect(screen.getByRole('tab', { name: en.installedTab }).querySelector('[data-testid="tab-badge"]')).toBeNull()
   })
 
   it('keeps the Installed tab panel through loading and the More list out of the tabs', () => {

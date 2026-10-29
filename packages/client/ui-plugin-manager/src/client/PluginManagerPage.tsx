@@ -44,7 +44,7 @@ export type PluginManagerPageProps =
   & PropsLocale<'pluginManager'>
   & PropsRenderSlots<
     | 'plugins.item' | 'plugins.bundle.config' | 'plugins.row.config' | 'plugins.bundle.activation'
-    | 'plugins.add.actions' | 'plugins.tab'
+    | 'plugins.add.actions' | 'plugins.tab' | 'plugins.tab.badge'
     | 'plugins.detail.actions' | 'plugins.detail.badge' | 'plugins.detail.section'
   >
   & InjectFace<PluginManagerFace>
@@ -1647,7 +1647,17 @@ export function PluginManagerPage(props: PluginManagerPageProps): ReactNode {
               onChange={(next) => { setTab(next) }}
               items={[
                 { value: INSTALLED_TAB, label: t('installedTab'), id: `${tabsId}-${INSTALLED_TAB}`, panelId: `${tabsId}-${INSTALLED_TAB}-panel` },
-                ...tabs.map(item => ({ value: item.id, label: item.label, id: `${tabsId}-${item.id}`, panelId: `${tabsId}-${item.id}-panel` })),
+                ...tabs.map(item => ({
+                  value: item.id,
+                  label: (
+                    <span className={css.tabLabel}>
+                      {item.label}
+                      {renderSlot('plugins.tab.badge', { id: item.id }, { only: item.id })}
+                    </span>
+                  ),
+                  id: `${tabsId}-${item.id}`,
+                  panelId: `${tabsId}-${item.id}-panel`,
+                })),
               ]}
             />
           </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { MioMarketController } from '../src/client/market-store.ts'
+import { hasUpdates, MioMarketController } from '../src/client/market-store.ts'
 
 const PACKAGE = '@q253595422/dsh-imagegen-video'
 const LISTING = {
@@ -101,5 +101,31 @@ describe('mio plugin market store', () => {
     controller.refreshInstalled()
     await vi.waitFor(() => { expect(controller.store.getSnapshot().installed).toEqual([]) })
     expect(ctx.remote.mioAccount.listPlugins).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('market update marker', () => {
+  const base = {
+    status: 'ready' as const, items: [LISTING], installed: [PACKAGE], updating: null, updateError: '', error: '',
+    installedVersions: {}, latestVersions: {},
+  }
+
+  it('marks only a newer registry version than the installed one', () => {
+    expect(hasUpdates({
+      ...base, installedVersions: { [PACKAGE]: '1.0.0' }, latestVersions: { [PACKAGE]: '2.0.0' },
+    })).toBe(true)
+    expect(hasUpdates({
+      ...base, installedVersions: { [PACKAGE]: '2.0.0' }, latestVersions: { [PACKAGE]: '2.0.0' },
+    })).toBe(false)
+    expect(hasUpdates({
+      ...base, installedVersions: { [PACKAGE]: '3.0.0' }, latestVersions: { [PACKAGE]: '2.0.0' },
+    })).toBe(false)
+  })
+
+  it('marks nothing before a registry read or for a package that is not installed', () => {
+    expect(hasUpdates({ ...base, installedVersions: { [PACKAGE]: '1.0.0' }, latestVersions: {} })).toBe(false)
+    expect(hasUpdates({
+      ...base, installed: [], installedVersions: { [PACKAGE]: '1.0.0' }, latestVersions: { [PACKAGE]: '2.0.0' },
+    })).toBe(false)
   })
 })

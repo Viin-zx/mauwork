@@ -55,6 +55,17 @@ export function updateAvailable(installed: string | undefined, latest: string | 
   return valid(installed) !== null && valid(latest) !== null && gt(latest, installed)
 }
 
+/**
+ * Whether any installed catalog plugin has a newer registry version, which is
+ * what the Plugins page tab marks with a dot.
+ * @param state - the market snapshot.
+ * @returns whether an installed catalog entry should be updated.
+ */
+export function hasUpdates(state: MioMarketState): boolean {
+  return state.items.some(item => state.installed.includes(item.packageName)
+    && updateAvailable(state.installedVersions[item.packageName], state.latestVersions[item.packageName]))
+}
+
 /** Resolve installed package names and versions from the plugin manager's bundle projection. */
 function installedOf(bundles: readonly {
   readonly name: string

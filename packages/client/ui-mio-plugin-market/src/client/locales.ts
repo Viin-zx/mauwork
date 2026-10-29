@@ -17,6 +17,7 @@ export const en = {
   updateDescription: 'The current version {installed} will be uninstalled and version {latest} reinstalled in its place. Plugin settings are kept.',
   restartToUpdate: 'Restart the client before updating this plugin.',
   updateFailed: 'Could not update the plugin.',
+  updateAvailableDot: 'A plugin update is available.',
   cancel: 'Cancel',
   autoConfigured: 'Auto-configured',
 } as const
@@ -42,6 +43,7 @@ export const zh: Record<MioPluginMarketKey, string> = {
   updateDescription: '会先卸载当前版本 {installed}，再重新安装最新版本 {latest}；插件设置会保留。',
   restartToUpdate: '需要重启客户端后再更新该插件。',
   updateFailed: '插件更新失败。',
+  updateAvailableDot: '有可用的插件更新。',
   cancel: '取消',
   autoConfigured: '自动配置',
 }
