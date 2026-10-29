@@ -142,7 +142,9 @@ jobs:
 
   macos-arm64:
     needs: version
-    runs-on: macos-14
+    # macos-14 arm64 repeatedly failed runner acquisition under hosted capacity
+    # constraints; macos-15 is the same architecture on a different pool.
+    runs-on: macos-15
     timeout-minutes: 240
     env:
       BUILD_VERSION: ${{ needs.version.outputs.build }}
