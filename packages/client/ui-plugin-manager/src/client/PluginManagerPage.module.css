@@ -1530,11 +1530,11 @@ label.registryOption {
   min-width: 240px;
 }
 
-/* A contributed tab's label with the marker its badge occupant draws, if any. */
+/* A contributed tab's label; a badge occupant positions itself against this box, so the
+   marker can sit at the label's top-right corner. */
 .tabLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  position: relative;
+  display: inline-block;
 }
 
 /* The Installed groups keep the page's row gap inside their tab panel. */
