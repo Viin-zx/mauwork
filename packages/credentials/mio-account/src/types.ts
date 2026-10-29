@@ -122,12 +122,22 @@ export type MioModelType = 'LANGUAGE' | 'EMBEDDING' | 'RERANK' | 'IMAGE' | 'VIDE
  * Type-specific model parameters. Only the fields the mioagent client API
  * documents are projected; image and video models carry none of them.
  */
+/** Thinking-depth ids a model may offer, in escalation order. */
+export const MIO_REASONING_LEVELS = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const
+
+/** One selectable thinking depth. */
+export type MioReasoningLevel = (typeof MIO_REASONING_LEVELS)[number]
+
+/** Parameters the backend declares for one model. */
 export interface MioModelParameters {
   readonly contextWindowTokens?: number | undefined
   readonly maxOutputTokens?: number | undefined
   readonly temperature?: number | null | undefined
   readonly topP?: number | null | undefined
-  readonly reasoningEffort?: string | null | undefined
+  /** Depths this model offers; absent or empty means it offers none. */
+  readonly reasoningEfforts?: readonly MioReasoningLevel[] | undefined
+  /** Depth the selector preselects; null leaves the provider's default. */
+  readonly reasoningEffort?: MioReasoningLevel | null | undefined
   readonly reasoningEnabled?: boolean | undefined
   readonly visionEnabled?: boolean | undefined
   readonly functionCallingEnabled?: boolean | undefined

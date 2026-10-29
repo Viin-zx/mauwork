@@ -38,9 +38,34 @@ import {
   IconDataOutlineRegular, IconWarningOutlineRegular, Input, rankByName, StateDot, Toast,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type { ModelKey } from './locales.ts'
 import type { ModelLabelOwner, ModelSelectInjected } from './slots.ts'
 import css from './ModelSelect.module.css'
 import { orderModelProviders } from './provider-order.ts'
+
+/**
+ * Localized names for the depth ids pi-ai defines. An id this build does not
+ * name — a provider-defined level, say — keeps the name the Host advertised.
+ */
+const EFFORT_KEYS: Readonly<Record<string, ModelKey>> = {
+  off: 'effort.off', minimal: 'effort.minimal', low: 'effort.low', medium: 'effort.medium',
+  high: 'effort.high', xhigh: 'effort.xhigh', max: 'effort.max',
+}
+
+/**
+ * @param efforts - the levels the model advertised.
+ * @param id - the level to name.
+ * @param t - the model namespace translator.
+ * @returns the localized depth name, falling back to the advertised one.
+ */
+function effortName(
+  efforts: readonly ModelReasoningEffort[],
+  id: string,
+  t: (key: ModelKey) => string,
+): string {
+  const key = EFFORT_KEYS[id]
+  return key === undefined ? efforts.find(effort => effort.id === id)?.name ?? id : t(key)
+}
 
 /** Which pane the dropdown shows: the two-row root or one drilled-in list. */
 type Pane = 'root' | 'model' | 'effort'
@@ -133,7 +158,8 @@ export function ModelSelect(
       ? state.retainedEffort
       : effectiveEffort === undefined
         ? t('effort.providerDefault')
-        : reasoning.efforts.find(level => level.id === effectiveEffort)?.name ?? effectiveEffort
+        : effortName(reasoning.efforts, effectiveEffort, t)
+
   const effortChoices = useMemo<readonly EffortChoice[]>(() => reasoning === undefined
     ? []
     : [
@@ -143,7 +169,7 @@ export function ModelSelect(
       ...reasoning.efforts.map((effort: ModelReasoningEffort) => ({
         key: `effort:${effort.id}`,
         effort: effort.id,
-        label: effort.name,
+        label: effortName(reasoning.efforts, effort.id, t),
       })),
     ], [reasoning, t])
   const { pending } = state

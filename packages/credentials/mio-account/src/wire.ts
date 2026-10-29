@@ -6,6 +6,7 @@
 
 import { z } from 'zod'
 import { brandString } from '@deepseek-ai/dsh-brand'
+import { MIO_REASONING_LEVELS, type MioReasoningLevel } from './types.ts'
 import type {
   MioAccountStatusView, MioAgreement, MioModelCatalogView, MioModelType, MioOrderStatus, MioPlan,
   MioPurchaseResult, MioQuotaView, MioSmsCode, MioSubscription, MioSubscriptionsView, MioUser, MioUserId,
@@ -54,12 +55,30 @@ export const accountStatusSchema: z.ZodType<MioAccountStatusView> = z.object({
   retryAfterSeconds: z.number().nonnegative(),
 })
 
+/**
+ * Keep only the depth ids this client can render. A backend value this build
+ * does not know is dropped rather than failing the whole catalog: an unknown
+ * depth is a backend ahead of the client, not a broken response.
+ * @param value - candidate ids from the wire.
+ * @returns the known ids, deduplicated in wire order.
+ */
+function knownReasoningLevels(value: unknown): readonly MioReasoningLevel[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const known = new Set<string>(MIO_REASONING_LEVELS)
+  const levels = value.filter((id): id is MioReasoningLevel => typeof id === 'string' && known.has(id))
+  return levels.length === 0 ? undefined : [...new Set(levels)]
+}
+
 const modelParametersSchema = z.object({
   contextWindowTokens: z.number().int().positive().optional(),
   maxOutputTokens: z.number().int().positive().optional(),
   temperature: z.number().nullable().optional(),
   topP: z.number().nullable().optional(),
-  reasoningEffort: z.string().nullable().optional(),
+  reasoningEfforts: z.unknown().optional().transform(knownReasoningLevels),
+  reasoningEffort: z.string().optional().transform((value): MioReasoningLevel | null | undefined => {
+    if (value === undefined) return undefined
+    return (MIO_REASONING_LEVELS as readonly string[]).includes(value) ? value as MioReasoningLevel : null
+  }),
   reasoningEnabled: z.boolean().optional(),
   visionEnabled: z.boolean().optional(),
   functionCallingEnabled: z.boolean().optional(),

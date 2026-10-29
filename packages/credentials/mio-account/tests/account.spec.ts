@@ -688,6 +688,29 @@ describe('model catalog and access', () => {
     expect(requests[0]?.headers['authorization']).toBe('Bearer at-1')
   })
 
+  it('keeps known thinking depths and drops ones this build cannot render', async () => {
+    const ctx = await signedIn()
+    const entry = (parameters: Record<string, unknown>) => ({
+      modelId: 'deepseek-v4-flash-0731', displayName: 'DeepSeek V4 Flash', providerName: 'mio',
+      modelType: 'LANGUAGE', requestTimeoutMs: 30_000, isDefault: true, parameters,
+    })
+    replies.push(ok({
+      items: [
+        entry({ reasoningEfforts: ['low', 'ultra', 'high', 'low'], reasoningEffort: 'high' }),
+        entry({ reasoningEfforts: ['low'], reasoningEffort: 'max' }),
+      ],
+      fetchedAt: '2026-10-20T00:00:00Z',
+      stale: false,
+    }))
+
+    const models = (await ctx.mioAccount.getModels()).items
+    expect(models[0]?.parameters.reasoningEfforts).toEqual(['low', 'high'])
+    expect(models[0]?.parameters.reasoningEffort).toBe('high')
+    // A level this build knows survives the wire; the adapter drops a default
+    // the model does not offer (see the llm-mio catalog test).
+    expect(models[1]?.parameters.reasoningEffort).toBe('max')
+  })
+
   it('reads plans, purchases one, polls its order, and lists subscriptions', async () => {
     const ctx = await signedIn()
     const plan = {

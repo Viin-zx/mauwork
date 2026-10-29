@@ -227,14 +227,30 @@ describe('route publication', () => {
     })
   })
 
-  it('declares each chat model thinking depths from its catalog name', async () => {
+  it('projects the backend-declared thinking depths and their default', async () => {
     const { account, adapter } = await harness()
     account.state = READY
     account.catalog = {
       items: [
-        { modelId: 'deepseek-v4-flash-0731', displayName: 'DeepSeek V4 Flash', providerName: 'mio', modelType: 'LANGUAGE', requestTimeoutMs: 30_000, isDefault: true, parameters: {} },
-        { modelId: 'glm-5.3', displayName: 'GLM 5.3', providerName: 'mio', modelType: 'LANGUAGE', requestTimeoutMs: 30_000, isDefault: false, parameters: {} },
-        { modelId: 'plain-chat', displayName: 'Plain Chat', providerName: 'mio', modelType: 'LANGUAGE', requestTimeoutMs: 30_000, isDefault: false, parameters: {} },
+        {
+          modelId: 'deepseek-v4-flash-0731', displayName: 'DeepSeek V4 Flash', providerName: 'mio', modelType: 'LANGUAGE',
+          requestTimeoutMs: 30_000, isDefault: true,
+          parameters: { reasoningEfforts: ['low', 'medium', 'high', 'max'], reasoningEffort: 'high' },
+        },
+        {
+          modelId: 'glm-5.3', displayName: 'GLM 5.3', providerName: 'mio', modelType: 'LANGUAGE',
+          requestTimeoutMs: 30_000, isDefault: false,
+          parameters: { reasoningEfforts: ['off', 'low', 'high', 'max'] },
+        },
+        {
+          modelId: 'plain-chat', displayName: 'Plain Chat', providerName: 'mio', modelType: 'LANGUAGE',
+          requestTimeoutMs: 30_000, isDefault: false, parameters: {},
+        },
+        {
+          modelId: 'stale-default', displayName: 'Stale Default', providerName: 'mio', modelType: 'LANGUAGE',
+          requestTimeoutMs: 30_000, isDefault: false,
+          parameters: { reasoningEfforts: ['low', 'high'], reasoningEffort: 'max' },
+        },
       ],
       fetchedAt: '2026-10-20T00:00:00Z',
       stale: false,
@@ -242,11 +258,14 @@ describe('route publication', () => {
     await adapter.refreshNow()
 
     const deepseek = await adapter.resolveModel('mio', 'deepseek-v4-flash-0731')
-    expect(deepseek.reasoning?.efforts.map(effort => effort.id)).toEqual(['low', 'high', 'max'])
-    expect(deepseek.reasoning?.defaultEffort).toBeUndefined()
+    expect(deepseek.reasoning?.efforts.map(effort => effort.id)).toEqual(['low', 'medium', 'high', 'max'])
+    expect(deepseek.reasoning?.defaultEffort).toBe('high')
     const glm = await adapter.resolveModel('mio', 'glm-5.3')
-    expect(glm.reasoning?.efforts.map(effort => effort.id)).toEqual(['low', 'high', 'max'])
+    expect(glm.reasoning?.efforts.map(effort => effort.id)).toEqual(['off', 'low', 'high', 'max'])
+    expect(glm.reasoning?.defaultEffort).toBeUndefined()
     expect((await adapter.resolveModel('mio', 'plain-chat')).reasoning).toBeUndefined()
+    // A default outside the model's ladder is dropped; the selector keeps the provider default.
+    expect((await adapter.resolveModel('mio', 'stale-default')).reasoning?.defaultEffort).toBeUndefined()
   })
 
   it('withholds the route while account provisioning is incomplete', async () => {

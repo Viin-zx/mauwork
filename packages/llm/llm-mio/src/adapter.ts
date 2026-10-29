@@ -13,12 +13,13 @@ import type {
   PreparedAdapterCall, StreamChunk,
 } from '@deepseek-ai/dsh-llm'
 import { authContextFrom, credentialStoreFrom, PiAiAdapter, resolveProfiles } from '@deepseek-ai/dsh-llm-pi-ai'
-import type { PiAiModelProfile, PiAiProviderProfile, ResolvedPiAiProviderProfile } from '@deepseek-ai/dsh-llm-pi-ai'
+import type {
+  PiAiModelProfile, PiAiProviderProfile, PiAiReasoningEfforts, ResolvedPiAiProviderProfile,
+} from '@deepseek-ai/dsh-llm-pi-ai'
 import type { MioAccount } from '@deepseek-ai/dsh-mio-account'
 import type { MioModel, MioModelCatalogView } from '@deepseek-ai/dsh-mio-account/types'
 import type {} from '@deepseek-ai/dsh-attachment'
 import type {} from '@deepseek-ai/dsh-fs'
-import { reasoningEffortsFor } from './reasoning.ts'
 
 /** Construction facts of {@link MioAdapter}. */
 export interface MioAdapterOptions {
@@ -41,14 +42,23 @@ export interface MioAdapterOptions {
 /** One catalog entry projected into the pi-ai model vocabulary. */
 function toPiModel(model: MioModel): PiAiModelProfile {
   const { parameters } = model
-  const efforts = reasoningEffortsFor(model.modelId)
+  const levels = parameters.reasoningEfforts ?? []
+  // `off` sends no reasoning parameter at all; every other level is its own
+  // wire spelling, which is what the gateway's `reasoning_effort` takes.
+  const reasoningEfforts = levels.length === 0
+    ? undefined
+    : Object.fromEntries(levels.map(level => [level, level === 'off' ? null : level])) as PiAiReasoningEfforts
+  const defaultEffort = parameters.reasoningEffort != null && levels.includes(parameters.reasoningEffort)
+    ? parameters.reasoningEffort
+    : undefined
   return {
     id: model.modelId,
     ...model.displayName === '' ? {} : { name: model.displayName },
     ...parameters.contextWindowTokens === undefined ? {} : { contextWindow: parameters.contextWindowTokens },
     ...parameters.maxOutputTokens === undefined ? {} : { maxTokens: parameters.maxOutputTokens },
     input: parameters.visionEnabled === true ? ['text', 'image'] : ['text'],
-    ...efforts === undefined ? {} : { reasoningEfforts: efforts },
+    ...reasoningEfforts === undefined ? {} : { reasoningEfforts },
+    ...defaultEffort === undefined ? {} : { defaultReasoningEffort: defaultEffort },
   }
 }
 
