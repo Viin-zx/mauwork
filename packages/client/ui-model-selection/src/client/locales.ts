@@ -28,7 +28,7 @@ export const zh = {
   'effort.low': '低',
   'effort.medium': '中',
   'effort.high': '高',
-  'effort.xhigh': '超高',
+  'effort.xhigh': '更高',
   'effort.max': '最高',
   'status.loading': '正在刷新模型列表…',
   'error.action': '模型操作失败：{message}',
