@@ -93,6 +93,13 @@ export class ClientEntries {
     return this.enqueue(async () => {
       await Promise.all(this.desired.plugins.map(async ({ id }) => {
         await this.create(loader, id)
+        // The Loader can keep no fiber without throwing; the boot audit then
+        // only knows "see console". Import the row here so a module-side
+        // failure rejects with its own message instead of being swallowed.
+        const entry = this.managed.get(id)
+        if (entry?.fiber !== undefined) return
+        await this.modules.import(id, '', {})
+        throw new Error(`client-modules: ${id} imported but the Loader kept no entry fiber`)
       }))
       await loader.await()
       for (const row of this.modules.manifest.modules) this.revisions.set(row.id, row.rev)
