@@ -35,6 +35,7 @@ import { claimDesktopSingleInstance } from './single-instance.ts'
 import { desktopUpdateChannel } from './update-channel.ts'
 import { DesktopUpdateCoordinator, hasPackagedUpdateSource } from './update-coordinator.ts'
 import { offerDownloadPage } from './update-download-page.ts'
+import { manualUpdateSourceFromManifest } from './update-manifest.ts'
 import { DesktopCommandManager } from './command-management.ts'
 import { serveWebDocument, authenticateWebHost, forwardWebRequest } from './web-document.ts'
 import { DesktopFatalRecovery } from './fatal-recovery.ts'
@@ -528,6 +529,9 @@ async function main(): Promise<void> {
 
   const manifest: unknown = JSON.parse(await readFile(join(app.getAppPath(), 'package.json'), 'utf8'))
   const updateChannel = desktopUpdateChannel(manifest)
+  // An unsigned macOS bundle ships no updater feed; it still learns that a
+  // release exists from the website manifest and offers that page on click.
+  const manualUpdates = manualUpdateSourceFromManifest(manifest, () => app.getVersion())
   const updates = new DesktopUpdateCoordinator(
     publishUpdate,
     async () => {
@@ -582,6 +586,7 @@ async function main(): Promise<void> {
     undefined, undefined, undefined,
     (success, reason) => { void track('desktop_upgrade_download_result', { is_success: success, ...reason === undefined ? {} : { error_reason: reason } }) },
     updateChannel,
+    manualUpdates,
   )
 
   const updateSchedule = new DesktopUpdateSchedule(updates, resolveDesktopUpdateScheduleConfig(process.env))
@@ -751,11 +756,10 @@ async function main(): Promise<void> {
     promptOperation ??= Promise.resolve().then(async () => {
       if (manual) updateJournal?.action('check-requested')
       // An unsigned macOS bundle carries no update feed; offering the product
-      // page beats reporting the updater's missing-source failure.
+      // page beats reporting the updater's missing-source failure. Both entries
+      // (the notice and the menu) are user actions, so both open the page.
       if (!hasPackagedUpdateSource()) {
-        if (manual) {
-          await offerDownloadPage({ messages: () => locale.messages, show: ordinaryMessageBox, open: url => shell.openExternal(url) })
-        }
+        await offerDownloadPage({ messages: () => locale.messages, show: ordinaryMessageBox, open: url => shell.openExternal(url) })
         return
       }
       const joinedPolicyAuthentication = authenticationOperation !== undefined

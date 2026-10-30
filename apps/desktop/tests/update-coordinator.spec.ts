@@ -47,7 +47,12 @@ describe('desktop release metadata', () => {
 const coordinators: InstanceType<typeof DesktopUpdateCoordinator>[] = []
 afterEach(() => { for (const item of coordinators.splice(0)) item.dispose() })
 
-function fixture(channel: 'nightly' | 'latest' = 'nightly', version = '1.1.0-alpha.1', enabled: () => boolean = () => true) {
+function fixture(
+  channel: 'nightly' | 'latest' = 'nightly',
+  version = '1.1.0-alpha.1',
+  enabled: () => boolean = () => true,
+  manual?: { latest(): Promise<string | undefined> },
+) {
   const events = new EventEmitter()
   const checkForUpdates = vi.fn(async () => ({
     isUpdateAvailable: true,
@@ -66,7 +71,7 @@ function fixture(channel: 'nightly' | 'latest' = 'nightly', version = '1.1.0-alp
   const updater = Object.assign(events, { checkForUpdates, downloadUpdate, quitAndInstall }) as unknown as AppUpdater
   const coordinator = new DesktopUpdateCoordinator(
     (state) => { states.push(state); return state },
-    beforeRestart, updater, enabled, () => version, downloadResult, channel,
+    beforeRestart, updater, enabled, () => version, downloadResult, channel, manual,
   )
   coordinators.push(coordinator)
   return { coordinator, updater, events, states, checkForUpdates, downloadUpdate, quitAndInstall, beforeRestart, downloadResult }
@@ -78,6 +83,18 @@ describe('desktop update coordinator', () => {
     expect(await f.coordinator.check()).toEqual({ phase: 'idle' })
     expect(f.checkForUpdates).not.toHaveBeenCalled()
     expect(f.states).toEqual([{ phase: 'idle' }])
+  })
+
+  it('reports a feedless release from the manual source and stays silent on its failure', async () => {
+    const detected = fixture('nightly', '1.1.0-alpha.1', () => false, { latest: async () => '0.0.15' })
+    expect(await detected.coordinator.check()).toEqual({ phase: 'available', version: '0.0.15' })
+    expect(detected.checkForUpdates).not.toHaveBeenCalled()
+
+    const offline = fixture('nightly', '1.1.0-alpha.1', () => false, {
+      latest: async () => { throw new Error('offline') },
+    })
+    expect(await offline.coordinator.check()).toEqual({ phase: 'idle' })
+    expect(offline.checkForUpdates).not.toHaveBeenCalled()
   })
   it('keeps safe preparation diagnostics separate and clears them on an explicit retry', async () => {
     const f = fixture()

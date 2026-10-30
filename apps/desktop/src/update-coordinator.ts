@@ -8,6 +8,7 @@ import { gt, valid } from 'semver'
 import type { DesktopUpdateState } from './ipc.ts'
 import { DesktopUpdateHttpExecutor } from './update-http-executor.ts'
 import { DesktopUpdatePreparationError } from './update-error.ts'
+import type { ManualUpdateSource } from './update-manifest.ts'
 
 const { autoUpdater } = electronUpdater
 
@@ -57,6 +58,7 @@ export class DesktopUpdateCoordinator {
    * @param currentVersion - Actual installed application version.
    * @param channel - Installed package channel; omitted test/local callers retain nightly.
    * @param downloadResult - Once per completed download attempt, including platform preparation failures.
+   * @param manual - Detection-only source for a build without an updater feed (an unsigned macOS bundle).
    */
   constructor(
     private readonly publish: (state: DesktopUpdateState) => DesktopUpdateState,
@@ -66,6 +68,7 @@ export class DesktopUpdateCoordinator {
     private readonly currentVersion: () => string = () => app.getVersion(),
     private readonly downloadResult?: (success: boolean, reason?: string) => void,
     private readonly channel: 'nightly' | 'latest' = 'nightly',
+    private readonly manual?: ManualUpdateSource,
   ) {
     if (updater === autoUpdater) {
       // electron-updater omits this internal transport property from its public declarations.
@@ -194,9 +197,18 @@ export class DesktopUpdateCoordinator {
   private async doCheck(): Promise<DesktopUpdateState> {
     try {
       this.assertLive()
-      // A build without an update feed has nothing to check; the shell offers
-      // its download page instead of reporting a missing-source failure.
-      if (!this.enabled()) return this.setState({ phase: 'idle' })
+      if (!this.enabled()) {
+        // A build without an update feed still reports that a release exists;
+        // installing one stays manual, so only the version is published. A
+        // failed read is silent: nothing is actionable without the feed.
+        if (this.manual === undefined) return this.setState({ phase: 'idle' })
+        try {
+          const version = await this.manual.latest()
+          return this.setState(version === undefined ? { phase: 'idle' } : { phase: 'available', version })
+        } catch {
+          return this.setState({ phase: 'idle' })
+        }
+      }
       const result = await this.updater.checkForUpdates()
       if (result === null) throw new Error('desktop update: no check result was returned')
       const version = result.updateInfo.version

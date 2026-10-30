@@ -147,6 +147,8 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 240
     env:
+      MAUWORK_DOWNLOAD_ORIGIN: ${{ vars.MAUWORK_DOWNLOAD_ORIGIN || 'https://mauwork-releases.oss-cn-hangzhou.aliyuncs.com' }}
+    env:
       BUILD_VERSION: ${{ needs.version.outputs.build }}
     outputs:
       sha: ${{ steps.checkout.outputs.commit }}
@@ -181,6 +183,8 @@ jobs:
     # A native Intel host avoids running the x64 Electron, LibreOffice and the runtime smoke under Rosetta.
     runs-on: macos-15-intel
     timeout-minutes: 240
+    env:
+      MAUWORK_DOWNLOAD_ORIGIN: ${{ vars.MAUWORK_DOWNLOAD_ORIGIN || 'https://mauwork-releases.oss-cn-hangzhou.aliyuncs.com' }}
     env:
       BUILD_VERSION: ${{ needs.version.outputs.build }}
     outputs:

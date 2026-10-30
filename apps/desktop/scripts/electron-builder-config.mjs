@@ -119,6 +119,13 @@ export function createElectronBuilderConfig(
     extraMetadata: {
       dshDesktopAppId: appId,
       dshDesktopUpdateChannel: update?.channel ?? 'nightly',
+      // Detection-only facts for a build without an updater feed (unsigned
+      // macOS): the website manifest origin and the product version its
+      // release counter extends.
+      dshProductVersion: productVersion,
+      ...(env.MAUWORK_DOWNLOAD_ORIGIN === undefined || env.MAUWORK_DOWNLOAD_ORIGIN.trim() === ''
+        ? {}
+        : { dshDownloadOrigin: env.MAUWORK_DOWNLOAD_ORIGIN.trim() }),
       ...(policy === undefined ? {} : { dshMandatoryUpdatePolicy: policy }),
       ...buildVersion === productVersion ? {} : { version: buildVersion },
       ...packaged === undefined ? {} : { dshBuildCommit: packaged.commit, dshBuildDirty: packaged.dirty },
