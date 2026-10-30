@@ -697,6 +697,7 @@ describe('model catalog and access', () => {
     replies.push(ok({
       items: [
         entry({ reasoningEfforts: ['low', 'ultra', 'high', 'low'], reasoningEffort: 'high' }),
+        entry({ reasoningEfforts: ['LOW'], reasoningEffort: 'MAX' }),
         entry({ reasoningEfforts: ['low'], reasoningEffort: 'max' }),
       ],
       fetchedAt: '2026-10-20T00:00:00Z',
@@ -706,9 +707,12 @@ describe('model catalog and access', () => {
     const models = (await ctx.mioAccount.getModels()).items
     expect(models[0]?.parameters.reasoningEfforts).toEqual(['low', 'high'])
     expect(models[0]?.parameters.reasoningEffort).toBe('high')
+    // Backend metadata spells ids in upper case; the wire normalizes them.
+    expect(models[1]?.parameters.reasoningEfforts).toEqual(['low'])
+    expect(models[1]?.parameters.reasoningEffort).toBe('max')
     // A level this build knows survives the wire; the adapter drops a default
     // the model does not offer (see the llm-mio catalog test).
-    expect(models[1]?.parameters.reasoningEffort).toBe('max')
+    expect(models[2]?.parameters.reasoningEffort).toBe('max')
   })
 
   it('reads plans, purchases one, polls its order, and lists subscriptions', async () => {

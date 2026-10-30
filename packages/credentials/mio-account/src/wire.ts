@@ -65,7 +65,10 @@ export const accountStatusSchema: z.ZodType<MioAccountStatusView> = z.object({
 function knownReasoningLevels(value: unknown): readonly MioReasoningLevel[] | undefined {
   if (!Array.isArray(value)) return undefined
   const known = new Set<string>(MIO_REASONING_LEVELS)
-  const levels = value.filter((id): id is MioReasoningLevel => typeof id === 'string' && known.has(id))
+  const levels = value
+    .filter((id): id is string => typeof id === 'string')
+    .map(id => id.toLowerCase())
+    .filter((id): id is MioReasoningLevel => known.has(id))
   return levels.length === 0 ? undefined : [...new Set(levels)]
 }
 
@@ -77,7 +80,8 @@ const modelParametersSchema = z.object({
   reasoningEfforts: z.unknown().optional().transform(knownReasoningLevels),
   reasoningEffort: z.string().optional().transform((value): MioReasoningLevel | null | undefined => {
     if (value === undefined) return undefined
-    return (MIO_REASONING_LEVELS as readonly string[]).includes(value) ? value as MioReasoningLevel : null
+    const id = value.toLowerCase()
+    return (MIO_REASONING_LEVELS as readonly string[]).includes(id) ? id as MioReasoningLevel : null
   }),
   reasoningEnabled: z.boolean().optional(),
   visionEnabled: z.boolean().optional(),
