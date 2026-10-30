@@ -732,6 +732,15 @@ describe('per-model reasoning efforts', () => {
     expect(model.contextWindow).toBe(catalogModel.contextWindow)
   })
 
+  it('records a selector default only where the model offers that level', () => {
+    const route = resolveProfiles(declared([
+      { id: 'think', reasoningEfforts: { low: 'low', high: 'high' }, defaultReasoningEffort: 'high' },
+      { id: 'stale', reasoningEfforts: { low: 'low' }, defaultReasoningEffort: 'max' },
+    ])).get('acme-gateway')
+    expect(route?.modelReasoningDefaults.get('think')).toBe('high')
+    expect(route?.modelReasoningDefaults.has('stale')).toBe(false)
+  })
+
   it('strips reasoning from a catalog model with false', () => {
     const [catalogModel] = getBuiltinModels('deepseek')
     if (catalogModel === undefined) throw new Error('the installed catalog ships no deepseek model')
