@@ -313,7 +313,14 @@ export async function runProfilePnpm(
       output = output.subarray(output.length - options.outputBytes)
     }
   }
-  const environment = { ...(options.execution === 'cli' ? process.env : scrubbedParentEnv()), ...options.env }
+  // A profile prepared by another client version can need its modules directory
+  // purged; no TTY can answer pnpm's confirmation, so allow the rebuild pnpm
+  // would otherwise abort with ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY.
+  const environment = {
+    ...(options.execution === 'cli' ? process.env : scrubbedParentEnv()),
+    npm_config_confirm_modules_purge: 'false',
+    ...options.env,
+  }
   const restore = async (): Promise<void> => {
     for (const file of savedFiles) {
       if (file.text === undefined) await rm(file.path, { force: true })

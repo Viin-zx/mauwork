@@ -901,6 +901,8 @@ it.each(['cli', 'service'] as const)('uses the %s environment and interaction po
   await runPluginCommand(context, ['approve-builds'], { execution, outputBytes: 100 })
   const options = command.run.mock.calls[0]?.[2] as { env: NodeJS.ProcessEnv; stdin: string; stdout: string; stderr: string }
   for (const name of names) expect(options.env[name]).toBe(execution === 'cli' ? 'fixture-credential' : undefined)
+  // A non-interactive run cannot answer pnpm's modules-directory purge prompt.
+  expect(options.env.npm_config_confirm_modules_purge).toBe('false')
   expect(options.stdin).toBe(execution === 'cli' ? 'inherit' : 'ignore')
   expect(options.stdout).toBe(execution === 'cli' ? 'inherit' : 'pipe')
   expect(options.stderr).toBe(execution === 'cli' ? 'inherit' : 'pipe')
