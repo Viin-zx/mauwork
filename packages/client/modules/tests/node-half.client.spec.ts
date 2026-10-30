@@ -702,7 +702,7 @@ describe('client bundle activation', () => {
     })
   })
 
-  it('retains one prior immutable batch generation across rebuild recomposition', async () => {
+  it('keeps earlier immutable batch generations served across rebuild recomposition', async () => {
     const packageName = '@fixture/batch-rebuild-race'
     const clientPath = writePackage(packageName)
     mkdirSync(dirname(clientPath), { recursive: true })
@@ -727,7 +727,8 @@ describe('client bundle activation', () => {
     expect(third).not.toBe(first)
     expect(third).not.toBe(second)
     expect(service.artifactBaseline(packageName)!.size).toBeGreaterThan(secondSize)
-    expect((await routeRequest(route, first)).status).toBe(404)
+    // A page booting with the first graph keeps fetching what that graph names.
+    expect((await routeRequest(route, first)).status).toBe(200)
     expect((await routeRequest(route, second)).status).toBe(200)
     expect((await routeRequest(route, third)).status).toBe(200)
   })
@@ -927,6 +928,16 @@ describe('client bundle activation', () => {
     })
     expect((await routeRequest(route, `${row.url}&stale=1`.replace(`rev=${row.rev}`, 'rev=stale'))).status).toBe(404)
 
+    // A page that booted before later rebuilds keeps using the revisions its
+    // own graph names; those resources stay served for several generations.
+    const bootUrl = `/${row.url}`
+    for (const offset of [1_000, 2_000]) {
+      const stat = statSync(clientPath)
+      utimesSync(clientPath, stat.atime, new Date(stat.mtimeMs + offset))
+      service.rebuilt(packageName)
+    }
+    expect((await service.fetchBundle(new Request(`http://localhost${bootUrl}`))).status).toBe(200)
+
     writeFileSync(`${clientPath}.map`, '{"version":3,"names":[],"mappings":"AAAA","sources":["src/changed.tsx"]}\n')
     const entryStat = statSync(clientPath)
     utimesSync(clientPath, entryStat.atime, new Date(entryStat.mtimeMs + 1_000))
@@ -1052,7 +1063,10 @@ describe('client bundle activation', () => {
     utimesSync(clientPath, entryStat.atime, completed)
     const nextRev = service.rebuilt(packageName)!
     expect(nextRev).not.toBe(firstRow.rev)
-    expect((await routeRequest(route, firstUrl)).status).toBe(404)
+    // Revisions stay immutable: the earlier chunk URL keeps serving its own bytes.
+    const firstAgain = await routeRequest(route, firstUrl)
+    expect(firstAgain.status).toBe(200)
+    expect(firstAgain.body.toString('utf8')).toContain('generation: 1')
     const nextUrl = chunkReference(packageName, 'client.terminal.js', nextRev)
     expect((await routeRequest(route, nextUrl)).body.toString('utf8')).toContain('generation: 2')
   })

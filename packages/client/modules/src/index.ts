@@ -225,6 +225,13 @@ function artifactRevision(baseline: ClientArtifactBaseline): string {
 /** Absolute route prefix serving every plugin resource. */
 const PLUGIN_ROUTE = '/plugins'
 
+/**
+ * Graph generations whose resources stay served after a recomposition. A page
+ * booting with an older graph keeps asking for its revisions; retains enough
+ * generations to cover the rebuilds one installation can trigger in a row.
+ */
+const RETAINED_GENERATIONS = 8
+
 /** Combo query addressing one ordered plugin-file list. */
 function comboSearch(ids: readonly string[], rev: string, sourceMap = false): string {
   const resources = ids.map(id => `${id}/client.js${sourceMap ? '.map' : ''}`).join(',')
@@ -617,9 +624,14 @@ export class ClientModuleRegistry extends Service {
   private readonly graphListeners = new Set<() => void>()
   private readonly dirty = new Set<string>()
   private responses = new Map<string, LazyResponse>()
-  private batchResponses = new Map<string, LazyResponse>()
-  /** One prior graph generation covers a request racing the HMR recomposition that replaced its URL. */
-  private previousBatchResponses = new Map<string, LazyResponse>()
+  /**
+   * Resource tables of the last few graph generations, newest first. A page
+   * that booted before a recomposition, or a renderer whose boot graph was
+   * cached across a rebuild, still asks for the URLs its own graph names;
+   * those revisions never change meaning, so keeping them costs only the
+   * bundle bytes a generation already holds.
+   */
+  private retiredResponses: Map<string, LazyResponse>[] = []
   private flushQueued = false
   private composed: WebBootGraph
 
@@ -817,8 +829,7 @@ export class ClientModuleRegistry extends Service {
     for (const [resourceUrl, response] of this.responses) {
       if (this.chunkRequest(new URL(resourceUrl, 'http://x')) !== undefined) responses.set(resourceUrl, response)
     }
-    this.previousBatchResponses = this.batchResponses
-    this.batchResponses = batchResponses
+    this.retiredResponses = [this.responses, ...this.retiredResponses].slice(0, RETAINED_GENERATIONS)
     this.responses = responses
     const batches = artifacts.map(artifact => artifact.descriptor)
     return {
@@ -1159,7 +1170,7 @@ export class ClientModuleRegistry extends Service {
     const requestUrl = new URL(url, 'http://x')
     const resourceUrl = `${requestUrl.pathname}${requestUrl.search}`
     const response = this.responses.get(resourceUrl)
-      ?? this.previousBatchResponses.get(resourceUrl)
+      ?? this.retiredResponses.find(retired => retired.has(resourceUrl))?.get(resourceUrl)
       ?? this.chunkResponse(requestUrl)
     if (response !== undefined) {
       return {
