@@ -148,7 +148,6 @@ jobs:
     timeout-minutes: 240
     env:
       MAUWORK_DOWNLOAD_ORIGIN: ${{ vars.MAUWORK_DOWNLOAD_ORIGIN || 'https://mauwork-releases.oss-cn-hangzhou.aliyuncs.com' }}
-    env:
       BUILD_VERSION: ${{ needs.version.outputs.build }}
     outputs:
       sha: ${{ steps.checkout.outputs.commit }}
@@ -185,7 +184,6 @@ jobs:
     timeout-minutes: 240
     env:
       MAUWORK_DOWNLOAD_ORIGIN: ${{ vars.MAUWORK_DOWNLOAD_ORIGIN || 'https://mauwork-releases.oss-cn-hangzhou.aliyuncs.com' }}
-    env:
       BUILD_VERSION: ${{ needs.version.outputs.build }}
     outputs:
       sha: ${{ steps.checkout.outputs.commit }}
