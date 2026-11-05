@@ -7,6 +7,7 @@ const STORAGE_KEY = 'dsh.mio.purchase-intent'
 interface PurchaseIntent {
   readonly requestId: string
   readonly planId: number
+  readonly paymentChannel: string
 }
 
 /** Storage subset these helpers use; tests pass an in-memory object. */
@@ -19,14 +20,16 @@ function browserStorage(): IntentStorage | undefined {
 function parseIntent(raw: string | null | undefined): PurchaseIntent | undefined {
   if (raw === null || raw === undefined) return undefined
   const parsed: unknown = JSON.parse(raw)
-  if (typeof parsed !== 'object' || parsed === null || !('requestId' in parsed) || !('planId' in parsed)) {
+  if (typeof parsed !== 'object' || parsed === null
+    || !('requestId' in parsed) || !('planId' in parsed) || !('paymentChannel' in parsed)) {
     return undefined
   }
-  const { requestId, planId } = parsed
-  if (typeof requestId !== 'string' || !/^[A-Za-z0-9_-]+$/u.test(requestId) || typeof planId !== 'number') {
+  const { requestId, planId, paymentChannel } = parsed
+  if (typeof requestId !== 'string' || !/^[A-Za-z0-9_-]+$/u.test(requestId) || typeof planId !== 'number'
+    || typeof paymentChannel !== 'string' || paymentChannel === '') {
     return undefined
   }
-  return { requestId, planId }
+  return { requestId, planId, paymentChannel }
 }
 
 function readIntent(storage: IntentStorage | undefined): PurchaseIntent | undefined {
@@ -47,16 +50,24 @@ function removeIntent(storage: IntentStorage | undefined): void {
 }
 
 /**
- * Return the persisted request id for this plan, creating one when the intent changed.
+ * Return the persisted request id for this plan and channel, creating one when the intent changed.
  * @param planId - selected plan.
+ * @param paymentChannel - selected payment channel; the backend replays the order
+ *   created for one id, so another channel must never share its key.
  * @param storage - storage override for tests.
  * @returns an idempotency key valid for one purchase intent.
  */
-export function purchaseRequestId(planId: number, storage: IntentStorage | undefined = browserStorage()): string {
+export function purchaseRequestId(
+  planId: number,
+  paymentChannel: string,
+  storage: IntentStorage | undefined = browserStorage(),
+): string {
   const existing = readIntent(storage)
-  if (existing !== undefined && existing.planId === planId) return existing.requestId
+  if (existing !== undefined && existing.planId === planId && existing.paymentChannel === paymentChannel) {
+    return existing.requestId
+  }
   const requestId = `mio-${globalThis.crypto.randomUUID().replaceAll('-', '')}`
-  writeIntent(storage, { requestId, planId })
+  writeIntent(storage, { requestId, planId, paymentChannel })
   return requestId
 }
 

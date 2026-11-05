@@ -266,6 +266,35 @@
   color: var(--dsw-alias-label-secondary);
 }
 
+.channels {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.channelLabel {
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.channel {
+  padding: 6px 14px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-base);
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.channel[data-selected='true'] {
+  border-color: var(--dsw-alias-brand-primary);
+  box-shadow: 0 0 0 1px var(--dsw-alias-brand-primary);
+}
+
 .agreement {
   display: flex;
   align-items: flex-start;

@@ -214,7 +214,7 @@ export interface MioPurchaseRequest {
   readonly paymentChannel?: string
 }
 
-/** Purchase result; a WeChat Native `codeUrl` is rendered as a QR code. */
+/** Purchase result; a Native `codeUrl` is rendered as a QR code for its channel. */
 export interface MioPurchaseResult {
   readonly orderNo: string
   readonly paymentStatus: string

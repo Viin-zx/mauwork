@@ -1,4 +1,4 @@
-/** Plan picker, WeChat Native QR payment, and order polling. */
+/** Plan picker, payment channel choice, QR payment, and order polling. */
 import { useEffect, useRef, useState } from 'react'
 import { toDataURL } from 'qrcode/lib/browser.js'
 import { Button, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
@@ -16,6 +16,22 @@ const POLL_INTERVAL_MS = 3_000
 
 /** One purchase-flow phase; only the browse phases show the plan list. */
 type Phase = 'browse' | 'creating' | 'paying' | 'paid' | 'expired' | 'failed'
+
+/** Payment channels the business backend accepts for a Native QR order. */
+const CHANNELS: readonly { value: string; localeKey: MioAccountKey }[] = [
+  { value: 'ALIPAY', localeKey: 'payAlipay' },
+  { value: 'WECHAT', localeKey: 'payWechat' },
+]
+
+/** Channel used when the order carries none. */
+const DEFAULT_CHANNEL = 'WECHAT'
+
+/** QR copy for one payment channel. */
+function channelCopy(channel: string, t: (key: MioAccountKey) => string): { title: string; description: string } {
+  return channel === 'ALIPAY'
+    ? { title: t('payQrTitleAlipay'), description: t('payQrDescriptionAlipay') }
+    : { title: t('payQrTitle'), description: t('payQrDescription') }
+}
 
 /** Plan purchase copy and operations. */
 export interface PlansDialogProps {
@@ -60,6 +76,8 @@ export function PlansDialog({
   const [agreed, setAgreed] = useState(false)
   const [agreementOpen, setAgreementOpen] = useState(false)
   const [phase, setPhase] = useState<Phase>('browse')
+  const [channel, setChannel] = useState(DEFAULT_CHANNEL)
+  const [paidChannel, setPaidChannel] = useState(DEFAULT_CHANNEL)
   const [message, setMessage] = useState('')
   const [orderNo, setOrderNo] = useState('')
   const [qr, setQr] = useState('')
@@ -77,6 +95,8 @@ export function PlansDialog({
       return
     }
     setPhase('browse')
+    setChannel(DEFAULT_CHANNEL)
+    setPaidChannel(DEFAULT_CHANNEL)
     setMessage('')
     setOrderNo('')
     setQr('')
@@ -136,8 +156,12 @@ export function PlansDialog({
     setPhase('creating')
     setMessage('')
     try {
-      const result = await purchasePlan({ planId: selected, requestId: purchaseRequestId(selected) })
+      const result = await purchasePlan({
+        planId: selected, requestId: purchaseRequestId(selected, channel), paymentChannel: channel,
+      })
       setOrderNo(result.orderNo)
+      const returned = result.paymentChannel ?? ''
+      setPaidChannel(returned === '' ? channel : returned.toUpperCase())
       if (result.paymentStatus.toUpperCase() === 'PAID') {
         await finish()
         return
@@ -175,8 +199,17 @@ export function PlansDialog({
     clearPurchaseIntent()
     close()
   }
+  const chooseChannel = (next: string): void => {
+    if (next === channel) return
+    // The backend replays the order created for a stored request id, so another
+    // channel cannot reuse that intent.
+    setChannel(next)
+    clearPurchaseIntent()
+    setMessage('')
+  }
 
   const browse = phase === 'browse' || phase === 'creating' || phase === 'failed' || phase === 'expired'
+  const pay = channelCopy(paidChannel, t)
   return <>
     <Modal open={open} title={t('plansTitle')} description={t('plansDescription')}
       className={css.wideDialog ?? ''} closeLabel={t('close')} onClose={close}>
@@ -201,6 +234,13 @@ export function PlansDialog({
                   </span>
                 </button>)}
               </div>}
+          <div className={css.channels} role="radiogroup" aria-label={t('paymentChannel')}>
+            <span className={css.channelLabel}>{t('paymentChannel')}</span>
+            {CHANNELS.map(item => <button key={item.value} type="button" role="radio"
+              aria-checked={channel === item.value} className={css.channel}
+              data-selected={channel === item.value}
+              onClick={() => { chooseChannel(item.value) }}>{t(item.localeKey)}</button>)}
+          </div>
           {agreement !== undefined && <label className={css.agreement}>
             <input type="checkbox" checked={agreed}
               onChange={(event) => { setAgreed(event.target.checked); setMessage('') }} />
@@ -221,9 +261,9 @@ export function PlansDialog({
           </div>
         </>}
         {phase === 'paying' && <div className={css.qrArea}>
-          <p className={css.title}>{t('payQrTitle')}</p>
-          <img className={css.qrImage} src={qr} alt={t('payQrTitle')} />
-          <p className={css.hint}>{t('payQrDescription')}</p>
+          <p className={css.title}>{pay.title}</p>
+          <img className={css.qrImage} src={qr} alt={pay.title} />
+          <p className={css.hint}>{pay.description}</p>
           {orderNo !== '' && <p className={css.orderNo}>{t('orderNo')}: {orderNo}</p>}
           <div className={css.footer}>
             <Button variant="outline" onClick={close}>{t('close')}</Button>

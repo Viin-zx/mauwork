@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import type { MioOrderStatus, MioSubscription } from '@deepseek-ai/dsh-mio-account/types'
+import type {
+  MioOrderStatus, MioPurchaseRequest, MioPurchaseResult, MioSubscription,
+} from '@deepseek-ai/dsh-mio-account/types'
 import { AccountSection, type AccountSectionProps } from '../src/client/AccountSection.tsx'
 import type { MioAccountOperations } from '../src/client/operations.ts'
 import type { MioAccountState } from '../src/client/account-state.ts'
@@ -105,13 +107,47 @@ describe('account settings section', () => {
 
     expect(await screen.findByAltText('payQrTitle')).toBeDefined()
     expect(purchasePlan).toHaveBeenCalledWith({
-      planId: PLAN.planId, requestId: expect.stringMatching(/^mio-[0-9a-z]+$/u),
+      planId: PLAN.planId, requestId: expect.stringMatching(/^mio-[0-9a-z]+$/u), paymentChannel: 'WECHAT',
     })
     expect(screen.getByText(/ord-1/u)).toBeDefined()
 
     await act(async () => { pending.resolve({ ...ORDER, paymentStatus: 'PAID' }) })
     expect(await screen.findByText('paySuccess')).toBeDefined()
     expect(getSubscriptions).toHaveBeenCalledTimes(2)
+  })
+
+  it('labels the QR with the chosen channel when the order omits it', async () => {
+    const purchasePlan = vi.fn(async () => ({ ...PURCHASE, paymentChannel: null }))
+    render(<AccountSection {...props({ view: SIGNED_IN, expired: false }, { purchasePlan })} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'upgradePlan' }))
+    expect(await screen.findByText(PLAN.planName)).toBeDefined()
+    fireEvent.click(screen.getByRole('radio', { name: 'payAlipay' }))
+    fireEvent.click(screen.getByRole('button', { name: 'purchase' }))
+
+    expect(await screen.findByAltText('payQrTitleAlipay')).toBeDefined()
+    expect(purchasePlan).toHaveBeenCalledWith(expect.objectContaining({ paymentChannel: 'ALIPAY' }))
+  })
+
+  it('starts a new purchase intent when the channel changes', async () => {
+    const purchasePlan = vi.fn(async (_request: MioPurchaseRequest): Promise<MioPurchaseResult> => {
+      throw new Error('channel unavailable')
+    })
+    render(<AccountSection {...props({ view: SIGNED_IN, expired: false }, { purchasePlan })} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'upgradePlan' }))
+    expect(await screen.findByText(PLAN.planName)).toBeDefined()
+    fireEvent.click(screen.getByRole('button', { name: 'purchase' }))
+    expect(await screen.findByText('channel unavailable')).toBeDefined()
+
+    fireEvent.click(screen.getByRole('radio', { name: 'payWechat' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'payAlipay' }))
+    fireEvent.click(screen.getByRole('button', { name: 'purchase' }))
+
+    const first = purchasePlan.mock.calls[0]?.[0]
+    const second = purchasePlan.mock.calls[1]?.[0]
+    expect(second?.paymentChannel).toBe('ALIPAY')
+    expect(second?.requestId).not.toBe(first?.requestId)
   })
 
   it('refuses to purchase before the subscription agreement is accepted', async () => {
