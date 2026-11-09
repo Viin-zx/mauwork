@@ -74,11 +74,6 @@ export default defineConfig([
         root: fileURLToPath(new URL('.', import.meta.url)),
         esbuild: { jsx: 'automatic' },
         define: { 'process.env.NODE_ENV': JSON.stringify('production') },
-        resolve: {
-          alias: {
-            '@deepseek-ai/dsh-client-ui-primitives': fileURLToPath(new URL('../../packages/client/ui-primitives/src/index.ts', import.meta.url)),
-          },
-        },
         build: {
           outDir: 'lib/welcome',
           emptyOutDir: true,

@@ -1,13 +1,21 @@
 /** Desktop welcome presentation using mioagent SMS/password login. */
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { IconLoadingOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type {
   MioAccountView, MioAgreement, MioPasswordLoginRequest, MioResetPasswordRequest, MioSmsCode,
   MioSmsCodeRequest, MioSmsLoginRequest,
 } from '@deepseek-ai/dsh-mio-account/types'
 import type { WelcomeApi } from '../welcome-api.ts'
 import css from './WelcomePage.module.css'
+
+function LoadingSpinner({ size = 20, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" className={className} aria-hidden="true">
+      <path fill="currentColor" d="M8 0a8 8 0 1 0 8 8h-2a6 6 0 1 1-6-6z" opacity=".25" />
+      <path fill="currentColor" d="M8 0v2a6 6 0 0 1 6 6h2A8 8 0 0 0 8 0" />
+    </svg>
+  )
+}
 
 const COUNTRY_CODE = '+86'
 const PHONE_PATTERN = /^1[3-9]\d{9}$/
@@ -147,7 +155,7 @@ export function Welcome({ api }: { api: WelcomeApi }) {
 
   if (state?.status === 'signed-in') {
     return <div className={css.loading} role="status">
-      <IconLoadingOutlineRegular size={20} className={css.spinner} />
+      <LoadingSpinner size={20} className={css.spinner} />
       <span>{m.loading}</span>
     </div>
   }
@@ -161,7 +169,7 @@ export function Welcome({ api }: { api: WelcomeApi }) {
         <h1 className={css.title}>{m.title}</h1>
         {state === undefined
           ? <div className={css.loading} role="status">
-            <IconLoadingOutlineRegular size={20} className={css.spinner} />
+            <LoadingSpinner size={20} className={css.spinner} />
             <span>{m.loading}</span>
           </div>
           : <form className={css.card} data-testid="mio-login-form" onSubmit={(event) => { void submit(event) }} noValidate>
