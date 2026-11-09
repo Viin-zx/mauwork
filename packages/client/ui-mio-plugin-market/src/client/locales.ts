@@ -20,6 +20,8 @@ export const en = {
   updateAvailableDot: 'A plugin update is available.',
   cancel: 'Cancel',
   autoConfigured: 'Auto-configured',
+  pin: 'Pin to top',
+  unpin: 'Unpin',
 } as const
 
 /** Locale keys the market tab owns. */
@@ -46,4 +48,6 @@ export const zh: Record<MioPluginMarketKey, string> = {
   updateAvailableDot: '有可用的插件更新。',
   cancel: '取消',
   autoConfigured: '自动配置',
+  pin: '置顶',
+  unpin: '取消置顶',
 }

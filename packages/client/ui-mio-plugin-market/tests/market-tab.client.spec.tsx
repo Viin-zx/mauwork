@@ -18,6 +18,7 @@ function props(
   state: Partial<MioMarketState>,
   overrides: Partial<MioMarketTabProps> = {},
   translate: (key: MioPluginMarketKey, params?: Record<string, unknown>) => string = key => key,
+  pinned: readonly string[] = [],
 ): MioMarketTabProps {
   const full: MioMarketState = {
     status: 'ready', items: [], installed: [], installedVersions: {}, latestVersions: {},
@@ -28,7 +29,9 @@ function props(
     install: vi.fn(),
     openPackage: vi.fn(),
     update: vi.fn(),
+    togglePin: vi.fn(),
     useMarket: (selector: (value: MioMarketState) => unknown) => selector(full),
+    usePinned: (selector: (value: readonly string[]) => unknown) => selector(pinned),
     ensure: vi.fn(),
     reload: vi.fn(),
     t: translate,
@@ -133,5 +136,30 @@ describe('mio plugin market tab', () => {
   it('localizes a restart-bound update failure', () => {
     render(<MioMarketTab {...props({ updateError: 'restart-required' })} />)
     expect(screen.getByRole('alert').textContent).toBe('restartToUpdate')
+  })
+
+  it('toggles the pin of the entry it belongs to', () => {
+    const togglePin = vi.fn()
+    const { rerender } = render(<MioMarketTab {...props({ items: [ITEM] }, { togglePin })} />)
+    const pin = screen.getByRole('button', { name: 'pin' })
+    expect(pin.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(pin)
+    expect(togglePin).toHaveBeenCalledExactlyOnceWith(PACKAGE)
+
+    rerender(<MioMarketTab {...props({ items: [ITEM] }, { togglePin }, undefined, [PACKAGE])} />)
+    const unpin = screen.getByRole('button', { name: 'unpin' })
+    expect(unpin.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(unpin)
+    expect(togglePin).toHaveBeenLastCalledWith(PACKAGE)
+  })
+
+  it('renders pinned entries first in pin order', () => {
+    const second = { ...ITEM, pluginName: 'Video', packageName: '@scope/video' }
+    const third = { ...ITEM, pluginName: 'Audio', packageName: '@scope/audio' }
+    render(<MioMarketTab {...props(
+      { items: [ITEM, second, third] }, {}, undefined, [third.packageName, PACKAGE],
+    )} />)
+    const names = screen.getAllByRole('heading', { level: 3 }).map(heading => heading.textContent)
+    expect(names).toEqual(['Audio', 'AI 生图', 'Video'])
   })
 })

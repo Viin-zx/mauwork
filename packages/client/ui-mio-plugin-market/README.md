@@ -28,7 +28,7 @@ Mount the row in a Web or Desktop profile:
   name: '@deepseek-ai/dsh-client-ui-mio-plugin-market'
 ```
 
-The tab injects `slots`, `locale`, `remote`, `remote.mioAccount`, and `remote.pluginManager`. It registers into `plugins.tab` after the page's own Installed tab, and into `plugins.tab.badge` under the same id so the page can mark that tab. Cards show the catalog name, package name, description, category, and an Auto-configured badge; an installed card opens the bundle's detail page through the page's `openPackage`. The tab refreshes installed names after `plugin-manager/changed` and reloads the catalog after a connection reset.
+The tab injects `slots`, `locale`, `remote`, `remote.mioAccount`, and `remote.pluginManager`. It registers into `plugins.tab` after the page's own Installed tab, and into `plugins.tab.badge` under the same id so the page can mark that tab. Cards show the catalog name, package name, description, category, and an Auto-configured badge; an installed card opens the bundle's detail page through the page's `openPackage`. Each card carries a pin button: pinned packages lead the grid in the order they were pinned, and that order is kept in this browser's localStorage rather than the account. The tab refreshes installed names after `plugin-manager/changed` and reloads the catalog after a connection reset.
 
 <a id="model-experience"></a>
 ## Model Experience

@@ -1,4 +1,4 @@
-/** Catalog state for the mioagent plugin market tab. */
+/** Catalog state for the mioagent plugin market tab, plus the browser-local pin order it renders first. */
 
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { MioPluginListing } from '@deepseek-ai/dsh-mio-account/types'
@@ -30,6 +30,8 @@ export interface MioMarketFace {
   readonly hooks: {
     /** Catalog state, bound as `useMarket`. */
     readonly market: SnapshotStore<MioMarketState>
+    /** Package names pinned to the top, in pin order, bound as `usePinned`. */
+    readonly pinned: SnapshotStore<readonly string[]>
   }
   /** Read the catalog once the tab first renders. */
   readonly ensure: () => void
@@ -37,6 +39,30 @@ export interface MioMarketFace {
   readonly reload: () => void
   /** Remove an installed package and open the page's install dialog for its latest version. */
   readonly update: (item: MioPluginListing, install: (target: PluginTabInstall) => void) => void
+  /** Pin a package to the top of the list, or unpin it. */
+  readonly togglePin: (packageName: string) => void
+}
+
+/**
+ * The catalog in display order: pinned packages first, in the order they were
+ * pinned, then every other package in the catalog's own order.
+ * @param items - the catalog as the account returned it.
+ * @param pinned - package names pinned in this browser, in pin order.
+ * @returns the items to render, top to bottom.
+ */
+export function orderMarketItems(
+  items: readonly MioPluginListing[], pinned: readonly string[],
+): MioPluginListing[] {
+  const rank = new Map(pinned.map((name, index) => [name, index]))
+  return items
+    .map((item, index) => ({ item, index, pin: rank.get(item.packageName) }))
+    .sort((left, right) => {
+      if (left.pin !== undefined && right.pin !== undefined) return left.pin - right.pin
+      if (left.pin !== undefined) return -1
+      if (right.pin !== undefined) return 1
+      return left.index - right.index
+    })
+    .map(({ item }) => item)
 }
 
 const INITIAL: MioMarketState = {
@@ -86,6 +112,10 @@ function installedOf(bundles: readonly {
 export class MioMarketController {
   /** Shared catalog state published to the tab. */
   readonly store: SnapshotStore<MioMarketState> = createSnapshotStore(INITIAL)
+  /** Package names pinned to the top, in pin order, kept in this browser. */
+  readonly pinned: SnapshotStore<readonly string[]> = createSnapshotStore<readonly string[]>([], {
+    persist: { name: 'dsh.mio-plugin-market.pinned' },
+  })
   private disposed = false
   private generation = 0
   private checkGeneration = 0
@@ -100,14 +130,20 @@ export class MioMarketController {
 
   /**
    * Build the tab's injected face.
-   * @returns the catalog state source and its read actions.
+   * @returns the catalog and pin state sources and their actions.
    */
   face(): MioMarketFace {
     return {
-      hooks: { market: this.store },
+      hooks: { market: this.store, pinned: this.pinned },
       ensure: () => { if (this.state().status === 'idle') void this.load() },
       reload: () => { void this.load() },
       update: (item, install) => { void this.update(item, install) },
+      togglePin: (packageName) => {
+        const pinned = this.pinned.getSnapshot()
+        this.pinned.set(pinned.includes(packageName)
+          ? pinned.filter(name => name !== packageName)
+          : [...pinned, packageName])
+      },
     }
   }
 

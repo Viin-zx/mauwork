@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { hasUpdates, MioMarketController } from '../src/client/market-store.ts'
+import { hasUpdates, MioMarketController, orderMarketItems } from '../src/client/market-store.ts'
 
 const PACKAGE = '@q253595422/dsh-imagegen-video'
 const LISTING = {
@@ -101,6 +101,38 @@ describe('mio plugin market store', () => {
     controller.refreshInstalled()
     await vi.waitFor(() => { expect(controller.store.getSnapshot().installed).toEqual([]) })
     expect(ctx.remote.mioAccount.listPlugins).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('market pin toggle', () => {
+  it('pins to the end of the pin order and unpins in place', () => {
+    const { controller } = fixture({ ok: true, value: [] }, { ok: true, value: [] })
+    const face = controller.face()
+    expect(controller.pinned.getSnapshot()).toEqual([])
+
+    face.togglePin(PACKAGE)
+    face.togglePin('@scope/video')
+    expect(controller.pinned.getSnapshot()).toEqual([PACKAGE, '@scope/video'])
+
+    face.togglePin(PACKAGE)
+    expect(controller.pinned.getSnapshot()).toEqual(['@scope/video'])
+  })
+})
+
+describe('market display order', () => {
+  const second = { ...LISTING, pluginId: '2', pluginName: 'Video', packageName: '@scope/video' }
+  const third = { ...LISTING, pluginId: '3', pluginName: 'Audio', packageName: '@scope/audio' }
+
+  it('leads with pinned entries in pin order, then keeps catalog order', () => {
+    expect(orderMarketItems([LISTING, second, third], []).map(item => item.packageName))
+      .toEqual([PACKAGE, '@scope/video', '@scope/audio'])
+    expect(orderMarketItems([LISTING, second, third], ['@scope/audio', PACKAGE]).map(item => item.packageName))
+      .toEqual(['@scope/audio', PACKAGE, '@scope/video'])
+  })
+
+  it('ignores pinned names that left the catalog', () => {
+    expect(orderMarketItems([LISTING, second], ['@scope/gone', '@scope/video']).map(item => item.packageName))
+      .toEqual(['@scope/video', PACKAGE])
   })
 })
 

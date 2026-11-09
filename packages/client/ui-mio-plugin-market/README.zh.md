@@ -28,7 +28,7 @@ kind: "package-reference"
   name: '@deepseek-ai/dsh-client-ui-mio-plugin-market'
 ```
 
-标签页注入 `slots`、`locale`、`remote`、`remote.mioAccount` 和 `remote.pluginManager`，注册到 `plugins.tab` 中页面自带 Installed 标签之后，并以同一个 id 注册到 `plugins.tab.badge`，供页面标记该标签页。卡片展示目录名称、包名、描述、分类和“自动配置”标记；已安装卡片通过页面的 `openPackage` 打开插件详情。`plugin-manager/changed` 后刷新已安装包名，连接重置后重新读取目录。
+标签页注入 `slots`、`locale`、`remote`、`remote.mioAccount` 和 `remote.pluginManager`，注册到 `plugins.tab` 中页面自带 Installed 标签之后，并以同一个 id 注册到 `plugins.tab.badge`，供页面标记该标签页。卡片展示目录名称、包名、描述、分类和“自动配置”标记；已安装卡片通过页面的 `openPackage` 打开插件详情。每张卡片带置顶按钮：置顶的包按置顶顺序排在网格最前，该顺序保存在本浏览器的 localStorage 中，不写入账号。`plugin-manager/changed` 后刷新已安装包名，连接重置后重新读取目录。
 
 <a id="model-experience"></a>
 ## 模型体验

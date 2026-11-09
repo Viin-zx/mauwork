@@ -1,9 +1,11 @@
 /** The Plugins page tab listing the mioagent plugin catalog. */
 import { useEffect, useState } from 'react'
-import { Button, Modal, PluginArtworkDefault, Tag } from '@deepseek-ai/dsh-client-ui-primitives'
+import {
+  Button, IconPinFillRegular, IconPinOutlineRegular, Modal, PluginArtworkDefault, Tag, Tooltip,
+} from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { MioPluginListing } from '@deepseek-ai/dsh-mio-account/types'
-import { updateAvailable, type MioMarketFace } from './market-store.ts'
+import { orderMarketItems, updateAvailable, type MioMarketFace } from './market-store.ts'
 import css from './MioMarketTab.module.css'
 
 /** Props assembled by the Plugins page tab renderer. */
@@ -14,15 +16,18 @@ export type MioMarketTabProps =
 
 /**
  * Render the account's plugin catalog and install entries through the page's
- * own install dialog.
- * @param props - tab actions, catalog state, and localized copy.
+ * own install dialog. Pinned entries lead the grid in pin order.
+ * @param props - tab actions, catalog and pin state, and localized copy.
  * @returns the market tab.
  */
-export function MioMarketTab({ install, openPackage, useMarket, ensure, reload, update, t }: MioMarketTabProps) {
+export function MioMarketTab({ install, openPackage, useMarket, usePinned, ensure, reload, update, togglePin, t }: MioMarketTabProps) {
   const state = useMarket(value => value)
+  const pinned = usePinned(value => value)
   const [pendingUpdate, setPendingUpdate] = useState<MioPluginListing | null>(null)
   useEffect(() => { ensure() }, [ensure])
   const busy = state.status === 'loading'
+  const pinnedNames = new Set(pinned)
+  const items = orderMarketItems(state.items, pinned)
   const updateError = state.updateError === 'restart-required'
     ? t('restartToUpdate')
     : state.updateError === 'update-failed' ? t('updateFailed') : state.updateError
@@ -52,14 +57,16 @@ export function MioMarketTab({ install, openPackage, useMarket, ensure, reload, 
       ? <div className={css.failure} role="alert"><span>{updateError}</span></div>
       : null}
 
-    {state.items.length > 0
+    {items.length > 0
       ? <div className={css.grid}>
-        {state.items.map((item) => {
+        {items.map((item) => {
           const installed = state.installed.includes(item.packageName)
           const installedVersion = state.installedVersions[item.packageName]
           const latest = state.latestVersions[item.packageName]
           const canUpdate = installed && updateAvailable(installedVersion, latest)
-          return <article className={css.card} key={item.packageName} data-testid={`mio-plugin-${item.packageName}`}>
+          const isPinned = pinnedNames.has(item.packageName)
+          return <article className={css.card} key={item.packageName}
+            data-testid={`mio-plugin-${item.packageName}`}>
             <header className={css.cardHead}>
               <span className={css.artwork} aria-hidden="true">
                 <PluginArtworkDefault size={32} />
@@ -68,6 +75,20 @@ export function MioMarketTab({ install, openPackage, useMarket, ensure, reload, 
                 <h3 className={css.name}>{item.pluginName}</h3>
                 <code className={css.packageName}>{item.packageName}</code>
               </div>
+              <Tooltip label={t(isPinned ? 'unpin' : 'pin')} side="bottom" delayMs={300} portal>
+                <button
+                  type="button"
+                  className={css.pinButton}
+                  data-pinned={isPinned ? '' : undefined}
+                  aria-label={t(isPinned ? 'unpin' : 'pin')}
+                  aria-pressed={isPinned}
+                  onClick={() => { togglePin(item.packageName) }}
+                >
+                  {isPinned
+                    ? <IconPinFillRegular size={14} aria-hidden="true" />
+                    : <IconPinOutlineRegular size={14} aria-hidden="true" />}
+                </button>
+              </Tooltip>
             </header>
             {item.description !== '' ? <p className={css.cardDescription}>{item.description}</p> : null}
             <div className={css.tags}>
