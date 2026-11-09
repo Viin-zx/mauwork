@@ -37,7 +37,7 @@ async function fixture(fail = false) {
   }
   new Remote()
   const changes = createSnapshotStore(false)
-  ctx.provide('pluginChanges', { bundle: (name) => {
+  ctx.provide('pluginChanges', { bundle: (name: string) => {
     expect(name).toBe('@deepseek-ai/dsh-cua-bundle')
     return changes
   } })
