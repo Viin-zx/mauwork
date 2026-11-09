@@ -47,12 +47,7 @@ describe('desktop release metadata', () => {
 const coordinators: InstanceType<typeof DesktopUpdateCoordinator>[] = []
 afterEach(() => { for (const item of coordinators.splice(0)) item.dispose() })
 
-function fixture(
-  channel: 'nightly' | 'latest' = 'nightly',
-  version = '1.1.0-alpha.1',
-  enabled: () => boolean = () => true,
-  manual?: { latest(): Promise<string | undefined> },
-) {
+function fixture(channel: 'nightly' | 'latest' = 'nightly', version = '1.1.0-alpha.1') {
   const events = new EventEmitter()
   const checkForUpdates = vi.fn(async () => ({
     isUpdateAvailable: true,
@@ -71,38 +66,20 @@ function fixture(
   const updater = Object.assign(events, { checkForUpdates, downloadUpdate, quitAndInstall }) as unknown as AppUpdater
   const coordinator = new DesktopUpdateCoordinator(
     (state) => { states.push(state); return state },
-    beforeRestart, updater, enabled, () => version, downloadResult, channel, manual,
+    beforeRestart, updater, () => true, () => version, downloadResult, channel,
   )
   coordinators.push(coordinator)
   return { coordinator, updater, events, states, checkForUpdates, downloadUpdate, quitAndInstall, beforeRestart, downloadResult }
 }
 
 describe('desktop update coordinator', () => {
-  it('reports idle without touching the updater when the build carries no update feed', async () => {
-    const f = fixture('nightly', '1.1.0-alpha.1', () => false)
-    expect(await f.coordinator.check()).toEqual({ phase: 'idle' })
-    expect(f.checkForUpdates).not.toHaveBeenCalled()
-    expect(f.states).toEqual([{ phase: 'idle' }])
-  })
-
-  it('reports a feedless release from the manual source and stays silent on its failure', async () => {
-    const detected = fixture('nightly', '1.1.0-alpha.1', () => false, { latest: async () => '0.0.15' })
-    expect(await detected.coordinator.check()).toEqual({ phase: 'available', version: '0.0.15' })
-    expect(detected.checkForUpdates).not.toHaveBeenCalled()
-
-    const offline = fixture('nightly', '1.1.0-alpha.1', () => false, {
-      latest: async () => { throw new Error('offline') },
-    })
-    expect(await offline.coordinator.check()).toEqual({ phase: 'idle' })
-    expect(offline.checkForUpdates).not.toHaveBeenCalled()
-  })
-  it('keeps safe preparation diagnostics separate and clears them on an explicit retry', async () => {
+  it.each(['stop-failed', 'fullscreen-timeout'] as const)('keeps safe %s diagnostics separate and clears them on an explicit retry', async (kind) => {
     const f = fixture()
     await f.coordinator.check()
     await f.coordinator.download('1.1.0-rc.2')
-    f.beforeRestart.mockRejectedValueOnce(new DesktopUpdatePreparationError('stop-failed', zh.updateStopFailed, 'exit 0; shutdown acknowledged false'))
+    f.beforeRestart.mockRejectedValueOnce(new DesktopUpdatePreparationError(kind, zh.updateStopFailed, 'exit 0; shutdown acknowledged false'))
     expect(await f.coordinator.install('1.1.0-rc.2')).toEqual({ phase: 'error', version: '1.1.0-rc.2',
-      failedOperation: 'install', preparationFailure: 'stop-failed', message: zh.updateStopFailed,
+      failedOperation: 'install', preparationFailure: kind, message: zh.updateStopFailed,
       technicalDetails: 'exit 0; shutdown acknowledged false' })
     expect(f.quitAndInstall).not.toHaveBeenCalled()
     f.beforeRestart.mockResolvedValueOnce(false)

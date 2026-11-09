@@ -21,6 +21,9 @@
     },
     {
       "path": "../../packages/client/product-analytics/tsconfig.client.json"
+    },
+    {
+      "path": "../../packages/client/ui-file-actions"
     }
   ]
 }
