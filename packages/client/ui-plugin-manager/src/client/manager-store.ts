@@ -23,6 +23,9 @@ import type {
   PluginInstallRequestId,
   PluginRegistries,
   PluginSpecInspection,
+  PluginUpdateResult,
+  PluginVersion,
+  PluginVersionList,
   ReadOnlyReason,
   Registry,
   RestartReason,
@@ -36,6 +39,28 @@ import type { ConfigLedger } from './config-ledger.ts'
 import type { PluginTabInstall } from './slot-contract.ts'
 import type { PluginTab } from './tab-ledger.ts'
 import { shortName } from './presentation.ts'
+
+/** The state of a plugin update operation. */
+export interface UpdateState {
+  readonly phase: 'confirm' | 'running' | 'done'
+  readonly from: string
+  readonly to: string
+  readonly registry: string
+  readonly steps: readonly PluginUpdateStep[]
+  readonly result: PluginUpdateResult | null
+  readonly outputOpen: boolean
+  readonly lost?: boolean
+}
+
+/** A step in the plugin update process. */
+export type PluginUpdateStep = 'checking' | 'removing' | 'installing' | 'restoring'
+
+/** The result of a version check. */
+export interface VersionCheck {
+  readonly phase: 'checking' | 'done'
+  readonly checkedAt: number
+  readonly list: PluginVersionList
+}
 
 /** The action a failed notice names. */
 export type FailedAction = 'enable' | 'disable' | 'uninstall' | 'rowEnable' | 'rowDisable'
@@ -107,6 +132,8 @@ export interface PackageView {
   /** Why the Host cannot read the bundle, when it cannot. */
   readonly error?: ManagementError
   readonly rows: readonly PackageRow[]
+  /** Whether this package has an update available. */
+  readonly updatable: boolean
 }
 
 /** The typed spec as the Host read it, on the installing, installed, and failed screens. */
@@ -435,6 +462,17 @@ export function rowKey(entryId: string): string {
   return `row:${entryId}`
 }
 
+/** Whether a plugin version can be installed (not blocked by incompatibility). */
+export function installable(version: PluginVersion): boolean {
+  return version.incompatible === undefined && version.bundle !== false
+}
+
+/** The best update candidate from a version list, if any. */
+export function updateCandidate(list: PluginVersionList): PluginVersion | undefined {
+  if (list.status !== 'listed') return undefined
+  return list.versions[0]
+}
+
 /**
  * One bundle as the page shows it: its rows joined with the Host's entries.
  * @param bundle - the Host's bundle.
@@ -470,6 +508,7 @@ export function packageView(bundle: BundleInfo, plugins: readonly PluginInfo[]):
     ...bundle.meta === undefined ? {} : { meta: bundle.meta },
     ...bundle.readOnlyReason === undefined ? {} : { readOnlyReason: bundle.readOnlyReason },
     ...bundle.error === undefined ? {} : { error: bundle.error },
+    updatable: bundle.installed && bundle.installTarget !== undefined,
   }
 }
 

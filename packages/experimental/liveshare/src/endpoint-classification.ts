@@ -93,6 +93,26 @@ export const VIEWER_ENDPOINT_CLASSES = {
   'account/startSignIn': 'owner-only', // owner account and sign-in; the served page never reads it
   'account/watch': 'owner-only', // owner account and sign-in; the served page never reads it
   'account/watchExpiry': 'owner-only', // owner account and sign-in; the served page never reads it
+  'mioAccount/getAccountStatus': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/getAgreements': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/getModels': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/getOrder': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/getPlans': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/getProfile': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/getQuota': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/getState': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/getSubscriptions': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/listPlugins': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/loginWithPassword': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/loginWithSms': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/logout': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/purchasePlan': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/register': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/resetPassword': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/retryAccount': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/sendSmsCode': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/watch': 'owner-only', // owner mio account; the served page never reads it
+  'mioAccount/watchExpiry': 'owner-only', // owner mio account; the served page never reads it
   'job/follow': 'owner-only', // owner background jobs
   'job/kill': 'owner-only', // owner background jobs
   'job/list': 'owner-only', // owner background jobs

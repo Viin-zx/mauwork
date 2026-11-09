@@ -60,6 +60,7 @@
       "@deepseek-ai/dsh-mio-account/types": ["./packages/credentials/mio-account/src/types.ts"],
       "@deepseek-ai/dsh-mio-account/client": ["./packages/credentials/mio-account/src/client.ts"],
       "@deepseek-ai/dsh-mio-account/service": ["./packages/credentials/mio-account/src/service.ts"],
+      "@deepseek-ai/dsh-api-mio-account-controller": ["./packages/api/mio-account-controller/src/index.ts"],
       "@deepseek-ai/dsh-experimental-speech-to-text": ["./packages/experimental/speech-to-text/src/index.ts"],
       "@deepseek-ai/dsh-experimental-translator": ["./packages/experimental/translator/src/index.ts"],
       "@deepseek-ai/dsh-experimental-translator/types": ["./packages/experimental/translator/src/types.ts"],

@@ -438,7 +438,7 @@ export function UpdateDialog({ update, title, t, onRun, onClose, onToggleOutput 
               </>
             )}
             <ol className={css.updateSteps}>
-              {steps.map((step, index) => {
+              {steps.map((step: PluginUpdateStep, index: number) => {
                 const state = stepState(step, update, index === steps.length - 1)
                 return (
                   <li key={step} className={css.updateStep} data-state={state}>

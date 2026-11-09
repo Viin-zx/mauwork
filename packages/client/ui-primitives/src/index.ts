@@ -2,6 +2,7 @@
  * Cordis-free React primitives styled only through `--dsw-*` tokens.
  */
 
+export { FISH_LOGO_PATH, FISH_LOGO_VIEWBOX } from './brand-logo.ts'
 export type { CodeToolbarLabels } from './CodeToolbar.tsx'
 export { UserMessageBubble } from './UserMessageBubble.tsx'
 export type { UserMessageBubbleProps } from './UserMessageBubble.tsx'
