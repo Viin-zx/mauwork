@@ -504,7 +504,7 @@ abstract getPlans(signal?: AbortSignal): Promise<readonly MioPlan[]>
  * Start one purchase. Reusing the same `requestId` returns the same order.
  * @param request - plan, idempotency key, and optional payment channel.
  * @param signal - caller cancellation.
- * @returns the created order and, for WeChat Native, its QR payload.
+ * @returns the created order and, for a Native Alipay or WeChat order, its QR payload.
  */
 abstract purchasePlan(request: MioPurchaseRequest, signal?: AbortSignal): Promise<MioPurchaseResult>
 

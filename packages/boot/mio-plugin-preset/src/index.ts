@@ -1,13 +1,15 @@
 /**
- * Apply mioagent catalog presets to installed plugins and install the catalog
- * defaults once per profile. A newly installed package always receives the
- * catalog preset; startup and later settings events only fill a target that
- * has no user channels. A fresh sign-in or a changed model credential refreshes
- * only the preset-managed channel. A catalog entry whose `autoRefresh` switch
- * the admin turned on is overwritten with the current preset on every sweep,
- * so a model upgrade reaches the client without a reinstall. Small profile-local
- * markers keep the force intent across a restart-required installation and keep
- * a default the person removed afterward removed.
+ * Apply mioagent catalog presets to installed plugins, install the catalog
+ * defaults and every entry the administration marked with `autoInstall` once
+ * per profile, and write the catalog preset a newly installed package carries.
+ * A package the person removes afterward stays removed. A newly installed
+ * package always receives the catalog preset; startup and later events only
+ * fill a target that has no user channels. A fresh sign-in or a changed model
+ * credential refreshes only the preset-managed channel. A catalog entry whose
+ * `autoRefresh` switch the admin turned on is overwritten with the current
+ * preset on every sweep, so a model upgrade reaches the client without a
+ * reinstall. Small profile-local markers keep the force intent across a
+ * restart-required installation and keep a handled package removed afterward.
  */
 
 import { mkdir, writeFile } from 'node:fs/promises'
@@ -20,7 +22,7 @@ export * from './markers.ts'
 import type {} from '@deepseek-ai/dsh-hmr'
 import type {} from '@deepseek-ai/dsh-plugin-manager'
 import type {} from '@deepseek-ai/dsh-settings'
-import { PENDING_DIRECTORY, appliedPath, defaultsPath, pendingPath, profileOf, readMarkerSet, writeMarkerSet } from './markers.ts'
+import { PENDING_DIRECTORY, appliedPath, autoInstallPath, defaultsPath, pendingPath, profileOf, readMarkerSet, writeMarkerSet } from './markers.ts'
 import { isEmptyTargetUser, PRESET_TARGET_PACKAGES, readPreset, refreshPresetUser, resolvePresetValues } from './preset.ts'
 
 /** Stable plugin name. */
@@ -63,6 +65,12 @@ interface SweepState {
   defaultsLoaded: boolean
   /** Defaults that failed in this process; the next sign-in or process start retries them. */
   defaultTried: Set<string>
+  /** Catalog auto-install entries installed here or found already present; a removal stays removed. */
+  catalog: Set<string>
+  /** Whether the persisted auto-install marker has been read. */
+  catalogLoaded: boolean
+  /** Catalog auto-installs that failed in this process; the next sign-in or process start retries them. */
+  catalogTried: Set<string>
   /** Packages whose preset has been applied; a reinstall after uninstall re-triggers force. */
   applied: Set<string>
 }
@@ -91,7 +99,8 @@ export function apply(ctx: Context): void {
   let catalogTick = true
   const state: SweepState = {
     known: undefined, pending: new Set(), reloadPending: new Set(), access: new Map(), signedIn: false,
-    defaults: new Set(), defaultsLoaded: false, defaultTried: new Set(), applied: new Set(),
+    defaults: new Set(), defaultsLoaded: false, defaultTried: new Set(),
+    catalog: new Set(), catalogLoaded: false, catalogTried: new Set(), applied: new Set(),
   }
 
   const schedule = (delayMs = EVENT_DELAY_MS): void => {
@@ -155,8 +164,9 @@ export function apply(ctx: Context): void {
     // publishes a stored or refreshed session.
     const offAccount = ctx.on('mio-account/changed', () => {
       accountChanged = true
-      // A default that failed before this sign-in gets one new attempt.
+      // A default or catalog install that failed before this sign-in gets one new attempt.
       state.defaultTried.clear()
+      state.catalogTried.clear()
       schedule()
     })
     // The catalog itself carries the refresh switch, so the startup sweep
@@ -251,14 +261,15 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean, t
     state.defaultsLoaded = true
   }
   const installedDefaults = await installDefaults(ctx, state, installed)
-  if (installedDefaults.packages.length > 0) {
-    ctx.emit('mio-plugin-preset/defaults-installed', {
-      packages: installedDefaults.packages,
-      reload: installedDefaults.applied,
-    })
+  if (!state.catalogLoaded) {
+    state.catalog = await readAutoInstalls(ctx)
+    state.catalogLoaded = true
   }
 
   const catalog = await ctx.mioAccount.getPlugins()
+  const autoInstalled = await installCatalog(ctx, state, catalog, installed)
+  // Persist the force intent before applying, like the pending reconcile above.
+  if (autoInstalled.packages.length > 0) await writePending(ctx, state.pending)
   const catalogPackages = new Set(catalog.map(item => item.packageName))
   for (const item of catalog) {
     if (!installed.has(item.packageName)) continue
@@ -304,6 +315,15 @@ async function sweepCatalog(ctx: Context, state: SweepState, refresh: boolean, t
   }
   if (appliedChanged) {
     await writeApplied(ctx, state.applied)
+  }
+  const installedPackages = [...installedDefaults.packages, ...autoInstalled.packages]
+  if (installedPackages.length > 0) {
+    // One announcement after every installation and preset write: reloading
+    // mid-sweep would boot a renderer that never loads the later bundles.
+    ctx.emit('mio-plugin-preset/installed', {
+      packages: installedPackages,
+      reload: installedDefaults.applied || autoInstalled.applied,
+    })
   }
   return true
 }
@@ -357,6 +377,64 @@ async function installDefaults(
     }
   }
   if (changed) await writeDefaults(ctx, state.defaults)
+  return { packages, applied }
+}
+
+/** One catalog installation pass: packages installed here and whether a reload can load them. */
+interface CatalogInstallsResult {
+  readonly packages: readonly string[]
+  /** True when at least one installation applied without a restart. */
+  readonly applied: boolean
+}
+
+/**
+ * Install the catalog entries the administration marked with `autoInstall`,
+ * once per profile. An entry found already installed is recorded as handled, so
+ * a later removal stays removed across sign-ins and process starts. A failed
+ * attempt waits for the next sign-in or process start so the installation's own
+ * change event cannot drive a failing pnpm run in a loop.
+ * @param ctx - Host context with the plugin manager service.
+ * @param state - sweep state carrying the handled and failed sets.
+ * @param catalog - enabled catalog entries in backend order.
+ * @param installed - installed package names, extended with each new installation.
+ * @returns installed packages and whether a renderer reload applies them.
+ */
+async function installCatalog(
+  ctx: Context, state: SweepState, catalog: readonly MioPluginCatalogItem[], installed: Set<string>,
+): Promise<CatalogInstallsResult> {
+  let applied = false
+  let changed = false
+  const packages: string[] = []
+  for (const item of catalog) {
+    const name = item.packageName
+    if (!item.autoInstall || state.catalog.has(name) || state.catalogTried.has(name)) continue
+    if (installed.has(name)) {
+      state.catalog.add(name)
+      changed = true
+      continue
+    }
+    try {
+      const result = await ctx.pluginManager.installBundle(name)
+      if (result.application === 'failed' || result.application === 'cancelled') {
+        throw new Error(`installation ${result.application}: ${result.error?.code ?? 'unknown'}`)
+      }
+      installed.add(name)
+      state.catalog.add(name)
+      changed = true
+      // This sweep installed the package, so its preset overwrites the target
+      // exactly like a package a person installs from the market.
+      state.pending.add(name)
+      packages.push(name)
+      if (result.application === 'applied') applied = true
+      ctx.logger.info('mio-plugin-preset: installed catalog plugin %s', name)
+    } catch (error) {
+      state.catalogTried.add(name)
+      const message = messageOf(error)
+      ctx.logger.warn('mio-plugin-preset: could not auto-install %s: %s', name, message)
+      await writeDiagnostic(ctx, name, message)
+    }
+  }
+  if (changed) await writeAutoInstalls(ctx, state.catalog)
   return { packages, applied }
 }
 
@@ -434,6 +512,18 @@ async function readDefaults(ctx: Context): Promise<Set<string>> {
 async function writeDefaults(ctx: Context, defaults: ReadonlySet<string>): Promise<void> {
   const profile = profileOf(ctx)
   if (profile !== undefined) await writeMarkerSet(ctx, defaultsPath(profile), defaults)
+}
+
+/** @returns catalog auto-install entries this profile already handled. */
+async function readAutoInstalls(ctx: Context): Promise<Set<string>> {
+  const profile = profileOf(ctx)
+  return profile === undefined ? new Set() : readMarkerSet(autoInstallPath(profile))
+}
+
+/** Persist handled auto-installs; a later removal must not reinstall the package. */
+async function writeAutoInstalls(ctx: Context, handled: ReadonlySet<string>): Promise<void> {
+  const profile = profileOf(ctx)
+  if (profile !== undefined) await writeMarkerSet(ctx, autoInstallPath(profile), handled)
 }
 
 /** Persist the force intent; failures never block installation. */

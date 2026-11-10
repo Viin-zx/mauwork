@@ -2230,7 +2230,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         signature: 'abstract purchasePlan(request: MioPurchaseRequest, signal?: AbortSignal): Promise<MioPurchaseResult>',
         description: 'Start one purchase. Reusing the same `requestId` returns the same order.',
         parameters: [{ name: 'request', description: 'plan, idempotency key, and optional payment channel.' }, { name: 'signal', description: 'caller cancellation.' }],
-        returns: 'the created order and, for WeChat Native, its QR payload.',
+        returns: 'the created order and, for a Native Alipay or WeChat order, its QR payload.',
       },
       {
         signature: 'abstract getOrder(orderNo: string, signal?: AbortSignal): Promise<MioOrderStatus>',
@@ -5253,11 +5253,11 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'change', description: 'package, target entry, and whether this Host process detected the installation.' }],
   },
   {
-    name: 'mio-plugin-preset/defaults-installed',
+    name: 'mio-plugin-preset/installed',
     mode: 'emit',
-    signature: '\'mio-plugin-preset/defaults-installed\'(change: MioPluginDefaultsInstalled): void',
-    summary: 'The catalog defaults installed packages for this profile.',
-    description: 'The catalog defaults installed packages for this profile.',
+    signature: '\'mio-plugin-preset/installed\'(change: MioPluginInstalled): void',
+    summary: 'The catalog defaults or an auto-install entry installed packages for this profile.',
+    description: 'The catalog defaults or an auto-install entry installed packages for this profile.',
     parameters: [{ name: 'change', description: 'installed packages and whether the renderer can load them now.' }],
   },
   {
@@ -7430,7 +7430,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'MioModelParameters',
-    declaration: 'export interface MioModelParameters {\n    readonly contextWindowTokens?: number | undefined;\n    readonly maxOutputTokens?: number | undefined;\n    readonly temperature?: number | null | undefined;\n    readonly topP?: number | null | undefined;\n    readonly reasoningEffort?: string | null | undefined;\n    readonly reasoningEnabled?: boolean | undefined;\n    readonly visionEnabled?: boolean | undefined;\n    readonly functionCallingEnabled?: boolean | undefined;\n    readonly speechRecognitionEnabled?: boolean | undefined;\n}',
+    declaration: 'export interface MioModelParameters {\n    readonly contextWindowTokens?: number | undefined;\n    readonly maxOutputTokens?: number | undefined;\n    readonly temperature?: number | null | undefined;\n    readonly topP?: number | null | undefined;\n    readonly reasoningEfforts?: readonly MioReasoningLevel[] | undefined;\n    readonly reasoningEffort?: MioReasoningLevel | null | undefined;\n    readonly reasoningEnabled?: boolean | undefined;\n    readonly visionEnabled?: boolean | undefined;\n    readonly functionCallingEnabled?: boolean | undefined;\n    readonly speechRecognitionEnabled?: boolean | undefined;\n}',
   },
   {
     name: 'MioModelType',
@@ -7450,11 +7450,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'MioPluginCatalogItem',
-    declaration: 'export interface MioPluginCatalogItem {\n    readonly pluginId: string;\n    readonly pluginName: string;\n    readonly packageName: string;\n    readonly category: string;\n    readonly description: string;\n    readonly config: Record<string, unknown> | null;\n}',
+    declaration: 'export interface MioPluginCatalogItem {\n    readonly pluginId: string;\n    readonly pluginName: string;\n    readonly packageName: string;\n    readonly category: string;\n    readonly description: string;\n    readonly autoRefresh: boolean;\n    readonly autoInstall: boolean;\n    readonly config: Record<string, unknown> | null;\n}',
   },
   {
-    name: 'MioPluginDefaultsInstalled',
-    declaration: 'export interface MioPluginDefaultsInstalled {\n    readonly packages: readonly string[];\n    readonly reload: boolean;\n}',
+    name: 'MioPluginInstalled',
+    declaration: 'export interface MioPluginInstalled {\n    readonly packages: readonly string[];\n    readonly reload: boolean;\n}',
   },
   {
     name: 'MioPluginPresetApplied',
@@ -7471,6 +7471,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'MioQuotaView',
     declaration: 'export interface MioQuotaView {\n    readonly remainingQuota: number;\n    readonly usedQuota: number;\n    readonly unit: string;\n    readonly fetchedAt: string;\n}',
+  },
+  {
+    name: 'MioReasoningLevel',
+    declaration: 'export type MioReasoningLevel = (typeof MIO_REASONING_LEVELS)[number];',
   },
   {
     name: 'MioRegisterRequest',

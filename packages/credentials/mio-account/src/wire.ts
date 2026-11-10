@@ -208,6 +208,7 @@ export const pluginCatalogSchema: z.ZodType<readonly MioPluginCatalogItem[]> = z
   category: z.string().nullish().transform(value => value ?? ''),
   description: z.string().nullish().transform(value => value ?? ''),
   autoRefresh: flagSchema,
+  autoInstall: flagSchema,
   config: z.record(z.string(), z.unknown()).nullish().transform(value => value ?? null),
 }))
 

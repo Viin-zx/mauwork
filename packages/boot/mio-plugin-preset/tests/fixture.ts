@@ -28,11 +28,13 @@ export async function settle(ms = 200, steps = 20): Promise<void> {
  * The catalog entry one fixture's sweep reads.
  * @param values - preset values the entry carries, or the default account-placeholder pair.
  * @param autoRefresh - whether the administration switched this plugin's configuration refresh on.
+ * @param autoInstall - whether the administration asked the client to install this plugin when absent.
  * @returns the catalog entry.
  */
 export function catalogEntry(
   values?: Record<string, unknown>,
   autoRefresh = false,
+  autoInstall = false,
 ): Record<string, unknown> {
   return {
     pluginId: '1',
@@ -41,6 +43,7 @@ export function catalogEntry(
     category: 'image',
     description: '',
     autoRefresh,
+    autoInstall,
     config: {
       target: 'imagegen',
       values: values ?? { channelSecrets: { mio: '{{MIO_API_KEY}}' }, apiUrl: '{{MIO_MODEL_BASE_URL}}' },
@@ -51,8 +54,8 @@ export function catalogEntry(
 /**
  * Build a Host context for one sweep.
  * @param options - the settings user layer, whether the package is installed, the preset values,
- *   whether the admin switched the entry's refresh on, whether the default plugins are present,
- *   and the profile home the markers live under.
+ *   whether the admin switched the entry's refresh or auto-install on, whether the default
+ *   plugins are present, and the profile home the markers live under.
  * @returns the context and the services it reads.
  */
 export function fixture(options: {
@@ -60,6 +63,7 @@ export function fixture(options: {
   installed?: boolean
   values?: Record<string, unknown>
   autoRefresh?: boolean
+  autoInstall?: boolean
   defaultsInstalled?: boolean
   home?: string
 } = {}) {
@@ -82,7 +86,7 @@ export function fixture(options: {
   }
   const account = {
     getState: vi.fn(async () => ({ status: 'signed-in', user: null })),
-    getPlugins: vi.fn(async () => [catalogEntry(options.values, options.autoRefresh)]),
+    getPlugins: vi.fn(async () => [catalogEntry(options.values, options.autoRefresh, options.autoInstall)]),
     getModelAccess: vi.fn(async () => ({
       baseUrl: 'https://models.test/v1', apiKey: 'sk-test', credentialVersion: 1, expiresAt: '2030-01-01 00:00:00',
     })),

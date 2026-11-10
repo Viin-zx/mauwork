@@ -39,6 +39,8 @@ export interface MioPluginCatalogItem {
   readonly description: string
   /** Whether the administration asks every catalog sweep to overwrite this plugin's settings. */
   readonly autoRefresh: boolean
+  /** Whether the administration asks every catalog sweep to install this plugin when it is absent. */
+  readonly autoInstall: boolean
   /** Default plugin configuration stored by the backend; null when unconfigured. */
   readonly config: Record<string, unknown> | null
 }

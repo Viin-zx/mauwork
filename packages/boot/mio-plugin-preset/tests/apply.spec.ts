@@ -210,7 +210,7 @@ describe('default plugin installation', () => {
   it('installs the defaults once and announces the renderer reload', async () => {
     const { ctx, manager } = fixture({ defaultsInstalled: false })
     const installed = vi.fn()
-    ctx.on('mio-plugin-preset/defaults-installed', installed)
+    ctx.on('mio-plugin-preset/installed', installed)
     await ctx.plugin(presetPlugin)
     await vi.advanceTimersByTimeAsync(1_600)
 
@@ -336,7 +336,7 @@ describe('default plugin installation', () => {
       })
       .mockResolvedValueOnce({ changed: false, application: 'cancelled', stage: 'install', target: 'b' })
     const installed = vi.fn()
-    ctx.on('mio-plugin-preset/defaults-installed', installed)
+    ctx.on('mio-plugin-preset/installed', installed)
     await ctx.plugin(presetPlugin)
     await vi.advanceTimersByTimeAsync(1_600)
 
@@ -350,7 +350,7 @@ describe('default plugin installation', () => {
       changed: true, application: 'restart-required', stage: 'install', target: name, bundle: name,
     }))
     const installed = vi.fn()
-    ctx.on('mio-plugin-preset/defaults-installed', installed)
+    ctx.on('mio-plugin-preset/installed', installed)
     await ctx.plugin(presetPlugin)
     await vi.advanceTimersByTimeAsync(1_600)
 
@@ -377,5 +377,143 @@ describe('default plugin installation', () => {
     } finally {
       await rm(home, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 })
     }
+  })
+})
+
+describe('catalog auto installation', () => {
+  it('installs an auto-install entry, forces its preset, and announces one reload', async () => {
+    const { ctx, manager, settings } = fixture({
+      installed: false, autoInstall: true, user: { channels: [{ id: 'mine' }] },
+    })
+    const installed = vi.fn()
+    const applied = vi.fn()
+    ctx.on('mio-plugin-preset/installed', installed)
+    ctx.on('mio-plugin-preset/applied', applied)
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+
+    expect(manager.installBundle.mock.calls.map(([name]) => name)).toEqual([PACKAGE])
+    expect(settings.replace).toHaveBeenCalledExactlyOnceWith('imagegen', {
+      channelSecrets: { mio: 'sk-test' },
+      apiUrl: 'https://models.test/v1',
+    }, 4)
+    // The install announcement owns the reload; the preset write must not add a second one.
+    expect(installed).toHaveBeenCalledExactlyOnceWith({ packages: [PACKAGE], reload: true })
+    expect(applied).not.toHaveBeenCalled()
+  })
+
+  it('announces one reload when defaults and an auto-install share the sweep', async () => {
+    const { ctx, manager } = fixture({ installed: false, autoInstall: true, defaultsInstalled: false })
+    const installed = vi.fn()
+    ctx.on('mio-plugin-preset/installed', installed)
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+
+    expect(manager.installBundle.mock.calls.map(([name]) => name))
+      .toEqual([...DEFAULT_INSTALL_PACKAGES, PACKAGE])
+    // A reload after the defaults pass alone would boot before the catalog install.
+    expect(installed).toHaveBeenCalledExactlyOnceWith({
+      packages: [...DEFAULT_INSTALL_PACKAGES, PACKAGE], reload: true,
+    })
+  })
+
+  it('leaves an entry without the switch uninstalled', async () => {
+    const { ctx, manager } = fixture({ installed: false })
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+
+    expect(manager.installBundle).not.toHaveBeenCalled()
+  })
+
+  it('does not reinstall an installed entry', async () => {
+    const { ctx, manager } = fixture({ autoInstall: true })
+    const installed = vi.fn()
+    ctx.on('mio-plugin-preset/installed', installed)
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+
+    expect(manager.installBundle).not.toHaveBeenCalled()
+    expect(installed).not.toHaveBeenCalled()
+  })
+
+  it('does not reinstall an entry the person removed', async () => {
+    const { ctx, manager } = fixture({ autoInstall: true })
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+    expect(manager.installBundle).not.toHaveBeenCalled()
+
+    // Only the catalog package disappears; the defaults stay present.
+    manager.listBundles.mockResolvedValue(
+      DEFAULT_INSTALL_PACKAGES.map(name => ({ name, installed: true, enabled: true })),
+    )
+    ctx.emit('plugin-manager/changed', { reason: 'remove' })
+    await vi.advanceTimersByTimeAsync(600)
+
+    expect(manager.installBundle).not.toHaveBeenCalled()
+  })
+
+  it('keeps a handled entry removed across processes', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'mio-preset-'))
+    try {
+      const first = fixture({ home, autoInstall: true })
+      await first.ctx.plugin(presetPlugin)
+      await vi.advanceTimersByTimeAsync(1_600)
+      expect(first.manager.installBundle).not.toHaveBeenCalled()
+
+      const markerPath = join(home, 'storages', 'mio-plugin-preset', 'desktop.auto-install.json')
+      await vi.waitFor(async () => {
+        const marker: unknown = JSON.parse(await readFile(markerPath, 'utf8'))
+        expect(marker).toEqual([PACKAGE])
+      })
+
+      // The person removed the package; a later sign-in or process start must not reinstall it.
+      const second = fixture({ home, autoInstall: true, installed: false })
+      await second.ctx.plugin(presetPlugin)
+      await vi.advanceTimersByTimeAsync(1_600)
+      expect(second.manager.installBundle).not.toHaveBeenCalled()
+    } finally {
+      // Windows can hold a just-closed marker handle for a moment.
+      await rm(home, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 })
+    }
+  })
+
+  it('retries a failed auto-install only after a new sign-in', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'mio-preset-'))
+    try {
+      const { ctx, manager } = fixture({ home, installed: false, autoInstall: true })
+      manager.installBundle.mockRejectedValue(new Error('offline'))
+      await ctx.plugin(presetPlugin)
+      await settle()
+      expect(manager.installBundle).toHaveBeenCalledTimes(1)
+
+      // The failed run's own change event must not drive a retry loop.
+      ctx.emit('plugin-manager/changed', { reason: 'install' })
+      await settle()
+      expect(manager.installBundle).toHaveBeenCalledTimes(1)
+
+      const diagnostic = JSON.parse(
+        await readFile(join(home, 'storages', 'mio-plugin-preset', 'last-error.json'), 'utf8'),
+      ) as { packageName: string }
+      expect(diagnostic.packageName).toBe(PACKAGE)
+
+      ctx.emit('mio-account/changed')
+      await settle()
+      expect(manager.installBundle).toHaveBeenCalledTimes(2)
+    } finally {
+      await rm(home, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 })
+    }
+  })
+
+  it('does not announce a reload when auto-install waits for a restart', async () => {
+    const { ctx, manager } = fixture({ installed: false, autoInstall: true })
+    manager.installBundle.mockImplementation(async (name: string) => ({
+      changed: true, application: 'restart-required', stage: 'install', target: name, bundle: name,
+    }))
+    const installed = vi.fn()
+    ctx.on('mio-plugin-preset/installed', installed)
+    await ctx.plugin(presetPlugin)
+    await vi.advanceTimersByTimeAsync(1_600)
+
+    expect(installed).toHaveBeenCalledExactlyOnceWith({ packages: [PACKAGE], reload: false })
   })
 })

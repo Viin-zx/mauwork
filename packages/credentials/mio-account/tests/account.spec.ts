@@ -320,6 +320,7 @@ describe('login and registration', () => {
       description: 'Generate images',
       status: '0',
       autoRefresh: '0',
+      autoInstall: '0',
       config: { target: 'imagegen', values: { channels: [] } },
     }]))
 
@@ -330,6 +331,7 @@ describe('login and registration', () => {
       category: 'image',
       description: 'Generate images',
       autoRefresh: true,
+      autoInstall: true,
       config: { target: 'imagegen', values: { channels: [] } },
     }])
     expect(requests[0]).toMatchObject({
@@ -347,6 +349,17 @@ describe('login and registration', () => {
     replies.push(ok([entry('0'), entry(0), entry('1'), entry(1), entry(undefined), entry(true)]))
 
     expect((await ctx.mioAccount.getPlugins()).map(item => item.autoRefresh))
+      .toEqual([true, true, false, false, false, false])
+  })
+
+  it('reads the auto-install switch only from the status-convention on value', async () => {
+    const ctx = await signedIn()
+    const entry = (autoInstall: unknown): Record<string, unknown> => ({
+      pluginId: 1, pluginName: 'p', packageName: '@acme/dsh-p', category: '', description: '', autoInstall,
+    })
+    replies.push(ok([entry('0'), entry(0), entry('1'), entry(1), entry(undefined), entry(true)]))
+
+    expect((await ctx.mioAccount.getPlugins()).map(item => item.autoInstall))
       .toEqual([true, true, false, false, false, false])
   })
 

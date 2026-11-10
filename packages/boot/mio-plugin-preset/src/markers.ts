@@ -1,6 +1,6 @@
 /**
  * Profile-local markers the catalog preset reads and writes: the force intent,
- * the handled defaults, and the applied installs.
+ * the handled defaults and catalog auto-installs, and the applied installs.
  */
 
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
@@ -13,6 +13,8 @@ export const PENDING_DIRECTORY = 'mio-plugin-preset'
 const PENDING_FILE = 'pending.json'
 /** File naming default packages already handled for this profile. */
 const DEFAULTS_FILE = 'defaults.json'
+/** File naming catalog auto-install entries already handled for this profile. */
+const AUTO_INSTALL_FILE = 'auto-install.json'
 /** File naming packages whose preset has been applied; a reinstall re-applies. */
 const APPLIED_FILE = 'applied.json'
 
@@ -47,6 +49,15 @@ export function appliedPath(profile: MarkerProfile): string {
  */
 export function defaultsPath(profile: MarkerProfile): string {
   return join(profile.home, 'storages', PENDING_DIRECTORY, `${profile.name}.${DEFAULTS_FILE}`)
+}
+
+/**
+ * Path of the marker naming catalog auto-install entries this profile already handled.
+ * @param profile - the active profile.
+ * @returns the profile-local handled auto-install marker path.
+ */
+export function autoInstallPath(profile: MarkerProfile): string {
+  return join(profile.home, 'storages', PENDING_DIRECTORY, `${profile.name}.${AUTO_INSTALL_FILE}`)
 }
 
 /**

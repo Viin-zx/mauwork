@@ -46,6 +46,7 @@ const plugins: readonly MioPluginCatalogItem[] = [{
   category: 'image',
   description: 'Generate images',
   autoRefresh: true,
+  autoInstall: true,
   config: { target: 'imagegen', values: {} },
 }]
 const pluginListings: readonly MioPluginListing[] = [{

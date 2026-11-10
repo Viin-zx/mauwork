@@ -538,19 +538,19 @@ A mioagent catalog preset was written to an installed plugin's settings entry.
 
 Source: [`packages/boot/mio-plugin-preset/src/types.ts`](../../packages/boot/mio-plugin-preset/src/types.ts)
 
-<a id="mio-plugin-presetdefaults-installed--emit"></a>
+<a id="mio-plugin-presetinstalled--emit"></a>
 
-#### `mio-plugin-preset/defaults-installed` — emit
+#### `mio-plugin-preset/installed` — emit
 
-The catalog defaults installed packages for this profile.
+The catalog defaults or an auto-install entry installed packages for this profile.
 
 ```ts cordis-catalog
 /**
- * The catalog defaults installed packages for this profile.
+ * The catalog defaults or an auto-install entry installed packages for this profile.
  * @mode emit
  * @param change - installed packages and whether the renderer can load them now.
  */
-'mio-plugin-preset/defaults-installed'(change: MioPluginDefaultsInstalled): void
+'mio-plugin-preset/installed'(change: MioPluginInstalled): void
 ```
 
 Source: [`packages/boot/mio-plugin-preset/src/types.ts`](../../packages/boot/mio-plugin-preset/src/types.ts)
