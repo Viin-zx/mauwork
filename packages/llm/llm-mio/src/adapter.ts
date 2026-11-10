@@ -12,9 +12,7 @@ import type {
   AdapterRegistrationHandle, GenerateOptions, LlmModelInfo, LlmProviderInfo, LlmResolvedModelInfo,
   PreparedAdapterCall, StreamChunk,
 } from '@deepseek-ai/dsh-llm'
-import { PiAiAdapter } from '@deepseek-ai/dsh-llm-pi-ai'
-import { authContextFrom, credentialStoreFrom } from '@deepseek-ai/dsh-llm-pi-ai/src/auth.ts'
-import { resolveProfiles } from '@deepseek-ai/dsh-llm-pi-ai/src/config.ts'
+import { authContextFrom, credentialStoreFrom, PiAiAdapter, resolveProfiles } from '@deepseek-ai/dsh-llm-pi-ai'
 import type {
   PiAiModelProfile, PiAiProviderProfile, PiAiReasoningEfforts, ResolvedPiAiProviderProfile,
 } from '@deepseek-ai/dsh-llm-pi-ai'
