@@ -266,8 +266,6 @@ static LRESULT CALLBACK ProgressProc(HWND window, UINT message, WPARAM wparam, L
             PaintCaptionButtons(graphics, *page);
             SolidBrush background(page->dark ? Color(255, 21, 21, 23) : Color(255, 255, 255, 255));
             graphics.FillRectangle(&background, 48, 480, 504, 56);
-            // The brand artwork is square; center it in the 600x196 band at its own aspect ratio.
-            graphics.DrawImage(page->brand, Rect(202, 174, 196, 196));
             const int stage = static_cast<int>(reinterpret_cast<INT_PTR>(GetPropW(GetParent(window), L"HarnessInstaller.Stage")));
             const double fraction = reinterpret_cast<UINT_PTR>(GetPropW(GetParent(window), L"HarnessInstaller.ExtractProgress")) / 100.0;
             page->progress.Advance(stage, fraction, GetTickCount64());
@@ -351,7 +349,9 @@ extern "C" __declspec(dllexport) HWND __cdecl InstallerShowProgress(HWND parent,
         graphics.SetSmoothingMode(SmoothingModeAntiAlias);
         graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
         graphics.SetPixelOffsetMode(PixelOffsetModeHalf);
-        graphics.DrawImage(page->brand, Rect(0, 174, 600, 196));
+        // The brand artwork is a square mark: center it in the 600x196 band instead of
+        // stretching it across the full width, matching INSTALLER_BRAND_X and INSTALLER_BRAND_SIZE.
+        graphics.DrawImage(page->brand, Rect(202, 174, 196, 196));
         PaintCaptionButtons(graphics, *page);
     }
     delete page->brand;
