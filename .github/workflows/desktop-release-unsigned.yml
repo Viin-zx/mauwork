@@ -48,6 +48,8 @@ permissions:
 env:
   # One fixed test feed keeps every tag on the same OSS update path.
   FEED_RELEASE_ID: 0123456789abcdef0123456789abcdef
+  # Released tags carry the product brand; local packaging keeps the build marker.
+  DSH_BUILD_CLIENT_PROFILE: official
 
 concurrency:
   group: desktop-release-unsigned-${{ github.ref_name }}

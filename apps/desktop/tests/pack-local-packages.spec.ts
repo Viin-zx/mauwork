@@ -82,6 +82,13 @@ it('packs local client artifacts without a release publication record', async ()
   expect(existsSync(join(root, 'packed', PUBLISH_ORDER_FILE))).toBe(false)
 }, testTimeout)
 
+it('stages the client profile named by --client-profile', async () => {
+  const root = fixture('official')
+  const result = await pack(root, false, ['--client-profile', 'official'])
+  expect(result.code, result.output).toBe(0)
+  expect(readdirSync(join(root, 'packed'))).toEqual(['deepseek-ai-dsh-probe-1.2.3.tgz'])
+}, testTimeout)
+
 it.each(['official', 'stale', 'missing'] as const)('rejects %s client artifacts before replacing local packages', async (kind) => {
   const root = fixture(kind === 'official' ? 'official' : 'local')
   if (kind === 'stale') write(root, 'packages/client/probe/lib/client.js', 'export const changed = true\n')

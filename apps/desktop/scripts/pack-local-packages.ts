@@ -1,4 +1,4 @@
-/** Stage local-branded DSH packages for unsigned Desktop builds without a publication record. */
+/** Stage one completed client build profile into unsigned Desktop packages without a publication record. */
 
 import { resolve } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -12,13 +12,16 @@ import { packFamilyMembers, parsePackConcurrency } from '../../../scripts/releas
 
 async function main(): Promise<void> {
   const { values } = parseArgs({
-    options: { out: { type: 'string' }, concurrency: { type: 'string' } },
+    options: { out: { type: 'string' }, concurrency: { type: 'string' }, 'client-profile': { type: 'string' } },
     allowPositionals: false,
   })
   if (values.out === undefined) throw new Error('desktop local pack: --out must name the package staging directory')
   const concurrency = parsePackConcurrency(values.concurrency)
   const root = process.cwd()
-  const environment = resolveClientBuildEnvironment(repositoryClientBuildEnvironment(root), 'local')
+  const environment = resolveClientBuildEnvironment(
+    repositoryClientBuildEnvironment(root),
+    values['client-profile'] ?? 'local',
+  )
   readClientBuildRecord(root, environment)
   const destination = resolve(root, values.out)
   const packed = await packFamilyMembers(root, releaseFamily('dsh'), destination, concurrency)
