@@ -120,6 +120,7 @@ const harness = await vi.hoisted(async () => {
     visible = true
     isVisible() { return this.visible }
     isFocused() { return true }
+    readonly loadFile = vi.fn(async () => {})
     async loadURL(url: string) {
       this.urls.push(url)
       this.webContents.mainFrame.url = url
@@ -153,11 +154,13 @@ const harness = await vi.hoisted(async () => {
     readonly updateTasks = vi.fn(async (_action: 'inspect' | 'lock' | 'unlock') => false)
     readonly inspectQuit = vi.fn(async () => ({ activeTasks: false, scheduledTasks: false }))
     url = 'http://127.0.0.1:3080/?token=test'
+    injections: readonly unknown[] = []
     fetch = vi.fn(async () => Response.json({ hasApiKey: true, writable: true, localePreference: null }))
     readonly ready = deferred()
     readonly exited = deferred()
     readonly stopping = deferred()
-    readonly start = vi.fn(() => { hostStarted.resolve(); return this.ready.promise.then(() => ({ url: this.url, injections: [] })) })
+    readonly start = vi.fn(() => { hostStarted.resolve(); return this.ready.promise.then(() => ({ url: this.url })) })
+    readonly bootInjections = vi.fn(async () => this.injections)
     readonly stop = vi.fn(() => {
       this.stopping.resolve()
       this.ready.reject(new Error('child stopped'))
@@ -1218,6 +1221,22 @@ describe('desktop main startup', () => {
     harness.hosts[0]!.ready.resolve()
     await expect(boot).resolves.toEqual({ injections: [], streamBaseUrl: 'http://127.0.0.1:3080' })
     expect(harness.windows[0]!.urls).toEqual(['dsh-app://app/'])
+  })
+
+  it('reads the Host injections on every page boot so a plugin install reload starts from the current graph', async () => {
+    await import('../src/main.ts')
+    await harness.preparing.promise
+    harness.prepared.resolve()
+    await harness.hostStarted.promise
+    const host = harness.hosts[0]!
+    host.ready.resolve()
+    await expect(Promise.resolve(invoke(DESKTOP_IPC.boot))).resolves.toEqual({ injections: [], streamBaseUrl: 'http://127.0.0.1:3080' })
+    host.injections = [{ kind: 'global', name: '__DSH_BOOT__', value: { rev: 'after-install' } }]
+    await expect(Promise.resolve(invoke(DESKTOP_IPC.boot))).resolves.toEqual({
+      injections: [{ kind: 'global', name: '__DSH_BOOT__', value: { rev: 'after-install' } }],
+      streamBaseUrl: 'http://127.0.0.1:3080',
+    })
+    expect(host.bootInjections).toHaveBeenCalledTimes(2)
   })
 
   it('retains macOS native editing actions on right-click and only copy for selected read-only text', async () => {

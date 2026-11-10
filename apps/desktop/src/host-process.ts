@@ -10,7 +10,6 @@ import { parsePluginOperationRecord, type PluginOperationRecord, type PluginOper
 interface ReadyEvent {
   readonly type: 'ready'
   readonly url: string
-  readonly injections?: readonly unknown[] | undefined
 }
 
 interface FatalEvent {
@@ -44,6 +43,11 @@ type DesktopHostEvent = ReadyEvent | FatalEvent | PlatformSessionEvent | {
   readonly activeTasks: boolean
   readonly scheduledTasks: boolean
   readonly error?: string
+} | {
+  readonly type: 'boot-injections'
+  readonly requestId: number
+  readonly injections: readonly unknown[]
+  readonly error?: string
 }
 
 /** Correlated answer to one shell control request. */
@@ -57,6 +61,12 @@ export interface DesktopQuitInspection {
 
 /** Quit inspection deadline; a slower Host counts as unknown work and the shell asks before quitting. */
 export const QUIT_INSPECTION_DEADLINE_MS = 2_000
+
+/**
+ * Boot injection deadline. A page cannot start without the Host's current index
+ * injections, so the shell waits rather than booting from a stale table.
+ */
+export const BOOT_INJECTIONS_DEADLINE_MS = 10_000
 
 const MAX_HOST_DIAGNOSTIC_CHARS = 64 * 1024
 const runIdSchema = z.uuid()
@@ -105,6 +115,9 @@ function isDesktopHostEvent(message: unknown): message is DesktopHostEvent {
     case 'quit-inspection':
       return Number.isSafeInteger(candidate.requestId) && typeof candidate.activeTasks === 'boolean'
         && typeof candidate.scheduledTasks === 'boolean' && (candidate.error === undefined || typeof candidate.error === 'string')
+    case 'boot-injections':
+      return Number.isSafeInteger(candidate.requestId) && Array.isArray(candidate.injections)
+        && (candidate.error === undefined || typeof candidate.error === 'string')
     default:
       return false
   }
@@ -126,7 +139,6 @@ async function exitsWithin(exit: Promise<void>, milliseconds: number): Promise<b
 /** Browser authentication URL reported by the running Web application. */
 export interface DesktopHostReady {
   readonly url: string
-  readonly injections?: readonly unknown[] | undefined
 }
 
 /** The child has exited, but task teardown did not finish successfully. */
@@ -244,7 +256,7 @@ export class DesktopHostProcess {
         return
       }
       if (message.type === 'starting') this.runId = message.runId
-      else if (message.type === 'ready') this.readyResolve({ url: message.url, injections: message.injections })
+      else if (message.type === 'ready') this.readyResolve({ url: message.url })
       else if (message.type === 'platform-session') this.onPlatformSession?.(message.session)
       else if (message.type === 'shutdown-complete') {
         if (this.stopping) this.shutdownCompleted = true
@@ -293,6 +305,20 @@ export class DesktopHostProcess {
   }
 
   /**
+   * Read the index injections for one page load.
+   * @returns the rows the Host would inline into its own index document, collected now.
+   * @throws {Error} when the Host is unavailable, fails the collection, or misses
+   * {@link BOOT_INJECTIONS_DEADLINE_MS}; a page that starts without them cannot
+   * resolve the bundle URLs its graph names.
+   */
+  async bootInjections(): Promise<readonly unknown[]> {
+    const response = await this.control({ type: 'boot-injections' }, BOOT_INJECTIONS_DEADLINE_MS,
+      'desktop boot: injection request timed out', 'desktop boot')
+    if (response.type !== 'boot-injections') throw new Error('desktop boot: Host answered with a different control response')
+    return response.injections
+  }
+
+  /**
    * @param address - Session-scoped file reference.
    * @param signal - preparation cancellation.
    * @returns privately authorized local resource, or null when nonlocal.
@@ -307,7 +333,7 @@ export class DesktopHostProcess {
 
   private async control(
     request: { readonly type: 'update-tasks'; readonly action: 'inspect' | 'lock' | 'unlock' } | { readonly type: 'quit-inspection' }
-      | { readonly type: 'file-drag-resource'; readonly address: string },
+      | { readonly type: 'file-drag-resource'; readonly address: string } | { readonly type: 'boot-injections' },
     deadlineMs: number, deadlineMessage: string, operation: string, signal?: AbortSignal,
   ): Promise<DesktopHostControlResponse> {
     const child = this.child

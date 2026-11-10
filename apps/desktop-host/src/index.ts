@@ -52,6 +52,7 @@ async function main(): Promise<void> {
   const control: {
     updateTasks?: ReturnType<typeof installDesktopUpdateTaskControl>
     quitInspection?: ReturnType<typeof installDesktopQuitInspection>
+    collectInjections?: () => readonly unknown[]
   } = {}
   const send = (message: object): Promise<void> => new Promise((resolve, reject) => {
     if (!process.connected || process.send === undefined) { resolve(); return }
@@ -113,6 +114,20 @@ async function main(): Promise<void> {
       })().catch((error: unknown) => { console.error(error) })
       return
     }
+    if (message.type === 'boot-injections') {
+      if (!('requestId' in message) || !Number.isSafeInteger(message.requestId)) return
+      const requestId = message.requestId
+      void (async () => {
+        try {
+          if (stopping !== undefined || control.collectInjections === undefined) throw new Error('desktop boot: Host is unavailable')
+          await send({ type: 'boot-injections', requestId, injections: control.collectInjections() })
+        } catch (error) {
+          await send({ type: 'boot-injections', requestId, injections: [],
+            error: error instanceof Error ? error.message : String(error) })
+        }
+      })().catch((error: unknown) => { console.error(error) })
+      return
+    }
     if (message.type !== 'update-tasks' || !('requestId' in message) || !Number.isSafeInteger(message.requestId)
       || !('action' in message) || !['inspect', 'lock', 'unlock'].includes(String(message.action))) return
     void (async () => {
@@ -139,8 +154,9 @@ async function main(): Promise<void> {
   installPlatformSessionPublisher(ctx, (session) => {
     if (process.connected) process.send?.({ type: 'platform-session', session })
   })
+  control.collectInjections = () => ctx.webServer.collectIndexInjections(ctx.connection.browserPeer)
   const url = ctx.connection.authenticatedUrl(`${ctx.webServer.protocol}//127.0.0.1:${String(ctx.webServer.port)}`)
-  if (process.connected) process.send?.({ type: 'ready', url, injections: ctx.webServer.collectIndexInjections(ctx.connection.browserPeer) }, (error) => { if (error !== null) console.error(error) })
+  if (process.connected) process.send?.({ type: 'ready', url }, (error) => { if (error !== null) console.error(error) })
 }
 
 if (import.meta.main) {

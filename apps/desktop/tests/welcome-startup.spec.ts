@@ -25,7 +25,7 @@ const state = vi.hoisted(() => ({
   resetPassword: vi.fn(async (_request: MioResetPasswordRequest) => {}),
   getAgreements: vi.fn(async (): Promise<readonly MioAgreement[]> => []),
   quit: vi.fn(),
-  startHost: vi.fn().mockResolvedValue({ url: 'http://127.0.0.1:3080/?token=test', injections: [] }),
+  startHost: vi.fn().mockResolvedValue({ url: 'http://127.0.0.1:3080/?token=test' }),
   stopHost: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
   loadWorkspace: vi.fn<(url: string) => Promise<void>>().mockResolvedValue(undefined),
   showWorkspace: vi.fn(),

@@ -58,6 +58,16 @@ process.on('message', message => {
     process.send({ type: 'quit-inspection', requestId: message.requestId, activeTasks: false, scheduledTasks: message.requestId % 2 === 1 })
     return
   }
+  if (message.type === 'boot-injections') {
+    // Odd ids answer the table as of now; even ids report a Host that cannot collect it.
+    if (message.requestId % 2 === 0) {
+      process.send({ type: 'boot-injections', requestId: message.requestId, injections: [], error: 'desktop boot: Host is unavailable' })
+      return
+    }
+    process.send({ type: 'boot-injections', requestId: message.requestId,
+      injections: [{ kind: 'global', name: '__DSH_BOOT__', value: { rev: 'generation-' + message.requestId } }] })
+    return
+  }
   if (message.type !== 'shutdown') return
   server.close(() => {
     writeFileSync(join(process.argv[3], 'stopped'), '')
@@ -218,6 +228,20 @@ ${HTTP_HOST}`)
     expect(Date.now() - started).toBeGreaterThanOrEqual(QUIT_INSPECTION_DEADLINE_MS - 50)
     expect(await host.inspectQuit()).toEqual({ activeTasks: false, scheduledTasks: false })
   }, 15_000)
+
+  it('reads a current injection table per page boot and propagates a Host that cannot collect one', async () => {
+    const host = hostProcess(projectWithHost())
+    await expect(host.bootInjections()).rejects.toThrow('desktop boot: Host is unavailable')
+    await host.start()
+    // Request ids 1 and 2: odd ids answer, even ids report, so one call proves each branch.
+    expect(await host.bootInjections()).toEqual([
+      { kind: 'global', name: '__DSH_BOOT__', value: { rev: 'generation-1' } },
+    ])
+    await expect(host.bootInjections()).rejects.toThrow('desktop boot: Host is unavailable')
+    expect(await host.bootInjections()).toEqual([
+      { kind: 'global', name: '__DSH_BOOT__', value: { rev: 'generation-3' } },
+    ])
+  })
 
   it.each([
     'process.exit(17)',
