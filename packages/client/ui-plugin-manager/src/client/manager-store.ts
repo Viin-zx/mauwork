@@ -462,12 +462,20 @@ export function rowKey(entryId: string): string {
   return `row:${entryId}`
 }
 
-/** Whether a plugin version can be installed (not blocked by incompatibility). */
+/**
+ * Whether a plugin version can be installed (not blocked by incompatibility).
+ * @param version - the catalog version to test.
+ * @returns whether the version is compatible and ships a bundle.
+ */
 export function installable(version: PluginVersion): boolean {
-  return version.incompatible === undefined && version.bundle !== false
+  return version.incompatible === undefined && version.bundle
 }
 
-/** The best update candidate from a version list, if any. */
+/**
+ * The best update candidate from a version list, if any.
+ * @param list - the registry's version list for one package.
+ * @returns the newest listed version, or undefined when none is listed.
+ */
 export function updateCandidate(list: PluginVersionList): PluginVersion | undefined {
   if (list.status !== 'listed') return undefined
   return list.versions[0]
@@ -609,7 +617,6 @@ export class PluginManagerController {
    */
   constructor(
     private readonly ctx: ClientContext,
-    private readonly reloadPage: () => void = () => { globalThis.location.reload() },
   ) {
     this.store = createSnapshotStore<PluginManagerState>({
       status: 'idle', refreshStatus: 'idle', packages: [], busy: [], notice: null,
@@ -719,7 +726,6 @@ export class PluginManagerController {
           this.applied(result, packageName)
           if (result.ok && (result.value.application === 'applied' || result.value.application === 'restart-required')) {
             this.trackToggle(packageName, enabled)
-            this.reloadPage()
           }
         })
       },
@@ -749,9 +755,6 @@ export class PluginManagerController {
           this.ctx.get('productAnalytics')?.track('confirm_uninstall_plugin', { plugin_name: packageName })
           const result = await this.ctx.remote.pluginManager.removeBundle(packageName)
           this.applied(result, packageName)
-          // HMR can unload the package without unmounting the plugin's browser
-          // contributions; a renderer reload drops the stale tab and page.
-          if (result.ok && result.value.application === 'applied') this.reloadPage()
         })
         this.patch({ confirm: { action: 'uninstall', packageName } })
       },
@@ -763,7 +766,6 @@ export class PluginManagerController {
           this.applied(result, entryId)
           if (result.ok && (result.value.application === 'applied' || result.value.application === 'restart-required')) {
             this.trackToggle(entryId, enabled, true)
-            this.reloadPage()
           }
         })
       },
