@@ -101,10 +101,7 @@ export function HeroShell({ t, renderSlot, children }: HeroShellProps) {
           {renderSlot('conversation.hero.brand.mark', { size: 34, className: css.fish }, {
             fallback: <HeroFish />,
           })}
-          <span className={css.titleGroup}>
-            <span>{t('hero.headline')}</span>
-            <span className={css.previewBadge}>{t('hero.preview')}</span>
-          </span>
+          <span>{t('hero.headline')}</span>
         </div>
         <div className={css.body}>
           {/* The composer remains mounted outside this component. */}
