@@ -1,6 +1,6 @@
 [
   {
-    "label": "About DeepSeek Harness",
+    "label": "About Mauwork",
     "role": "about"
   },
   {
@@ -10,7 +10,7 @@
     "label": "Check for Updates…"
   },
   {
-    "label": "Manage mauwork Command…"
+    "label": "Manage dsh Command…"
   },
   {
     "type": "separator"

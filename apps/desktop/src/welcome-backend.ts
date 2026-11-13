@@ -11,6 +11,8 @@ import type {
 export interface WelcomeState {
   readonly loggedIn: boolean
   readonly localePreference: string | null
+  /** Effective Host theme preference; absent or invalid optional theme settings use system appearance. */
+  readonly themePreference: 'light' | 'dark' | 'system'
 }
 
 /** Narrow operations available to the native welcome flow. */
@@ -19,7 +21,7 @@ export interface DesktopWelcomeBackend {
   analyticsEnabled(): Promise<boolean>
   /** @param event - desktop-owned fields. @returns after local Host intake. */
   report(event: ProductEvent): Promise<void>
-  /** @returns Configured-key presence and the shared language preference, without credential values. */
+  /** @returns Configured-key presence and the shared language and theme preferences, without credential values. */
   read(): Promise<WelcomeState>
   /** @returns The saved UI language without account or provider requests. */
   readLocalePreference(): Promise<string | null>
@@ -80,15 +82,27 @@ export async function connectDesktopWelcome(
     }
     return envelope.result.value
   }
-  const localePreference = async (): Promise<string | null> => {
+  const settingsNamespaces = async (): Promise<unknown[]> => {
     const settings = await invoke({ namespace: 'settings', method: 'describe', args: {} })
     if (!record(settings) || !Array.isArray(settings.namespaces)) throw new Error('desktop welcome: missing settings namespaces')
-    const locale: unknown = settings.namespaces.find((item: unknown) => record(item) && item.ns === 'locale')
+    return settings.namespaces
+  }
+  const localeOf = (namespaces: unknown[]): string | null => {
+    const locale: unknown = namespaces.find((item: unknown) => record(item) && item.ns === 'locale')
     if (!record(locale) || !record(locale.value)
       || (locale.value.preference !== undefined && typeof locale.value.preference !== 'string')) {
       throw new Error('desktop welcome: invalid locale preference')
     }
     return locale.value.preference ?? null
+  }
+  const localePreference = async (): Promise<string | null> => localeOf(await settingsNamespaces())
+  const themePreference = (namespaces: unknown[]): WelcomeState['themePreference'] => {
+    const theme = namespaces.find(item => record(item) && item.ns === 'ui-theme')
+    if (theme === undefined) return 'system'
+    const preference = record(theme) && record(theme.value) ? theme.value.preference : undefined
+    if (preference === 'light' || preference === 'dark' || preference === 'system') return preference
+    console.warn('desktop appearance: invalid Host theme preference; using system appearance')
+    return 'system'
   }
   const read = async (): Promise<WelcomeState> => {
     let loggedIn = false
@@ -98,9 +112,11 @@ export async function connectDesktopWelcome(
     } catch {
       // The mioAccount Remote may not exist; treat as not logged in.
     }
+    const namespaces = await settingsNamespaces()
     return {
       loggedIn,
-      localePreference: await localePreference(),
+      localePreference: localeOf(namespaces),
+      themePreference: themePreference(namespaces),
     }
   }
   return {

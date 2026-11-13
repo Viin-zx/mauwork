@@ -1,4 +1,4 @@
-vi.mock('../src/web-document.ts', () => ({ authenticateWebHost: async () => 'test-cookie', serveWebDocument: vi.fn(), forwardWebRequest: vi.fn() }))
+vi.mock('../src/web-document.ts', () => ({ authenticateWebHost: async () => 'test-cookie', serveWebDocument: vi.fn(), forwardWebRequest: vi.fn(), removeLegacyHostCookies: async () => {} }))
 /** Welcome startup uses the Host before transitioning to the workspace. */
 
 import { afterEach, expect, it, vi } from 'vitest'
@@ -37,13 +37,14 @@ const state = vi.hoisted(() => ({
   welcomeLocale: undefined as DesktopLocale | undefined,
   welcomeReady: false,
   preference: 'zh',
+  themePreference: 'system' as 'light' | 'dark' | 'system',
   handlers: new Map<string, (...args: unknown[]) => unknown>(),
   listeners: new Map<string, (...args: unknown[]) => void>(),
   contents: undefined as { mainFrame: { url: string }; send: ReturnType<typeof vi.fn> } | undefined,
   windowOptions: undefined as BrowserWindowConstructorOptions | undefined,
   menu: vi.fn(),
   operations: undefined as WelcomeOperations | undefined,
-  nativeTheme: { themeSource: 'system', shouldUseDarkColors: false },
+  nativeTheme: { themeSource: 'system', shouldUseDarkColors: false, on: vi.fn(), removeListener: vi.fn() },
 }))
 
 vi.mock('../src/crash-report.ts', async importOriginal => ({
@@ -80,6 +81,7 @@ vi.mock('electron', () => ({
     on() { return this }
     isDestroyed() { return false }
     isMinimized() { return false }
+    setBackgroundColor = vi.fn()
     restore = vi.fn()
     focus = state.focusWorkspace
     moveTop = state.moveTopWorkspace
@@ -121,7 +123,7 @@ vi.mock('../src/host-process.ts', () => ({
     start = state.startHost
     stop = state.stopHost
     fetch() {
-      return Promise.resolve(Response.json({ loggedIn: false, localePreference: state.preference }))
+      return Promise.resolve(Response.json({ loggedIn: false, localePreference: state.preference, themePreference: state.themePreference }))
     }
   },
 }))
@@ -132,7 +134,7 @@ vi.mock('../src/welcome-backend.ts', () => ({
     readLocalePreference: async () => state.preference,
     read: async () => {
       await state.beforeRead()
-      return { loggedIn: false, localePreference: state.preference }
+      return { loggedIn: false, localePreference: state.preference, themePreference: state.themePreference }
     },
     getState: () => state.accountState(),
     sendSmsCode: (request: MioSmsCodeRequest) => state.sendSmsCode(request),

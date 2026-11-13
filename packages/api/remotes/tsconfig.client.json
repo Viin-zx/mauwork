@@ -11,6 +11,7 @@
     "src/types.ts"
   ],
   "references": [
+    { "path": "../../team/agent-team" },
     { "path": "../../client/product-analytics/tsconfig.client.json" },
     {
       "path": "../../../vendor/cordis"
@@ -103,22 +104,25 @@
       "path": "../../boot/plugin-manager"
     },
     {
+      "path": "../../mcp/mcp-manager"
+    },
+    {
       "path": "../../boot/plugin-market"
     },
     {
       "path": "../../boot/mio-plugin-preset"
     },
     {
-      "path": "../../document/office-to-pdf"
-    },
-    {
-      "path": "../account-controller"
+      "path": "../../document/office-kit"
     },
     {
       "path": "../mio-account-controller"
     },
     {
       "path": "../../credentials/deepseek-account"
+    },
+    {
+      "path": "../../web/web"
     }
   ]
 }

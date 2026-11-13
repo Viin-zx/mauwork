@@ -6,7 +6,7 @@ import { connectDesktopWelcome } from '../src/welcome-backend.ts'
 const signedOut: MioAccountView = { status: 'signed-out', user: null }
 const signedIn: MioAccountView = { status: 'signed-in', user: null }
 
-function transport(options: { locale?: string; state?: MioAccountView; failState?: boolean } = {}) {
+function transport(options: { locale?: string; theme?: string; state?: MioAccountView; failState?: boolean } = {}) {
   const calls: { method: string; args: Record<string, unknown> }[] = []
   const send = vi.fn<Parameters<typeof connectDesktopWelcome>[1]>(async (_input, init) => {
     if (init?.method !== 'POST') return new Response('index')
@@ -29,7 +29,9 @@ function transport(options: { locale?: string; state?: MioAccountView; failState
     } else if (method === 'mioAccount/getAgreements') {
       value = [{ agreementType: 'USER', content: '<p>agreement</p>' }]
     } else if (method === 'settings/describe') {
-      value = { namespaces: [{ ns: 'locale', value: options.locale === undefined ? {} : { preference: options.locale } }] }
+      const namespaces: unknown[] = [{ ns: 'locale', value: options.locale === undefined ? {} : { preference: options.locale } }]
+      if (options.theme !== undefined) namespaces.push({ ns: 'ui-theme', value: { preference: options.theme } })
+      value = { namespaces }
     } else if (method === 'productAnalytics/enabled') {
       value = true
     } else if (method === 'productAnalytics/report') {
@@ -50,7 +52,7 @@ describe('desktop welcome Web operations', () => {
     const backend = await connectDesktopWelcome(url, host.send)
     expect(host.send).toHaveBeenCalledExactlyOnceWith(url, { credentials: 'include' })
     expect(await backend.analyticsEnabled()).toBe(true)
-    expect(await backend.read()).toEqual({ loggedIn: false, localePreference: null })
+    expect(await backend.read()).toEqual({ loggedIn: false, localePreference: null, themePreference: 'system' })
     for (const [input, init] of host.send.mock.calls.slice(1)) {
       expect(input).toMatch(/^http:\/\/127\.0\.0\.1:19387\/api\//u)
       expect(init).toMatchObject({ credentials: 'include', redirect: 'error' })
@@ -60,7 +62,7 @@ describe('desktop welcome Web operations', () => {
   it('recognizes a signed-in account and the explicit language preference', async () => {
     const host = transport({ locale: 'zh', state: signedIn })
     const backend = await connectDesktopWelcome(url, host.send)
-    expect(await backend.read()).toEqual({ loggedIn: true, localePreference: 'zh' })
+    expect(await backend.read()).toEqual({ loggedIn: true, localePreference: 'zh', themePreference: 'system' })
     expect(host.calls.map(call => call.method)).toEqual(['mioAccount/getState', 'settings/describe'])
   })
 
@@ -74,7 +76,23 @@ describe('desktop welcome Web operations', () => {
   it('treats an unavailable account Remote as signed out', async () => {
     const host = transport({ failState: true })
     const backend = await connectDesktopWelcome(url, host.send)
-    expect(await backend.read()).toEqual({ loggedIn: false, localePreference: null })
+    expect(await backend.read()).toEqual({ loggedIn: false, localePreference: null, themePreference: 'system' })
+  })
+
+  it.each(['light', 'dark', 'system'] as const)('reads the live %s theme preference', async (preference) => {
+    const host = transport({ theme: preference })
+    const backend = await connectDesktopWelcome(url, host.send)
+    expect(await backend.read()).toMatchObject({ themePreference: preference })
+  })
+
+  it('falls back to system for an invalid theme without blocking startup metadata', async () => {
+    const host = transport({ theme: 'invalid' })
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const backend = await connectDesktopWelcome(url, host.send)
+      expect(await backend.read()).toMatchObject({ themePreference: 'system' })
+      expect(warn).toHaveBeenCalledOnce()
+    } finally { warn.mockRestore() }
   })
 
   it('forwards every mioagent operation to its Remote method', async () => {
