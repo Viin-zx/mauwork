@@ -290,6 +290,7 @@ export const zh = {
   detailFailed: '加载失败',
   detailInvalid: '无效响应',
   reasonUnsupportedPlatform: '不支持的平台',
+  reasonUnexpectedPackage: '插件来源安装了与所请求不同的包或版本，已撤销这次安装。请向插件发布者或插件索引维护者报告此问题。',
 } satisfies Record<string, string>
 
 /** Plugin manager locale key union. */
@@ -580,4 +581,5 @@ export const en = {
   detailFailed: 'Load failed',
   detailInvalid: 'Invalid response',
   reasonUnsupportedPlatform: 'Unsupported platform',
+  reasonUnexpectedPackage: 'The plugin source installed another package or version than requested; the installation was undone. Report it to the plugin\'s publisher or the index maintainer.',
 } satisfies Record<PluginManagerLocaleKey, string>
