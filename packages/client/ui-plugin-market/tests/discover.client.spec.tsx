@@ -24,7 +24,7 @@ const COMMIT = '0123456789abcdef0123456789abcdef01234567'
 function release(name: string, version: string, fields: Partial<MarketListingVersion> = {}): MarketListingVersion {
   return {
     version, publishTimestamp: 1790476800, source: { type: 'npm' }, engines: {},
-    install: { spec: `${name}@${version}` }, compatibility: { compatible: true }, ...fields,
+    install: { spec: `${name}@${version}` }, compatibility: { compatible: true }, update: false, ...fields,
   }
 }
 

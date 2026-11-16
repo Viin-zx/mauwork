@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-mio-plugin-preset",
   "description": "Apply mioagent plugin catalog presets to empty plugin settings",
-  "version": "0.2.2-rc.2",
+  "version": "0.2.2-rc.3",
   "publishConfig": {
     "access": "public"
   },
