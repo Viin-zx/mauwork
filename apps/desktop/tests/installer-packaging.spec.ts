@@ -1,4 +1,4 @@
-import { readInstallerLocales } from '../scripts/installer-locales.mjs'
+import { readInstallerLocales, renderInstallerStrings } from '../scripts/installer-locales.mjs'
 import { tmpdir } from 'node:os'
 import { readFileSync } from 'node:fs'
 import { Arch, Platform } from 'electron-builder'
@@ -52,9 +52,9 @@ describe('installer preparation preserves application dependencies', () => {
       })
       const appInfo = new AppInfo(metadataPackager, undefined)
       expect(appInfo.companyName).toBe('Hangzhou DeepSeek Artificial Intelligence Co., Ltd.')
-      expect(appInfo.copyright).toBe(`Copyright © ${new Date().getFullYear()} DeepSeek Harness`)
+      expect(appInfo.copyright).toBe(`Copyright © ${new Date().getFullYear()} Mauwork`)
       if (platform === 'win32') {
-        expect(expandMacro(config.nsis.uninstallDisplayName, null, appInfo, {}, false)).toBe('DeepSeek Harness')
+        expect(expandMacro(config.nsis.uninstallDisplayName, null, appInfo, {}, false)).toBe('Mauwork')
         expect(config.nsis.installerLanguages).toEqual(readInstallerLocales().map(locale => locale.id))
       }
       const aboutIcon = config.extraResources.find(resource => resource.to === 'icon.png')
@@ -163,7 +163,8 @@ describe('installer preparation preserves application dependencies', () => {
 
   it('names the product Mauwork in every installer message', () => {
     const read = (path: string): string => readFileSync(new URL(path, import.meta.url), 'utf8')
-    const copy = read('../installer/strings.nsh') + read('../installer/extract-report.h')
+    const copy = renderInstallerStrings(readInstallerLocales()) + read('../installer/extract-report.h')
+      + read('../installer/restart-banner.h') + read('../installer/restart-status.h')
     expect(copy).not.toContain('DeepSeek Harness')
     expect(copy).toContain('Mauwork 正在运行')
   })
