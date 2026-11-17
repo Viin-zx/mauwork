@@ -9,6 +9,7 @@ import {
   realpathSync,
   closeSync,
   readFileSync,
+  rmSync,
   unlinkSync,
   writeFileSync,
   writeSync,
@@ -21,7 +22,7 @@ import {
 } from './core-package-set.ts'
 import type { DesktopPaths } from './paths.ts'
 import type { DesktopRelease } from './release.ts'
-import { readDesktopRuntime } from './runtime-tree.ts'
+import { readDesktopRuntime, type DesktopRuntimeDescriptor } from './runtime-tree.ts'
 import { initProfile, removeLinkProjections, sanitizeProfile } from '@deepseek-ai/dsh-app-boot'
 import { PROFILE_TEMPLATES, type ProfileTemplate } from '@deepseek-ai/dsh-official-bundles'
 
@@ -56,6 +57,32 @@ function migrateProfileSettings(projectDir: string): void {
   }
 }
 
+/**
+ * Delete release-owned packages a profile installed at another version.
+ * Profile module resolution answers a bare package name from the profile's own
+ * `node_modules` before the installation, so one stale core package shadows the
+ * copy this release ships; the compatibility preflight then disables that row
+ * and every service waiting on it stays pending. A copy at the release's own
+ * version is compatible and stays.
+ */
+function removeStaleCorePackages(projectDir: string, runtime: DesktopRuntimeDescriptor): void {
+  for (const shared of runtime.sharedPackages) {
+    const directory = join(projectDir, 'node_modules', ...shared.name.split('/'))
+    let version: unknown
+    try {
+      const manifest: unknown = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'))
+      version = typeof manifest === 'object' && manifest !== null && 'version' in manifest ? manifest.version : undefined
+    } catch (error) {
+      // A package the profile does not carry leaves nothing to repair.
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue
+      version = undefined
+    }
+    if (version === shared.version) continue
+    rmSync(directory, { recursive: true, force: true })
+    console.warn(`desktop profile: removed ${shared.name}@${typeof version === 'string' ? version : 'unknown'}, release ships ${shared.version}`)
+  }
+}
+
 /** Initializes the Desktop profile and disables third-party bundles during recovery. */
 export class DesktopProjectManager {
   /**
@@ -82,10 +109,11 @@ export class DesktopProjectManager {
   async applyRelease(): Promise<void> {
     await this.withLock(() => {
       // Validation only: an unreadable or mismatched runtime descriptor stops preparation before the Host starts.
-      readDesktopRuntime(this.runtime.dsh)
+      const runtime = readDesktopRuntime(this.runtime.dsh)
       migrateProfileSettings(this.paths.profile)
       createPluginProfile(this.paths.profile)
       removeLinkProjections(this.paths.profile)
+      removeStaleCorePackages(this.paths.profile, runtime)
     })
   }
 
