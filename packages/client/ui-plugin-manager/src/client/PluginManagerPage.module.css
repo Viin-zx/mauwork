@@ -1,6 +1,7 @@
 /* Plugin manager page: a centred column with its header, notices, and the package cards. */
 
 .page {
+  --plugin-page-inset: clamp(24px, 4vw, 48px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -11,8 +12,15 @@
   /* Inline and bottom insets only: the 28px top inset belongs to the head row
      (`.pageHead`, `.detailTop`). macOS window dragging is owned by a row's own box,
      so an inset above that box leaves a top strip no drag region covers. */
-  padding: 0 clamp(24px, 4vw, 48px) 48px;
+  padding: 0 var(--plugin-page-inset) 48px;
   color: var(--dsw-alias-label-primary);
+}
+
+/* Phones keep a narrower gutter than the desktop clamp. */
+@media (max-width: 767px) {
+  .page {
+    --plugin-page-inset: 20px;
+  }
 }
 
 .page > * {
@@ -162,9 +170,14 @@
   color: color-mix(in srgb, var(--dsw-alias-label-secondary) 60%, var(--dsw-alias-label-tertiary));
 }
 
-.groupMore:hover,
 .groupMore:focus-visible {
   color: var(--dsw-alias-label-secondary);
+}
+
+@media (hover: hover) {
+  .groupMore:hover {
+    color: var(--dsw-alias-label-secondary);
+  }
 }
 
 .moreHead {
@@ -186,9 +199,14 @@
   color: var(--dsw-alias-label-caption);
 }
 
-.groupInfo:hover,
 .groupInfo:focus-visible {
   color: var(--dsw-alias-label-secondary);
+}
+
+@media (hover: hover) {
+  .groupInfo:hover {
+    color: var(--dsw-alias-label-secondary);
+  }
 }
 
 /* Center the status label geometrically: beside larger titles the capsule's line-box offset shows. */
@@ -309,8 +327,16 @@
   position: relative;
 }
 
-.cardLink:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
+/* Hover stays behind @media (hover: hover) so a tap cannot latch it; the press
+   state carries the feedback a touch client would otherwise lose. */
+.cardLink:active {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+@media (hover: hover) {
+  .cardLink:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
 }
 
 .cardOpen {
@@ -417,9 +443,16 @@
   cursor: pointer;
 }
 
-.iconButton:hover:not(:disabled) {
-  background: var(--dsw-alias-interactive-bg-hover);
+.iconButton:active:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-active);
   color: var(--dsw-alias-label-secondary);
+}
+
+@media (hover: hover) {
+  .iconButton:hover:not(:disabled) {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-secondary);
+  }
 }
 
 .iconButton:disabled {
@@ -497,8 +530,14 @@
   cursor: pointer;
 }
 
-.deleteButton:hover:not(:disabled) {
+.deleteButton:active:not(:disabled) {
   background: var(--dsw-alias-interactive-bg-hover-danger, var(--dsw-alias-interactive-bg-hover));
+}
+
+@media (hover: hover) {
+  .deleteButton:hover:not(:disabled) {
+    background: var(--dsw-alias-interactive-bg-hover-danger, var(--dsw-alias-interactive-bg-hover));
+  }
 }
 
 .deleteButton:disabled {
@@ -632,8 +671,10 @@
   cursor: pointer;
 }
 
-.guideToggle:hover {
-  color: var(--dsw-alias-label-primary);
+@media (hover: hover) {
+  .guideToggle:hover {
+    color: var(--dsw-alias-label-primary);
+  }
 }
 
 .guideChevron {
@@ -763,8 +804,10 @@
   cursor: pointer;
 }
 
-.registryToggle:hover:not(:disabled) {
-  color: var(--dsw-alias-label-primary);
+@media (hover: hover) {
+  .registryToggle:hover:not(:disabled) {
+    color: var(--dsw-alias-label-primary);
+  }
 }
 
 .registryToggle:disabled {
@@ -817,8 +860,10 @@
   cursor: pointer;
 }
 
-.registryOption:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
+@media (hover: hover) {
+  .registryOption:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
 }
 
 /* An offered registry is one row: the radio beside its title and the line under it. */
@@ -952,9 +997,11 @@ label.registryOption {
   cursor: pointer;
 }
 
-.wizardClose:hover {
-  background: var(--dsw-alias-bg-layer-3);
-  color: var(--dsw-alias-label-primary);
+@media (hover: hover) {
+  .wizardClose:hover {
+    background: var(--dsw-alias-bg-layer-3);
+    color: var(--dsw-alias-label-primary);
+  }
 }
 
 .wizardHero {
@@ -1238,8 +1285,10 @@ label.registryOption {
   cursor: pointer;
 }
 
-.crumb:hover {
-  color: var(--dsw-alias-label-primary);
+@media (hover: hover) {
+  .crumb:hover {
+    color: var(--dsw-alias-label-primary);
+  }
 }
 
 .crumb:focus-visible {
@@ -1475,9 +1524,11 @@ label.registryOption {
   cursor: pointer;
 }
 
-.rowOpen:hover .rowId {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+@media (hover: hover) {
+  .rowOpen:hover .rowId {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 
 .rowOpenIcon {
@@ -1485,8 +1536,10 @@ label.registryOption {
   color: var(--dsw-alias-label-tertiary);
 }
 
-.rowOpen:hover .rowOpenIcon {
-  color: var(--dsw-alias-label-primary);
+@media (hover: hover) {
+  .rowOpen:hover .rowOpenIcon {
+    color: var(--dsw-alias-label-primary);
+  }
 }
 
 .rowState {
@@ -1548,4 +1601,13 @@ label.registryOption {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* iOS Safari zooms the visual viewport for a focused field under 16px. */
+@media (pointer: coarse) {
+  .installField input[type='text'],
+  .registryCustomField,
+  .partsFilter input {
+    font-size: 16px;
+  }
 }
