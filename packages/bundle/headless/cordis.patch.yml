@@ -44,3 +44,11 @@
 
 - id: mio-account
   disabled: true
+
+# Both inject `mioAccount`; leaving them enabled only keeps them waiting for the
+# account service this profile turns off.
+- id: mio-plugin-preset
+  disabled: true
+
+- id: llm-mio
+  disabled: true
