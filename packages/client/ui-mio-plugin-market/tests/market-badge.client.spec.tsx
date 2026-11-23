@@ -17,6 +17,7 @@ function props(state: Partial<MioMarketState>): MarketUpdateDotProps {
   const full: MioMarketState = {
     status: 'ready', items: [ITEM], installed: [PACKAGE], installedVersions: {}, latestVersions: {},
     updating: null, updateError: '', error: '',
+    updatingAll: null, updateAllError: null, updateAllRestart: 0,
     ...state,
   }
   return {

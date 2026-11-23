@@ -18,6 +18,13 @@
   min-width: 0;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 8px;
+}
+
 .title {
   margin: 0;
   font-size: 16px;
@@ -48,6 +55,38 @@
   font-size: 13px;
   line-height: 20px;
   color: var(--dsw-alias-state-error-primary);
+}
+
+.notice {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.updateList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.updateRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.updateVersions {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+  font-variant-numeric: tabular-nums;
 }
 
 .grid {

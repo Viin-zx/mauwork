@@ -14,6 +14,13 @@ const ITEM = {
 
 afterEach(cleanup)
 
+/** English copy with every `{param}` replaced, for tests that read rendered sentences. */
+function enText(key: MioPluginMarketKey, params?: Record<string, unknown>): string {
+  let text: string = en[key]
+  for (const [name, value] of Object.entries(params ?? {})) text = text.replaceAll(`{${name}}`, String(value))
+  return text
+}
+
 function props(
   state: Partial<MioMarketState>,
   overrides: Partial<MioMarketTabProps> = {},
@@ -23,12 +30,14 @@ function props(
   const full: MioMarketState = {
     status: 'ready', items: [], installed: [], installedVersions: {}, latestVersions: {},
     updating: null, updateError: '', error: '',
+    updatingAll: null, updateAllError: null, updateAllRestart: 0,
     ...state,
   }
   return {
     install: vi.fn(),
     openPackage: vi.fn(),
     update: vi.fn(),
+    updateAll: vi.fn(),
     togglePin: vi.fn(),
     useMarket: (selector: (value: MioMarketState) => unknown) => selector(full),
     usePinned: (selector: (value: readonly string[]) => unknown) => selector(pinned),
@@ -99,6 +108,7 @@ describe('mio plugin market tab', () => {
     })} />)
     expect(container.querySelector('[data-testid="mio-plugin-market"]')).not.toBeNull()
     expect(screen.queryByRole('button', { name: 'update' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'updateAll' })).toBeNull()
 
     cleanup()
     render(<MioMarketTab {...props({
@@ -106,20 +116,75 @@ describe('mio plugin market tab', () => {
       installedVersions: { [PACKAGE]: '1.0.0' }, latestVersions: { [PACKAGE]: '2.0.0' },
     })} />)
     expect(screen.getByRole('button', { name: 'update' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'updateAll' })).toBeDefined()
+  })
+
+  it('updates every newer plugin at once after listing the replacements', () => {
+    const second = { ...ITEM, pluginName: 'Video', packageName: '@scope/video' }
+    const updateAll = vi.fn()
+    const { container } = render(<MioMarketTab {...props({
+      items: [ITEM, second], installed: [PACKAGE, second.packageName],
+      installedVersions: { [PACKAGE]: '1.0.0', [second.packageName]: '2.0.0' },
+      latestVersions: { [PACKAGE]: '2.0.0', [second.packageName]: '3.0.0' },
+    }, { updateAll }, enText)} />)
+
+    const header = container.querySelector('header') as HTMLElement
+    expect(within(header).getAllByRole('button').map(button => button.textContent))
+      .toEqual(['Update all (2)', 'Refresh'])
+    fireEvent.click(screen.getByRole('button', { name: 'Update all (2)' }))
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByText('AI 生图')).toBeDefined()
+    expect(within(dialog).getByText('1.0.0 → 2.0.0')).toBeDefined()
+    expect(within(dialog).getByText('Video')).toBeDefined()
+    expect(within(dialog).getByText('2.0.0 → 3.0.0')).toBeDefined()
+
+    fireEvent.click(within(dialog).getAllByRole('button', { name: 'Cancel' }).at(-1) as HTMLElement)
+    expect(updateAll).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Update all (2)' }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Update all' }))
+    expect(updateAll).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows update-all progress, the restart notice, and the reason a run stopped', () => {
+    const { rerender } = render(<MioMarketTab {...props({
+      items: [ITEM], installed: [PACKAGE],
+      installedVersions: { [PACKAGE]: '1.0.0' }, latestVersions: { [PACKAGE]: '2.0.0' },
+      updatingAll: { done: 0, total: 2, packageName: PACKAGE, pluginName: 'AI 生图' },
+    })} />)
+    expect(screen.getByRole('status').textContent).toBe('updatingAll')
+    expect(screen.getByRole('button', { name: 'updating' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'updateAll' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: 'refresh' }).hasAttribute('disabled')).toBe(true)
+
+    rerender(<MioMarketTab {...props({ updateAllRestart: 2 })} />)
+    expect(screen.getByRole('status').textContent).toBe('updateAllRestartNotice')
+
+    const stopped = { packageName: PACKAGE, pluginName: 'AI 生图', reason: '' }
+    rerender(<MioMarketTab {...props({ updateAllError: { ...stopped, kind: 'restart-required' } }, {}, enText)} />)
+    expect(screen.getByRole('alert').textContent)
+      .toBe(enText('updateAllRestartRequired', { name: 'AI 生图' }))
+
+    rerender(<MioMarketTab {...props({
+      updateAllError: { ...stopped, kind: 'build-approval', reason: 'approve esbuild' },
+    }, {}, enText)} />)
+    expect(screen.getByRole('alert').textContent).toBe(enText('updateAllNeedsApproval', { name: 'AI 生图' }))
+
+    rerender(<MioMarketTab {...props({ updateAllError: { ...stopped, kind: 'failed', reason: 'offline' } }, {}, enText)} />)
+    expect(screen.getByRole('alert').textContent).toBe(`${enText('updateAllFailed', { name: 'AI 生图' })} offline`)
+
+    rerender(<MioMarketTab {...props({ updateAllError: { ...stopped, kind: 'failed', reason: '' } }, {}, enText)} />)
+    expect(screen.getByRole('alert').textContent).toBe(enText('updateAllFailed', { name: 'AI 生图' }))
   })
 
   it('confirms the update before handing the latest version to the page', () => {
     const update = vi.fn()
     const install = vi.fn()
-    const translate = (key: MioPluginMarketKey, params?: Record<string, unknown>): string => {
-      let text: string = en[key]
-      for (const [name, value] of Object.entries(params ?? {})) text = text.replaceAll(`{${name}}`, String(value))
-      return text
-    }
     render(<MioMarketTab {...props({
       items: [ITEM], installed: [PACKAGE],
       installedVersions: { [PACKAGE]: '1.0.0' }, latestVersions: { [PACKAGE]: '2.0.0' },
-    }, { update, install }, translate)} />)
+    }, { update, install }, enText)} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Update' }))
     const dialog = screen.getByRole('dialog')

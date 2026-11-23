@@ -4,8 +4,27 @@ import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { MioPluginListing } from '@deepseek-ai/dsh-mio-account/types'
 import { createSnapshotStore, type SnapshotStore } from '@deepseek-ai/dsh-client-store'
 import type { PluginTabInstall } from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
+import type { ChangeResult } from '@deepseek-ai/dsh-plugin-manager/types'
 import { gt, valid } from 'semver'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
+
+/** Progress of an update-all run: plugins finished, and the one now being replaced. */
+export interface MioUpdateAllProgress {
+  readonly done: number
+  readonly total: number
+  readonly packageName: string
+  readonly pluginName: string
+}
+
+/** The plugin that stopped an update-all run, and whether its refusal names a known reason. */
+export interface MioUpdateAllError {
+  readonly packageName: string
+  readonly pluginName: string
+  /** `restart-required` or `build-approval` when the refusal names one, else `failed`. */
+  readonly kind: 'restart-required' | 'build-approval' | 'failed'
+  /** The Host's diagnostic, when it gave one. */
+  readonly reason: string
+}
 
 /** Catalog state shared by the tab's rows. */
 export interface MioMarketState {
@@ -22,6 +41,13 @@ export interface MioMarketState {
   readonly updating: string | null
   /** The last update refusal; `restart-required` is a marker the view localizes. */
   readonly updateError: string
+  /** Update-all progress, or null when no run is in flight. */
+  readonly updatingAll: MioUpdateAllProgress | null
+  /** The plugin that stopped the last update-all run, or null. */
+  readonly updateAllError: MioUpdateAllError | null
+  /** How many plugins the last update-all run replaced with a change that waits for the next start; 0 when none. */
+  readonly updateAllRestart: number
+  /** The catalog read's failure. */
   readonly error: string
 }
 
@@ -39,6 +65,8 @@ export interface MioMarketFace {
   readonly reload: () => void
   /** Remove an installed package and open the page's install dialog for its latest version. */
   readonly update: (item: MioPluginListing, install: (target: PluginTabInstall) => void) => void
+  /** Replace every installed catalog plugin with a newer registry version, one at a time. */
+  readonly updateAll: () => void
   /** Pin a package to the top of the list, or unpin it. */
   readonly togglePin: (packageName: string) => void
 }
@@ -67,7 +95,7 @@ export function orderMarketItems(
 
 const INITIAL: MioMarketState = {
   status: 'idle', items: [], installed: [], installedVersions: {}, latestVersions: {},
-  updating: null, updateError: '', error: '',
+  updating: null, updateError: '', updatingAll: null, updateAllError: null, updateAllRestart: 0, error: '',
 }
 
 /**
@@ -81,6 +109,30 @@ export function updateAvailable(installed: string | undefined, latest: string | 
   return valid(installed) !== null && valid(latest) !== null && gt(latest, installed)
 }
 
+/** One installed catalog entry and the registry version that replaces it. */
+export interface MioUpdateTarget {
+  readonly item: MioPluginListing
+  readonly installed: string
+  readonly latest: string
+}
+
+/**
+ * The installed catalog entries whose registry version is newer, in catalog order.
+ * @param state - the market snapshot.
+ * @returns the entries an update replaces, each with its installed and target versions.
+ */
+export function updatableItems(state: MioMarketState): MioUpdateTarget[] {
+  const targets: MioUpdateTarget[] = []
+  for (const item of state.items) {
+    if (!state.installed.includes(item.packageName)) continue
+    const installed = state.installedVersions[item.packageName]
+    const latest = state.latestVersions[item.packageName]
+    if (installed === undefined || latest === undefined || !updateAvailable(installed, latest)) continue
+    targets.push({ item, installed, latest })
+  }
+  return targets
+}
+
 /**
  * Whether any installed catalog plugin has a newer registry version, which is
  * what the Plugins page tab marks with a dot.
@@ -88,8 +140,7 @@ export function updateAvailable(installed: string | undefined, latest: string | 
  * @returns whether an installed catalog entry should be updated.
  */
 export function hasUpdates(state: MioMarketState): boolean {
-  return state.items.some(item => state.installed.includes(item.packageName)
-    && updateAvailable(state.installedVersions[item.packageName], state.latestVersions[item.packageName]))
+  return updatableItems(state).length > 0
 }
 
 /** Resolve installed package names and versions from the plugin manager's bundle projection. */
@@ -106,6 +157,25 @@ function installedOf(bundles: readonly {
     if (bundle.version !== undefined) versions[bundle.name] = bundle.version
   }
   return { names, versions }
+}
+
+/** The identity one catalog entry contributes to an update-all run's progress and refusal. */
+function nameOf(item: MioPluginListing): Pick<MioUpdateAllProgress, 'packageName' | 'pluginName'> {
+  return { packageName: item.packageName, pluginName: item.pluginName }
+}
+
+/**
+ * Read why a replacement stopped: pending install scripts first, then a removal
+ * that waits for a restart, else the Host's words.
+ * @param result - the failed or removal-bound step.
+ * @returns the refusal kind and reason the view shows.
+ */
+function refusalOf(result: ChangeResult): Pick<MioUpdateAllError, 'kind' | 'reason'> {
+  if (result.pendingBuilds !== undefined && result.pendingBuilds.length > 0) {
+    return { kind: 'build-approval', reason: result.error?.diagnostic ?? '' }
+  }
+  if (result.application === 'restart-required') return { kind: 'restart-required', reason: result.error?.diagnostic ?? '' }
+  return { kind: 'failed', reason: result.error?.diagnostic ?? '' }
 }
 
 /** Owns catalog reads for one Client. */
@@ -138,6 +208,7 @@ export class MioMarketController {
       ensure: () => { if (this.state().status === 'idle') void this.load() },
       reload: () => { void this.load() },
       update: (item, install) => { void this.update(item, install) },
+      updateAll: () => { void this.updateAll() },
       togglePin: (packageName) => {
         const pinned = this.pinned.getSnapshot()
         this.pinned.set(pinned.includes(packageName)
@@ -164,13 +235,18 @@ export class MioMarketController {
     return this.store.getSnapshot()
   }
 
+  /** Whether an awaited step settled after disposal or after a reload replaced its generation. */
+  private stale(generation: number): boolean {
+    return this.disposed || generation !== this.generation
+  }
+
   private patch(next: Partial<MioMarketState>): void {
     this.store.set({ ...this.state(), ...next })
   }
 
   private async load(): Promise<void> {
     const generation = ++this.generation
-    this.patch({ status: 'loading', error: '', updateError: '' })
+    this.patch({ status: 'loading', error: '', updateError: '', updateAllError: null, updateAllRestart: 0 })
     const [plugins, bundles] = await Promise.all([
       this.ctx.remote.mioAccount.listPlugins(),
       this.ctx.remote.pluginManager.listBundles(),
@@ -234,8 +310,8 @@ export class MioMarketController {
   /** Uninstall one installed package, then hand the latest version to the page's install dialog. */
   private async update(item: MioPluginListing, install: (target: PluginTabInstall) => void): Promise<void> {
     const latest = this.state().latestVersions[item.packageName]
-    if (latest === undefined || this.state().updating !== null) return
-    this.patch({ updating: item.packageName, updateError: '' })
+    if (latest === undefined || this.state().updating !== null || this.state().updatingAll !== null) return
+    this.patch({ updating: item.packageName, updateError: '', updateAllError: null, updateAllRestart: 0 })
     try {
       const removed = await this.ctx.remote.pluginManager.removeBundle(item.packageName)
       if (this.disposed) return
@@ -262,5 +338,66 @@ export class MioMarketController {
     } finally {
       if (!this.disposed) this.patch({ updating: null })
     }
+  }
+
+  /**
+   * Replace every installed catalog plugin whose registry version is newer, one
+   * at a time, through the Host's checked update that restores the installed
+   * version when a replacement fails. A stopped replacement ends the run before
+   * the next plugin starts; one that waits for the next start lets it continue.
+   */
+  private async updateAll(): Promise<void> {
+    const state = this.state()
+    if (this.disposed || state.updatingAll !== null || state.updating !== null) return
+    const targets = updatableItems(state)
+    if (targets.length === 0) return
+    const generation = this.generation
+    let done = 0
+    let restart = 0
+    const inFlight = (done: number, item: MioPluginListing): MioUpdateAllProgress =>
+      ({ done, total: targets.length, ...nameOf(item) })
+    this.patch({ updateAllError: null, updateAllRestart: 0, updateError: '' })
+    for (const { item, latest } of targets) {
+      this.patch({ updatingAll: inFlight(done, item) })
+      try {
+        // The Gateway validates the descriptor's argument count, so the optional options parameter is still passed.
+        const answer = await this.ctx.remote.pluginManager.updateBundle(item.packageName, latest, undefined)
+        if (this.stale(generation)) return
+        if (!answer.ok) {
+          this.patch({
+            updatingAll: null, updateAllError: { ...nameOf(item), kind: 'failed', reason: answer.error.message },
+            updateAllRestart: restart,
+          })
+          this.refreshInstalled()
+          return
+        }
+        const { step, result } = answer.value
+        const stopped = result.application === 'failed' || result.application === 'cancelled'
+          || (result.application === 'restart-required' && step === 'remove')
+        if (stopped) {
+          this.patch({
+            updatingAll: null, updateAllError: { ...nameOf(item), ...refusalOf(result) }, updateAllRestart: restart,
+          })
+          this.refreshInstalled()
+          return
+        }
+        if (result.application === 'restart-required') restart++
+        done++
+        this.patch({ installedVersions: { ...this.state().installedVersions, [item.packageName]: latest } })
+      } catch (error) {
+        if (this.stale(generation)) return
+        this.patch({
+          updatingAll: null,
+          updateAllError: {
+            ...nameOf(item), kind: 'failed', reason: error instanceof Error ? error.message : String(error),
+          },
+          updateAllRestart: restart,
+        })
+        this.refreshInstalled()
+        return
+      }
+    }
+    this.patch({ updatingAll: null, updateAllRestart: restart })
+    this.refreshInstalled()
   }
 }

@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-浏览器半边在插件页增加一个 **插件市场** 标签页。它通过 `remote.mioAccount.listPlugins` 读取已启用目录，通过 `remote.pluginManager.listBundles` 标记 profile 已声明安装的包，并把缺失包名交给页面自己的 `install` 动作完成安装。对已安装的包，它通过 `pluginManager.inspect` 查询注册表版本，发现更高版本时显示 **更新**；更新会先移除当前包，再按发现的版本重新打开页面的安装对话框。只要任一已安装的目录插件存在更高版本，标签页文案旁就通过 `plugins.tab.badge` 显示一个红点。因此安装继续复用页面现有的检查、进度、取消、注册表和重启提示。安装完成后由 Host 侧的 [`mio-plugin-preset`](../../boot/mio-plugin-preset/README.zh.md) 行应用目录预设；标签页本身不接触原始预设值。
+浏览器半边在插件页增加一个 **插件市场** 标签页。它通过 `remote.mioAccount.listPlugins` 读取目录，通过 `remote.pluginManager.listBundles` 标记已安装的包，并交给页面的安装对话框完成安装。**更新** 会移除已安装且有更高注册表版本的包并重新打开对话框；**全部更新** 则对每个这样的包调用 Host 的受检 `pluginManager.updateBundle`，遇到需要重启或需要审批安装脚本的插件时停下。只要任一已安装插件存在更高版本，标签页文案旁就通过 `plugins.tab.badge` 显示红点。安装完成后由 Host 侧的 [`mio-plugin-preset`](../../boot/mio-plugin-preset/README.zh.md) 行应用目录预设。
 
 ## 目录
 
@@ -28,7 +28,7 @@ kind: "package-reference"
   name: '@deepseek-ai/dsh-client-ui-mio-plugin-market'
 ```
 
-标签页注入 `slots`、`locale`、`remote`、`remote.mioAccount` 和 `remote.pluginManager`，注册到 `plugins.tab` 中页面自带 Installed 标签之后，并以同一个 id 注册到 `plugins.tab.badge`，供页面标记该标签页。卡片展示目录名称、包名、描述、分类和“自动配置”标记；已安装卡片通过页面的 `openPackage` 打开插件详情。每张卡片带置顶按钮：置顶的包按置顶顺序排在网格最前，该顺序保存在本浏览器的 localStorage 中，不写入账号。`plugin-manager/changed` 后刷新已安装包名，连接重置后重新读取目录。
+标签页注入 `slots`、`locale`、`remote`、`remote.mioAccount` 和 `remote.pluginManager`，注册到 `plugins.tab` 中页面自带 Installed 标签之后，并以同一个 id 注册到 `plugins.tab.badge`，供页面标记该标签页。卡片展示目录名称、包名、描述、分类和“自动配置”标记；已安装卡片通过页面的 `openPackage` 打开插件详情。每张卡片带置顶按钮：置顶的包按置顶顺序排在网格最前，该顺序保存在本浏览器的 localStorage 中，不写入账号。页头的全部更新按钮会先列出待替换的包及其已装版本和目标版本，再开始逐个更新；运行中显示当前插件，有需要重启才生效的更新时保留重启提示到下次读取目录。`plugin-manager/changed` 后刷新已安装包名，连接重置后重新读取目录。
 
 <a id="model-experience"></a>
 ## 模型体验
@@ -52,6 +52,7 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 
 - 目录接口没有版本、图标或安装源字段。安装使用 `packageName`，页面显示 `latest`；因此更新检测会对每个已安装包调用 `pluginManager.inspect`，需要注册表访问，而且 pnpm 的 `minimumReleaseAge` 拦截最新版时仍可能装入较旧版本。目录补一个版本字段即可省去这次网络检查。
+- 全部更新走 Host 的受检更新，而不是页面的安装对话框；需要审批安装脚本时整轮更新停下，标签页列出该插件，由用户单独更新。逐个替换是因为 Host 对 profile 变更加锁。
 - 客户端接口一次返回全部启用插件，因此没有搜索和分页。
 - 预设由 Host 自动应用；标签页除插件后续配置状态外，不展示应用结果。更新会卸载并重新安装插件，因此也会重新应用目录预设并替换现有渠道。
 - 直连账号密钥预设只是开发路径。正式环境的图像提供者需要预设包限制中描述的本机回环代理。
@@ -59,4 +60,4 @@ kind: "package-reference"
 <a id="dev-note"></a>
 ### 开发备注
 
-标签页从不自行安装：它打开插件页自己的安装对话框，因此安装源回退、取消、脚本审批和重启提示在所有安装路径上都由同一处负责。已安装状态来自 `pluginManager.listBundles`，而不是目录，因为账号接口既不报版本也不报安装源；所以更新检测会调用 `pluginManager.inspect` 并允许已安装的包作答，卡片上的标记是这次比较的结果，而非目录内容。
+标签页从不自行安装：它打开插件页自己的安装对话框，因此安装源回退、取消、脚本审批和重启提示在所有安装路径上都由同一处负责。全部更新是刻意的例外：它使用 Host 的受检更新，替换失败会恢复已安装版本，并且队列中间不复用安装对话框。已安装状态来自 `pluginManager.listBundles`，而不是目录，因为账号接口既不报版本也不报安装源；所以更新检测会调用 `pluginManager.inspect` 并允许已安装的包作答，卡片上的标记是这次比较的结果，而非目录内容。
