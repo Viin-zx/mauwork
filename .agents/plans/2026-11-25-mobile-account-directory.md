@@ -579,7 +579,7 @@ export abstract class MioAccount extends Service {
 ### 10.2 桌面发行版打包
 
 - fork 发布名 `@mauwork/mobile-access`，加入桌面默认 profile 的插件清单，锁版本、默认启用。
-- **内置 frpc 二进制**（按平台随包），不在运行时从网上下载。校验方式：打包时固定 SHA-256，启动前校验。
+- **内置 frpc 二进制**（按平台随包），不在运行时从网上下载。校验方式：打包时固定 SHA-256，启动前校验。**已实现（2026-11-27）**：`bin/frpc-manifest.json` 是版本（FRP v0.72.0）、下载地址与两级 SHA-256（归档、解压后的 `frpc`）的唯一来源；`scripts/fetch-frpc.mjs` 在 `prepack` 从 FRP 官方 GitHub release 下载 macOS arm64/x64 与 Windows x64 资产，用官方校验和验证后解压到 `bin/frpc-<platform>-<arch>`（不入 git）；运行时 `verifyFrpcBinary` 复核清单哈希，缺失或不符只报告未连接中继、不启动进程。本机实测：包内 frpc 连上本地 frps、离开账号后进程停止、重新添加后恢复、篡改二进制被拒绝并记录 warn。
 - 发布前 smoke：启动桌面 → 登录 → 手机能看到本机 → 连接成功 → 中继断开后 30 秒内恢复。
 
 ---
@@ -879,7 +879,7 @@ disabled
 | T13 | Android | 登录 + 我的电脑列表 | T2 | 真机登录、列表、刷新、离线态正确 —— **已完成（2026-11-26）**：API 36 模拟器 + 假后端实测短信登录、列表排序、手动刷新、离线/最后在线、空列表、重启后会话保留、401 回登录页带失效提示、15 秒自动刷新；18 项单测（8 HTTP + 6 解析 + 4 存储）通过，lint 通过 |
 | T14 | Android | 连接编排 + 存储 + 指纹校验 + 自动重配 | T9,T13 | 验收 3–8、13、21 通过 |
 | T15 | Android | 错误文案 + 设置 + 扫码兜底 | T14 | 验收 16、17 通过 |
-| T16 | 联合 | 验收 1–24 + 抓包检查 | 全部 | 全过 |
+| T16 | 联合 | 验收 1–24 + 抓包检查 | 全部 | 全过 —— **14/17 的中继半句已完成（2026-11-27）**：frpc 进包后实测离账号即断开、重新添加恢复、后端停机 12 秒内已建立的中继不断且二维码接口仍可用；**7 仍需真实公网中继**（子域名 DNS + 证书 + 手机 5G），8 的桌面换 IP 分支未测 |
 
 **本仓库开发规范（T3 必读）**：ESM + 本地相对导入带 `.ts`；注册走 `ctx.effect()`/`ctx.on()`；错误用 `HarnessError`；不得新增 `as unknown`；导出必须有 JSDoc（`@param`/`@returns`）；改包同步 README 双语；新建文件 LF；提交前 `pnpm run typecheck`、相关测试、`pnpm run lint`。
 
