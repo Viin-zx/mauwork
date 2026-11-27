@@ -540,6 +540,42 @@ describe('stored session hygiene', () => {
 
 })
 
+describe('host-only business session', () => {
+  it('is absent while signed out and reads no backend fact', async () => {
+    const ctx = await boot()
+
+    expect(await ctx.mioAccount.getBusinessSession()).toBeNull()
+    expect(requests).toHaveLength(0)
+  })
+
+  it('returns the stored token and user id without a request', async () => {
+    const ctx = await signedIn()
+
+    expect(await ctx.mioAccount.getBusinessSession()).toEqual({ token: 'at-1', userId: '42' })
+    expect(requests).toHaveLength(0)
+  })
+
+  it('is absent when the stored session has no user projection', async () => {
+    const ctx = await boot()
+    replies.push(ok({ accessToken: 'at-1' }))
+    await ctx.mioAccount.loginWithPassword({
+      countryCode: '+86',
+      mobile: '13800000000',
+      password: 'secret123',
+    })
+
+    expect(await ctx.mioAccount.getState()).toEqual({ status: 'signed-in', user: null })
+    expect(await ctx.mioAccount.getBusinessSession()).toBeNull()
+  })
+
+  it('exposes the normalized business origin without a request', async () => {
+    const ctx = await boot()
+
+    expect(ctx.mioAccount.getBusinessBaseUrl()).toBe(BASE)
+    expect(requests).toHaveLength(0)
+  })
+})
+
 describe('account state stream', () => {
   it('replays the current state, then follows sign-in and cancellation', async () => {
     const ctx = await boot()

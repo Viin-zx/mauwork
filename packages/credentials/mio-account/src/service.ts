@@ -45,6 +45,14 @@ export interface MioPluginCatalogItem {
   readonly config: Record<string, unknown> | null
 }
 
+/** Host-only business session handed to sibling plugins; never exposed through a Remote method. */
+export interface MioBusinessSession {
+  /** Bearer token for `/mio/client/v1` calls. */
+  readonly token: string
+  /** Backend user id the token belongs to. */
+  readonly userId: string
+}
+
 /** Service Definition of the mioagent account seam shared by the HTTP provider, Remote controller, and llm-mio. */
 export abstract class MioAccount extends Service {
   /** @param ctx - context owning this account implementation. */
@@ -136,6 +144,23 @@ export abstract class MioAccount extends Service {
    * @returns every model the backend currently offers.
    */
   abstract getModels(signal?: AbortSignal): Promise<MioModelCatalogView>
+
+  /**
+   * Read the stored business session without network access. Host-only; callers
+   * must not log, persist outside the credentials seam, or pass the token to
+   * another process, except as an `Authorization` header to the business backend.
+   * @returns the token and its user id, or null when signed out or the stored
+   * session has no user projection.
+   */
+  abstract getBusinessSession(): Promise<MioBusinessSession | null>
+
+  /**
+   * Read the configured business backend origin. Host-only; sibling plugins use
+   * it to call their own `/mio/client/v1` routes instead of duplicating deployment
+   * configuration.
+   * @returns the normalized origin plus optional path prefix, without `/mio/client/v1`.
+   */
+  abstract getBusinessBaseUrl(): string
 
   /**
    * Resolve the model endpoint and current key. Host-only; callers must not

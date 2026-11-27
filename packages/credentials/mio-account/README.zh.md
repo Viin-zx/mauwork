@@ -9,7 +9,7 @@ kind: "package-reference"
 
 `MioAccount` 是由 Remote 控制器和 `llm-mio` 使用的服务定义。`MioAccountHttp` 是与业务后端 `/mio/client/v1` 通信的提供者：它用 zod 校验每个响应信封和载荷，并把访问 token 以 `mio-account/session` 为键存入凭证接缝。存储的授权只包含 token 和可展示的用户投影；模型密钥从不持久化。
 
-访问 token 只用于业务调用。模型请求使用来自 `POST /models/config` 的独立密钥，`getModelAccess` 会将其缓存 `modelAccessTtlMs`，并以服务端声明的过期时间封顶。退登、token 被拒绝、凭证记录变化，以及模型服务拒绝密钥后调用 `invalidateModelAccess` 时，缓存都会被丢弃。两种凭证都不会进入日志、Session 事件或 Remote 结果。
+访问 token 只用于业务调用。`getBusinessSession()` 无需网络即可把存储的 token 与用户 id 交给同宿主插件，且不新增 Remote 方法。模型请求使用来自 `POST /models/config` 的独立密钥，`getModelAccess` 会将其缓存 `modelAccessTtlMs`，并以服务端声明的过期时间封顶。退登、token 被拒绝、凭证记录变化，以及模型服务拒绝密钥后调用 `invalidateModelAccess` 时，缓存都会被丢弃。两种凭证都不会进入日志、Session 事件或 Remote 结果。
 
 ## 概述
 
@@ -28,7 +28,7 @@ Host 持有 mioagent 业务会话，并按需解析模型端点与密钥。登�
 
 在插件行配置 `businessBaseUrl`（默认 `http://localhost:8080`）、`requestTimeoutMs`（默认 30,000ms）和 `modelAccessTtlMs`（默认 300,000ms）。`businessBaseUrl` 是带可选路径前缀的 HTTP(S) 地址：客户端自行追加 `/mio/client/v1`，配置中的查询、片段或内嵌凭证都会被拒绝。
 
-`getState()` 和 `watch(signal)` 无需网络即可报告登录状态。`sendSmsCode`、`register`、`loginWithPassword`、`loginWithSms` 和 `resetPassword` 执行文档定义的认证与找回流程；`sendSmsCode` 与 `resetPassword` 接受 `authenticated: true`，改用存储的 token 及其绑定手机号完成修改密码。登录或注册成功后，先存储授权再返回已登录视图；密码重置成功后删除存储的会话，因为后端会撤销其 token。`getProfile` 仅在读取到的 token 仍是当前 token 时更新存储的用户投影。`getAccountStatus` 和 `retryAccount` 把开通状态写回存储的用户。`getModels` 读取模型目录，`getQuota` 读取剩余额度，`getAgreements` 读取协议文档，`getPlugins` 读取已启用插件目录，其预设配置只保留在 Host 内。
+`getState()`、`watch(signal)` 和 `getBusinessSession()` 无需网络即可报告登录状态；最后一个返回 bearer token 与其用户 id，供同宿主插件使用，`getBusinessBaseUrl()` 把配置的后端地址交给这些插件，避免再配一份部署地址。`sendSmsCode`、`register`、`loginWithPassword`、`loginWithSms` 和 `resetPassword` 执行文档定义的认证与找回流程；`sendSmsCode` 与 `resetPassword` 接受 `authenticated: true`，改用存储的 token 及其绑定手机号完成修改密码。登录或注册成功后，先存储授权再返回已登录视图；密码重置成功后删除存储的会话，因为后端会撤销其 token。`getProfile` 仅在读取到的 token 仍是当前 token 时更新存储的用户投影。`getAccountStatus` 和 `retryAccount` 把开通状态写回存储的用户。`getModels` 读取模型目录，`getQuota` 读取剩余额度，`getAgreements` 读取协议文档，`getPlugins` 读取已启用插件目录，其预设配置只保留在 Host 内。
 
 访问 token 的过期由后端校验，客户端不保存本地过期时间。可选的用户信息中缺失字段会归一化为空字符串，缺少用户对象时保持 null。后端拒绝的会话会被删除，并发送一次 `mio-account/session-expired`。`logout` 先调用撤销端点，再删除本地记录；即使 token 被拒绝，本地记录仍会被删除。
 

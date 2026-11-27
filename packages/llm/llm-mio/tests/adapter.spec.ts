@@ -153,6 +153,10 @@ class TestAccount extends MioAccount {
     return Promise.resolve(this.access)
   }
 
+  override getBusinessSession(): Promise<never> { throw new Error('unused') }
+
+  override getBusinessBaseUrl(): never { throw new Error('unused') }
+
   override getAccountStatus(): Promise<MioAccountStatusView> {
     this.statusReads += 1
     return Promise.resolve(this.status)

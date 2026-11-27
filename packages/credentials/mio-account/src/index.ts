@@ -12,7 +12,7 @@ import { z } from 'zod'
 import { MioClient, normalizeMioBaseUrl } from './client.ts'
 import { MioAccountError } from './error.ts'
 import { MioAccount } from './service.ts'
-import type { MioPluginCatalogItem } from './service.ts'
+import type { MioBusinessSession, MioPluginCatalogItem } from './service.ts'
 import type {
   MioAccountStatusView, MioAccountView, MioAgreement, MioModelAccess, MioModelCatalogView,
   MioOrderStatus, MioPasswordLoginRequest, MioPlan, MioPurchaseRequest, MioPurchaseResult, MioQuotaView,
@@ -27,7 +27,7 @@ import {
 import type { LoginPayload, StoredSession } from './wire.ts'
 
 export { MioAccount } from './service.ts'
-export type { MioPluginCatalogItem } from './service.ts'
+export type { MioBusinessSession, MioPluginCatalogItem } from './service.ts'
 export { MioAccountError, mioAccountErrorOf } from './error.ts'
 export { normalizeMioBaseUrl } from './client.ts'
 export type { MioInternalErrorCode, MioAccountErrorOptions } from './error.ts'
@@ -65,6 +65,7 @@ interface CachedModelAccess {
 export class MioAccountHttp extends MioAccount {
   static inject = ['credentials']
   static Config = Config
+  private readonly baseUrl: string
   private readonly client: MioClient
   private readonly modelAccessTtlMs: number
   private readonly listeners = new Set<() => void>()
@@ -79,6 +80,7 @@ export class MioAccountHttp extends MioAccount {
     super(ctx)
     const resolved = Config(config)
     const baseUrl = normalizeMioBaseUrl(resolved.businessBaseUrl)
+    this.baseUrl = baseUrl
     this.modelAccessTtlMs = resolved.modelAccessTtlMs
     this.client = new MioClient({
       baseUrl,
@@ -272,6 +274,16 @@ export class MioAccountHttp extends MioAccount {
       token: session.accessToken,
       ...signal === undefined ? {} : { signal },
     })
+  }
+
+  override async getBusinessSession(): Promise<MioBusinessSession | null> {
+    const session = await this.readSession()
+    if (session === null || session.user === null) return null
+    return { token: session.accessToken, userId: session.user.userId }
+  }
+
+  override getBusinessBaseUrl(): string {
+    return this.baseUrl
   }
 
   override async getModelAccess(signal?: AbortSignal): Promise<MioModelAccess> {

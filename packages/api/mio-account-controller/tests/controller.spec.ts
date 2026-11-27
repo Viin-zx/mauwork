@@ -187,3 +187,11 @@ it('delivers expiry to current subscribers and never replays it on reconnect', a
   reconnect.abort()
   expect(await reopened).toEqual({ done: true, value: undefined })
 })
+
+it('keeps Host-only credential reads off the Remote surface', () => {
+  const { controller } = fixture()
+
+  expect('getBusinessSession' in controller).toBe(false)
+  expect('getModelAccess' in controller).toBe(false)
+  expect('invalidateModelAccess' in controller).toBe(false)
+})
